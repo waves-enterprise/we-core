@@ -1,0 +1,98 @@
+syntax = "proto3";
+package wavesenterprise.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.protobuf.service.privacy";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+import "atomic_badge.proto";
+import "google/protobuf/wrappers.proto";
+import "managed/policy_data_hash_transaction.proto";
+import "entity/address.proto";
+
+service PrivacyPublicService {
+  rpc GetPolicyItemData (PolicyItemRequest) returns (PolicyItemDataResponse);
+  rpc GetPolicyItemLargeData (PolicyItemRequest) returns (stream PolicyItemDataResponse);
+  rpc GetPolicyItemInfo (PolicyItemRequest) returns (PolicyItemInfoResponse);
+  rpc PolicyItemDataExists (PolicyItemRequest) returns (PolicyItemDataExistsResponse);
+  rpc SendData (SendDataRequest) returns (SendDataResponse);
+  rpc SendLargeData (stream SendLargeDataRequest) returns (SendDataResponse);
+  rpc Recipients (PolicyIdRequest) returns (wavesenterprise.entity.AddressesResponse);
+  rpc Owners (PolicyIdRequest) returns (wavesenterprise.entity.AddressesResponse);
+  rpc Hashes (PolicyIdRequest) returns (HashesResponse);
+  rpc ForceSync (PolicyIdRequest) returns (ForceSyncResponse);
+}
+
+message PolicyItemRequest {
+  string policy_id = 1;
+  string data_hash = 2;
+}
+
+message PolicyItemDataResponse {
+  bytes data = 1;
+}
+
+message PolicyItemInfoResponse {
+  string sender_address = 1;
+  string policy_id = 2;
+  PolicyItemFileInfo info = 3;
+  string data_hash = 4;
+}
+
+message PolicyItemDataExistsResponse {
+  bool exists = 1;
+}
+
+message PolicyItemFileInfo {
+  string filename = 1;
+  int32 size = 2;
+  int64 timestamp = 3;
+  string author = 4;
+  string comment = 5;
+}
+
+message SendDataResponse {
+  int32 tx_version = 1;
+  PolicyDataHashTransaction tx = 2;
+}
+
+message SendDataRequest {
+  SendDataMetadata metadata = 1;
+  bytes data = 2;
+}
+
+message SendLargeDataRequest {
+  oneof request {
+    SendDataMetadata metadata = 1;
+    File file = 2;
+  }
+}
+
+message File {
+  bytes content = 1;
+}
+
+message SendDataMetadata {
+  string sender_address = 1;
+  string policy_id = 2;
+  string data_hash = 3;
+  PolicyItemFileInfo info = 5;
+  int64 fee = 6;
+  google.protobuf.StringValue fee_asset_id = 7;
+  AtomicBadge atomic_badge = 8;
+  google.protobuf.StringValue password = 9;
+  bool broadcast_tx = 10;
+}
+
+message PolicyIdRequest {
+  string policy_id = 1;
+}
+
+message HashesResponse {
+  repeated string hashes = 1;
+}
+
+message ForceSyncResponse {
+  int32 force_restarted = 1;
+}

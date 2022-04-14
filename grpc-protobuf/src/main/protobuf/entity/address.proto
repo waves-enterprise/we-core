@@ -1,0 +1,19 @@
+syntax = "proto3";
+package wavesenterprise.entity;
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.protobuf.entity";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+message AddressRequest {
+  string address = 1;
+}
+
+message AddressResponse {
+  string address = 1;
+}
+
+message AddressesResponse {
+  repeated string addresses = 1;
+}

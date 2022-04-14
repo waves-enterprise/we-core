@@ -1,0 +1,23 @@
+syntax = "proto3";
+package wavesenterprise;
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.protobuf.service.privacy";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+import "util/events/util_events_subscribe_on_request.proto";
+
+service PrivacyEventsService {
+  rpc SubscribeOn (SubscribeOnRequest) returns (stream PrivacyEvent) {}
+}
+
+message PrivacyEvent {
+  string policy_id = 1;
+  string data_hash = 2;
+  enum EventType {
+    DATA_ACQUIRED = 0;
+    DATA_INVALIDATED = 1;
+  }
+  EventType event_type = 3;
+}
