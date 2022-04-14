@@ -1,0 +1,186 @@
+package com.wavesenterprise.transaction
+
+import com.wavesenterprise.acl.PermissionsGen
+import com.wavesenterprise.settings.TestFees
+import com.wavesenterprise.state.ByteStr
+import com.wavesenterprise.utils.Base58
+import com.wavesenterprise.utils.EitherUtils.EitherExt
+import com.wavesenterprise.{CoreTransactionGen, crypto}
+import org.scalatest.{FunSpecLike, Inside, Matchers}
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import play.api.libs.json.Json
+
+class UpdatePolicyTransactionV3Specification extends FunSpecLike with ScalaCheckPropertyChecks with Matchers with CoreTransactionGen with Inside {
+
+  private val defaultPolicyId: ByteStr = ByteStr(Base58.decode("thfgsdfewe").get)
+  private val updatePolicyFee          = TestFees.defaultFees.forTxType(CreatePolicyTransaction.typeId)
+
+  it("UpdatePolicy Transaction encoding round trip") {
+    forAll(updatePolicyTransactionV3Gen()) { updatePolicyTx =>
+      val encoded = updatePolicyTx.bytes()
+
+      assert(encoded.nonEmpty, "Encoded bytes are empty!")
+      val Array(zeroByte, encodedTypeId, encodedVersion) = encoded.take(3)
+      assert(zeroByte === 0)
+      assert(encodedTypeId === UpdatePolicyTransaction.typeId)
+      assert(encodedVersion === 3)
+
+      val decoded = UpdatePolicyTransactionV3.parseTail(version = 3, encoded, 3)
+      decoded.fold(ex => fail(ex), decodedTx => updatePolicyTx shouldEqual decodedTx)
+    }
+  }
+
+  it("UpdatePolicyTransactionV3 proto serialization roundtrip") {
+    forAll(updatePolicyTransactionV3Gen()) { tx =>
+      val recovered = UpdatePolicyTransactionV3.fromProto(tx.toInnerProto).explicitGet()
+      recovered shouldEqual tx
+    }
+  }
+
+  it("serialize and deserialize UpdatePolicy Transaction with empty owners and recipients") {
+    val updatePolicyTx = UpdatePolicyTransactionV3(
+      sender = accountGen.sample.get,
+      policyId = defaultPolicyId,
+      recipients = List.empty,
+      owners = List.empty,
+      opType = PermissionsGen.permissionOpTypeGen.sample.get,
+      timestamp = System.currentTimeMillis(),
+      fee = updatePolicyFee,
+      None,
+      None,
+      proofs = Proofs.empty
+    )
+
+    val encoded                                        = updatePolicyTx.bytes()
+    val Array(zeroByte, encodedTypeId, encodedVersion) = encoded.take(3)
+    assert(zeroByte === 0)
+    assert(encodedTypeId === UpdatePolicyTransaction.typeId)
+    assert(encodedVersion === 3)
+
+    val decoded = UpdatePolicyTransactionV3.parseTail(version = 3, encoded, 3)
+    decoded.fold(ex => fail(ex), decodedTx => updatePolicyTx shouldEqual decodedTx)
+    decoded.get.owners shouldBe empty
+    decoded.get.recipients shouldBe empty
+  }
+
+  it("UpdatePolicy Transaction from TransactionParser") {
+    forAll(updatePolicyTransactionV3Gen()) { updatePolicyTx =>
+      val encoded = updatePolicyTx.bytes()
+
+      TransactionParsers
+        .parseBytes(encoded)
+        .fold(ex => fail(ex), tx => assert(tx.id() === updatePolicyTx.id(), "Transaction ids don't match"))
+    }
+  }
+
+  it("UpdatePolicy Transaction's signature verifies ok") {
+    forAll(updatePolicyTransactionV3Gen()) { updatePolicyTx =>
+      assert(crypto.verify(updatePolicyTx.proofs.proofs.head.arr, updatePolicyTx.bodyBytes(), updatePolicyTx.sender.publicKey))
+      updatePolicyTx match {
+        case pt: ProvenTransaction =>
+          assert(crypto.verify(pt.proofs.proofs.head.arr, pt.bodyBytes(), pt.sender.publicKey))
+      }
+    }
+  }
+
+  it("UpdatePolicy Transaction's signature doesn't corrupt after encoding trip") {
+    forAll(updatePolicyTransactionV3Gen()) { updatePolicyTx =>
+      val signature = updatePolicyTx.proofs.proofs.head.arr
+      val encodedTx = updatePolicyTx.bytes()
+
+      TransactionParsers
+        .parseBytes(encodedTx)
+        .fold(
+          ex => fail(ex), {
+            case tx: UpdatePolicyTransactionV3 =>
+              val parsedSignature = tx.proofs.proofs.head.arr
+              assert(signature.length === parsedSignature.length, "Signature lengths should match")
+
+              assert(
+                parsedSignature.sameElements(signature),
+                s"Signatures in proof don't match! Got: [${Base58.encode(parsedSignature)}], expected [${Base58.encode(signature)}]"
+              )
+
+              assert(crypto.verify(parsedSignature, tx.bodyBytes(), tx.sender.publicKey), "Signature is invalid")
+          }
+        )
+    }
+  }
+
+  it("Success serialize and deserialize with empty lists") {
+    val sender    = accountGen.sample.get
+    val timestamp = System.currentTimeMillis()
+    val proofStr  = "5NxNhjMrrH5EWjSFnVnPbanpThic6fnNL48APVAkwq19y2FpQp4tNSqoAZgboC2ykUfqQs9suwBQj6wERmsWWNqa"
+    val tx = UpdatePolicyTransactionV3(
+      sender = sender,
+      policyId = defaultPolicyId,
+      recipients = List.empty,
+      owners = List.empty,
+      opType = PermissionsGen.permissionOpTypeGen.sample.get,
+      timestamp = timestamp,
+      fee = updatePolicyFee,
+      None,
+      None,
+      proofs = Proofs(Seq(ByteStr.decodeBase58(proofStr).get))
+    )
+
+    val encoded                                        = tx.bytes()
+    val Array(zeroByte, encodedTypeId, encodedVersion) = encoded.take(3)
+    assert(zeroByte === 0)
+    assert(encodedTypeId === UpdatePolicyTransactionV2.typeId)
+    assert(encodedVersion === 3)
+
+    val decoded = UpdatePolicyTransactionV3.parseTail(version = 3, encoded, 3)
+    decoded.fold(ex => fail(ex), decodedTx => tx shouldEqual decodedTx)
+  }
+
+  it("JSON format validation") {
+    val sender                 = accountGen.sample.get
+    val senderPkBase58: String = Base58.encode(sender.publicKey.getEncoded)
+    val timestamp              = System.currentTimeMillis()
+    val proofStr               = "5NxNhjMrrH5EWjSFnVnPbanpThic6fnNL48APVAkwq19y2FpQp4tNSqoAZgboC2ykUfqQs9suwBQj6wERmsWWNqa"
+    val recipients             = severalAddressGenerator(4, 40).sample.get
+    val owners                 = severalAddressGenerator(5, 21).sample.get
+    val opType                 = PermissionsGen.permissionOpTypeGen.sample.get
+    val tx = UpdatePolicyTransactionV3(
+      sender,
+      defaultPolicyId,
+      recipients,
+      owners,
+      opType,
+      timestamp,
+      updatePolicyFee,
+      None,
+      Some(AtomicBadge(Some(sender.toAddress))),
+      Proofs(Seq(ByteStr.decodeBase58(proofStr).get))
+    )
+
+    val recipientsStr = recipients.map(r => s""""${r.address}"""").mkString(",")
+    val ownersStr     = owners.map(r => s""""${r.address}"""").mkString(",")
+    val js            = Json.parse(s"""{
+                                        |  "version": 3,
+                                        |  "type": 113,
+                                        |  "id": "${tx.id().base58}",
+                                        |  "sender": "${sender.address}",
+                                        |  "senderPublicKey": "$senderPkBase58",
+                                        |  "fee": $updatePolicyFee,
+                                        |  "feeAssetId": null,
+                                        |  "timestamp": $timestamp,
+                                        |  "proofs":["5NxNhjMrrH5EWjSFnVnPbanpThic6fnNL48APVAkwq19y2FpQp4tNSqoAZgboC2ykUfqQs9suwBQj6wERmsWWNqa"],
+                                        |  "policyId": "${Base58.encode(defaultPolicyId.arr)}",
+                                        |  "recipients": [$recipientsStr],
+                                        |  "opType": "${opType.str}",
+                                        |  "owners": [$ownersStr],
+                                        |  "atomicBadge": { "trustedSender": "${sender.address}"}
+                                        |}""".stripMargin)
+
+    js shouldEqual tx.json()
+  }
+
+  it("verify proofs") {
+    forAll(updatePolicyTransactionV3Gen()) { updatePolicyTx =>
+      val senderPubKey = updatePolicyTx.sender
+      crypto.verify(updatePolicyTx.proofs.proofs.head.arr, updatePolicyTx.bodyBytes(), senderPubKey.publicKey)
+    }
+  }
+}

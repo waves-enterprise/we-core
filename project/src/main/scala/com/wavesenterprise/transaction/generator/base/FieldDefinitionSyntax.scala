@@ -1,0 +1,46 @@
+package com.wavesenterprise.transaction.generator.base
+
+import com.wavesenterprise.transaction.generator.base.FieldGenerationOption._
+
+object FieldDefinitionSyntax {
+
+  implicit class ExtendedString(private val name: String) extends AnyVal {
+
+    def as(`type`: FieldType): FieldScheme = FieldScheme(name, `type`)
+
+    def as(typeWithOption: (FieldType, FieldGenerationOption)): FieldScheme = {
+      val (tpe, option) = typeWithOption
+      as(tpe, Set(option))
+    }
+
+    def as(typeWithOptions: (FieldType, Set[FieldGenerationOption]))(implicit d: DummyImplicit): FieldScheme = {
+      val (tpe, options) = typeWithOptions
+
+      val maybeIsEssential     = options.collectFirst { case Essential                     => () }
+      val maybeExcludeFromBody = options.collectFirst { case ExcludeFromBinaryBody         => () }
+      val maybeIsOverride      = options.collectFirst { case Override                      => () }
+      val maybeExcludeFromJson = options.collectFirst { case NoJson                        => () }
+      val maybeInConstructor   = options.collectFirst { case inConstructor: InConstructor  => inConstructor.versions }
+      val maybeValidation      = options.collectFirst { case validation: Validation        => validation.fieldToCode }
+      val maybeInBody          = options.collectFirst { case inBody: InBody                => inBody }
+      val maybeCustomJson      = options.collectFirst { case json: Json                    => json.fieldToCode }
+      val specialProtoName     = options.collectFirst { case ProtobufCustomName(protoName) => protoName }
+
+      FieldScheme(
+        name = name,
+        tpe = tpe,
+        inConstructorVersions = maybeInConstructor,
+        inBinaryBody = maybeExcludeFromBody.isEmpty,
+        isEssential = maybeIsEssential.isDefined,
+        isOverride = maybeIsOverride.isDefined,
+        fieldToValidation = maybeValidation,
+        versionToBodyValue = maybeInBody.map(_.versionToCode).getOrElse(PartialFunction.empty),
+        explicitVal = maybeInBody.fold(false)(_.explicitVal),
+        fieldToJson = maybeCustomJson,
+        inJson = maybeExcludeFromJson.isEmpty,
+        excludeFormSealedTrait = maybeInBody.exists(_.excludeFromSealedTrait),
+        specialProtoName = specialProtoName
+      )
+    }
+  }
+}
