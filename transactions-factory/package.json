@@ -1,0 +1,32 @@
+{
+  "name": "@wavesenterprise/transactions-factory",
+  "version": "1.4.6",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "module": "dist/transactions-factory.esm.js",
+  "dependencies": {
+    "@waves/data-entities": "^1.6.0",
+    "@wavesenterprise/signature-generator": "^2.3.5"
+  },
+  "scripts": {
+    "prepare": "npm run build",
+    "build": "tsdx build",
+    "test": "export TS_NODE_PROJECT='./tsconfig.tests.json' &&  node_modules/.bin/mocha -r ts-node/register tests/*.ts",
+    "test-server": "node_modules/.bin/ts-node -P tsconfig.tests.json tests/server/server.ts"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.8",
+    "@types/mocha": "^8.2.2",
+    "body-parser-bigint": "^1.13.2",
+    "expect": "^26.6.2",
+    "express": "^4.17.1",
+    "mocha": "^8.3.2",
+    "ts-node": "^8.10.2",
+    "tsdx": "^0.14.1",
+    "tslib": "^2.4.0",
+    "typescript": "^3.8.3"
+  }
+}
