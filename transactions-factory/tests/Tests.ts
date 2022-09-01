@@ -3,11 +3,18 @@
 */
 
 import { TRANSACTIONS } from '../src/';
+import { config } from "@wavesenterprise/signature-generator";
 import * as expect from 'expect';
 
+const decoder = new TextDecoder('utf-8');
+
 describe('', () => {
+  beforeEach(() => {
+    config.set({networkByte: 84, crypto: 'waves'})
+  });
+  
   it('RegisterNode', async () => {
-    const txBody = {
+    const transaction = {
       senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
       targetPubKey: "FM5ojNqW7e9cZ9zhPYGkpSP1Pcd8Z3e3MNKYVS5pGJ8Z",
       nodeName: "node-0",
@@ -15,9 +22,15 @@ describe('', () => {
       timestamp: 1598008066632,
       fee: 1000000
     };
-    const Tx = TRANSACTIONS.RegisterNode.V1(txBody);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.RegisterNode.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CreateAliasV2', async () => {
@@ -27,9 +40,15 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.CreateAlias.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CreateAlias.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CreateAliasV3', async () => {
@@ -40,9 +59,15 @@ describe('', () => {
       timestamp: 1598008066632,
       feeAssetId: "WAVES"
     };
-    const Tx = TRANSACTIONS.CreateAlias.V3(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CreateAlias.V3(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('IssueV2', async () => {
@@ -58,9 +83,15 @@ describe('', () => {
       timestamp: 1598008066632,
       script: "base64:3rbFDtbPwAvSp2vBvqGfGR9nRS1nBVnfuSCN3HxSZ7fVRpt3tuFG5JSmyTmvHPxYf34SocMRkRKFgzTtXXnnv7upRHXJzZrLSQo8tUW6yMtE"
     };
-    const Tx = TRANSACTIONS.Issue.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Issue.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('ReissueV2', async () => {
@@ -73,9 +104,15 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.Reissue.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Reissue.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('BurnV2', async () => {
@@ -87,9 +124,15 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.Burn.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Burn.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('LeaseV2', async () => {
@@ -101,9 +144,15 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.Lease.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Lease.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('LeaseCancelV2', async () => {
@@ -114,9 +163,15 @@ describe('', () => {
       timestamp: 1598008066632,
       leaseId: "E9yZC4cVhCDfbjFJCc9CqkAtkoFy5KaCe64iaxHM2adG"
     };
-    const Tx = TRANSACTIONS.LeaseCancel.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.LeaseCancel.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('SponsorFee', async () => {
@@ -127,9 +182,15 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.SponsorFee.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.SponsorFee.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('SetAssetScript', async () => {
@@ -141,9 +202,15 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.SetAssetScript.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.SetAssetScript.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('Data', async () => {
@@ -154,9 +221,15 @@ describe('', () => {
       timestamp: 1598008066632,
       fee: 1000000
     };
-    const Tx = TRANSACTIONS.Data.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Data.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('DataV2', async () => {
@@ -168,9 +241,15 @@ describe('', () => {
       fee: 1000000,
       feeAssetId: "WAVES"
     };
-    const Tx = TRANSACTIONS.Data.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Data.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('TransferV2', async () => {
@@ -182,11 +261,17 @@ describe('', () => {
       amount: "100000000",
       fee: 1000000,
       recipient: "3NiVPB1t32jC3SJpLomY3Zv6kwvfaJpRkqS",
-      attachment: "3rbFDtbPwAvSp2vBvqGfGR9PxYf34SocMRkRKFgzTtXXnnv7upRHXJzZrLSQo8tUW6yMtEiZ"
+      attachment: "base64:3rbFDtbPwAvSp2vBvqGfGR9PxYf34SocMRkRKFgzTtXXnnv7upRHXJzZrLSQo8tUW6yMtEiZ"
     };
-    const Tx = TRANSACTIONS.Transfer.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Transfer.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('TransferV3', async () => {
@@ -198,14 +283,18 @@ describe('', () => {
       amount: "100000000",
       fee: 1000000,
       recipient: "3NiVPB1t32jC3SJpLomY3Zv6kwvfaJpRkqS",
-      attachment: "3rbFDtbPwAvSp2vBvqGfGR9PxYf34SocMRkRKFgzTtXXnnv7upRHXJzZrLSQo8tUW6yMtEiZ",
-      atomicBadge: {
-        trustedSender: ""
-      }
+      attachment: "base64:3rbFDtbPwAvSp2vBvqGfGR9PxYf34SocMRkRKFgzTtXXnnv7upRHXJzZrLSQo8tUW6yMtEiZ",
+      atomicBadge: ""
     };
-    const Tx = TRANSACTIONS.Transfer.V3(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Transfer.V3(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('MassTransfer', async () => {
@@ -220,11 +309,17 @@ describe('', () => {
       ],
       timestamp: 1598008066632,
       fee: 1000000,
-      attachment: "3rbFDtbPwAvSp2vBvqGfGR9PxYf34SocMRkRKFgzTtXXnnv7upRHXJzZrLSQo8tUW6yMtEiZ"
+      attachment: "base64:3rbFDtbPwAvSp2vBvqGfGR9PxYf34SocMRkRKFgzTtXXnnv7upRHXJzZrLSQo8tUW6yMtEiZ"
     };
-    const Tx = TRANSACTIONS.MassTransfer.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.MassTransfer.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('MassTransferV2', async () => {
@@ -239,12 +334,18 @@ describe('', () => {
       ],
       timestamp: 1598008066632,
       fee: 1000000,
-      attachment: "3rbFDtbPwAvSp2vBvqGfGR9PxYf34SocMRkRKFgzTtXXnnv7upRHXJzZrLSQo8tUW6yMtEiZ",
+      attachment: "base64:3rbFDtbPwAvSp2vBvqGfGR9PxYf34SocMRkRKFgzTtXXnnv7upRHXJzZrLSQo8tUW6yMtEiZ",
       feeAssetId: "WAVES"
     };
-    const Tx = TRANSACTIONS.MassTransfer.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.MassTransfer.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('Permit', async () => {
@@ -258,9 +359,15 @@ describe('', () => {
       duplicate_timestamp: 1598008066632,
       dueTimestamp: 1572600785208
     };
-    const Tx = TRANSACTIONS.Permit.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Permit.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('PermitV2', async () => {
@@ -273,13 +380,17 @@ describe('', () => {
       role: "miner",
       duplicate_timestamp: 1598008066632,
       dueTimestamp: 1572600785208,
-      atomicBadge: {
-        trustedSender: ""
-      }
+      atomicBadge: ""
     };
-    const Tx = TRANSACTIONS.Permit.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Permit.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CreatePolicy', async () => {
@@ -292,9 +403,15 @@ describe('', () => {
       timestamp: 1598008066632,
       fee: 1000000
     };
-    const Tx = TRANSACTIONS.CreatePolicy.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CreatePolicy.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CreatePolicyV2', async () => {
@@ -308,9 +425,15 @@ describe('', () => {
       fee: 1000000,
       feeAssetId: "WAVES"
     };
-    const Tx = TRANSACTIONS.CreatePolicy.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CreatePolicy.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CreatePolicyV3', async () => {
@@ -323,13 +446,17 @@ describe('', () => {
       timestamp: 1598008066632,
       fee: 1000000,
       feeAssetId: "WAVES",
-      atomicBadge: {
-        trustedSender: ""
-      }
+      atomicBadge: ""
     };
-    const Tx = TRANSACTIONS.CreatePolicy.V3(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CreatePolicy.V3(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('UpdatePolicy', async () => {
@@ -342,9 +469,15 @@ describe('', () => {
       timestamp: 1598008066632,
       fee: 1000000
     };
-    const Tx = TRANSACTIONS.UpdatePolicy.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.UpdatePolicy.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('UpdatePolicyV2', async () => {
@@ -358,9 +491,15 @@ describe('', () => {
       fee: 1000000,
       feeAssetId: "WAVES"
     };
-    const Tx = TRANSACTIONS.UpdatePolicy.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.UpdatePolicy.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('UpdatePolicyV3', async () => {
@@ -373,13 +512,17 @@ describe('', () => {
       timestamp: 1598008066632,
       fee: 1000000,
       feeAssetId: "WAVES",
-      atomicBadge: {
-        trustedSender: ""
-      }
+      atomicBadge: ""
     };
-    const Tx = TRANSACTIONS.UpdatePolicy.V3(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.UpdatePolicy.V3(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('PolicyDataHashV3', async () => {
@@ -390,13 +533,17 @@ describe('', () => {
       timestamp: 1598008066632,
       fee: 1000000,
       feeAssetId: "WAVES",
-      atomicBadge: {
-        trustedSender: ""
-      }
+      atomicBadge: ""
     };
-    const Tx = TRANSACTIONS.PolicyDataHash.V3(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.PolicyDataHash.V3(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CreateContract', async () => {
@@ -409,9 +556,15 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.CreateContract.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CreateContract.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CreateContractV2', async () => {
@@ -425,9 +578,15 @@ describe('', () => {
       timestamp: 1598008066632,
       feeAssetId: "WAVES"
     };
-    const Tx = TRANSACTIONS.CreateContract.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CreateContract.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CreateContractV3', async () => {
@@ -440,13 +599,17 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632,
       feeAssetId: "WAVES",
-      atomicBadge: {
-        trustedSender: ""
-      }
+      atomicBadge: ""
     };
-    const Tx = TRANSACTIONS.CreateContract.V3(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CreateContract.V3(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CreateContractV4', async () => {
@@ -459,17 +622,19 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632,
       feeAssetId: "WAVES",
-      atomicBadge: {
-        trustedSender: ""
-      },
-      validationPolicy: {
-        type: 0
-      },
+      atomicBadge: "",
+      validationPolicy: 0,
       apiVersion: "1.1"
     };
-    const Tx = TRANSACTIONS.CreateContract.V4(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CreateContract.V4(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CallContract', async () => {
@@ -480,9 +645,15 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.CallContract.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CallContract.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CallContractV2', async () => {
@@ -494,9 +665,15 @@ describe('', () => {
       timestamp: 1598008066632,
       contractVersion: 2
     };
-    const Tx = TRANSACTIONS.CallContract.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CallContract.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CallContractV3', async () => {
@@ -509,9 +686,15 @@ describe('', () => {
       contractVersion: 2,
       feeAssetId: "WAVES"
     };
-    const Tx = TRANSACTIONS.CallContract.V3(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CallContract.V3(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('CallContractV4', async () => {
@@ -523,13 +706,17 @@ describe('', () => {
       timestamp: 1598008066632,
       contractVersion: 2,
       feeAssetId: "WAVES",
-      atomicBadge: {
-        trustedSender: ""
-      }
+      atomicBadge: ""
     };
-    const Tx = TRANSACTIONS.CallContract.V4(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.CallContract.V4(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('DisableContract', async () => {
@@ -539,9 +726,15 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.DisableContract.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.DisableContract.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('DisableContractV2', async () => {
@@ -552,9 +745,15 @@ describe('', () => {
       timestamp: 1598008066632,
       feeAssetId: "WAVES"
     };
-    const Tx = TRANSACTIONS.DisableContract.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.DisableContract.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('DisableContractV3', async () => {
@@ -564,13 +763,17 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632,
       feeAssetId: "WAVES",
-      atomicBadge: {
-        trustedSender: ""
-      }
+      atomicBadge: ""
     };
-    const Tx = TRANSACTIONS.DisableContract.V3(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.DisableContract.V3(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('UpdateContract', async () => {
@@ -582,9 +785,15 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.UpdateContract.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.UpdateContract.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('UpdateContractV2', async () => {
@@ -597,9 +806,15 @@ describe('', () => {
       timestamp: 1598008066632,
       feeAssetId: "WAVES"
     };
-    const Tx = TRANSACTIONS.UpdateContract.V2(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.UpdateContract.V2(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('UpdateContractV3', async () => {
@@ -611,13 +826,17 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632,
       feeAssetId: "WAVES",
-      atomicBadge: {
-        trustedSender: ""
-      }
+      atomicBadge: ""
     };
-    const Tx = TRANSACTIONS.UpdateContract.V3(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.UpdateContract.V3(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('UpdateContractV4', async () => {
@@ -629,17 +848,19 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632,
       feeAssetId: "WAVES",
-      atomicBadge: {
-        trustedSender: ""
-      },
-      validationPolicy: {
-        type: 0
-      },
+      atomicBadge: "",
+      validationPolicy: 0,
       apiVersion: "1.1"
     };
-    const Tx = TRANSACTIONS.UpdateContract.V4(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.UpdateContract.V4(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('SetScript', async () => {
@@ -652,19 +873,31 @@ describe('', () => {
       fee: 1000000,
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.SetScript.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.SetScript.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 
   it('Atomic', async () => {
     const transaction = {
       senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
-      transactions: [],
+      transactions: "",
       timestamp: 1598008066632
     };
-    const Tx = TRANSACTIONS.Atomic.V1(transaction);
-
-    expect(Tx.isValid()).toEqual(true);
+    const signatureGenerator = TRANSACTIONS.Atomic.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
   })
 });
