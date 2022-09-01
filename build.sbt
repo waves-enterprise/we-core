@@ -287,14 +287,7 @@ lazy val grpcProtobuf = (project in file("grpc-protobuf"))
   .dependsOn(transactionProtobuf)
   .aggregate(transactionProtobuf)
   .settings(
-    version := {
-      val suffix = git.makeUncommittedSignifierSuffix(git.gitUncommittedChanges.value, Some("DIRTY"))
-      if (isSnapshotVersion.value) {
-        s"$grpcProtobufVersion-${branchName.value}-SNAPSHOT"
-      } else {
-        grpcProtobufVersion + suffix
-      }
-    },
+    version := s"$grpcProtobufVersion-${version.value}",
     publishTo := publishingRepo.value,
     Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
