@@ -2,6 +2,7 @@
 .idea
 .ensime
 .ensime_cache/
+.bsp/
 
 # scala build folders and files
 target
@@ -48,6 +49,7 @@ envfile
 
 .metals/
 .bloop/
+.bsp/
 
 # vscode
 .vscode

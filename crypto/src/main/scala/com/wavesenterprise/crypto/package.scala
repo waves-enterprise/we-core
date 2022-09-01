@@ -1,8 +1,11 @@
 package com.wavesenterprise
 
+import cats.implicits._
 import com.wavesenterprise.account.{PrivateKeyAccount, PublicKeyAccount}
 import com.wavesenterprise.crypto.internals._
-import com.wavesenterprise.settings.CryptoSettings
+import com.wavesenterprise.lang.v1.BaseGlobal
+import com.wavesenterprise.certs.CertChain
+import com.wavesenterprise.settings.{CryptoSettings, PkiCryptoSettings}
 import com.wavesenterprise.state.ByteStr
 import com.wavesenterprise.utils.Constants.base58Length
 import scorex.crypto.signatures.{MessageToSign, Signature, PublicKey => PublicKeyBytes}
@@ -10,6 +13,8 @@ import scorex.crypto.signatures.{MessageToSign, Signature, PublicKey => PublicKe
 import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 import java.security.Provider
+import java.security.{PublicKey => JavaPublicKey}
+import java.security.cert.X509Certificate
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Promise}
 
@@ -20,6 +25,7 @@ package crypto {
     def init(cryptoSettings: CryptoSettings): Either[CryptoError, Unit] = {
       for {
         _ <- Either.cond(!cryptoSettingsPromise.isCompleted, (), GenericError("Initialization error: Crypto was already initialized!"))
+        _ <- cryptoSettings.checkEnvironment
       } yield {
         cryptoSettingsPromise.success(cryptoSettings)
       }
@@ -32,16 +38,11 @@ package object crypto {
     .getOrElse(Await.result(CryptoInitializer.cryptoSettingsPromise.future, 7.seconds))
 
   def readEnvForCryptoSettings(): Option[CryptoSettings] = {
-    val wavesCryptoSettingKey = "node.waves-crypto"
-    val positiveValues        = List("yes", "true").map(_.toUpperCase)
+    val cryptoSettingKey = "node.crypto.type"
 
-    Option(System.getProperty(wavesCryptoSettingKey)).flatMap {
-      case wavesCryptoSettingValue if positiveValues.contains(wavesCryptoSettingValue.toUpperCase) =>
-        Some(CryptoSettings.WavesCryptoSettings)
-
-      case unsupportedValue =>
-        throw new IllegalArgumentException(s"Unacceptable value for parameter '$wavesCryptoSettingKey': '$unsupportedValue'")
-    }
+    Option(System.getProperty(cryptoSettingKey))
+      .flatMap(CryptoSettings.findImplementation)
+      .map(settings => CryptoSettings.instantiateSettings(settings, PkiCryptoSettings.DisabledPkiSettings))
   }
 
   def toAlias(keyPair: com.wavesenterprise.crypto.internals.KeyPair,
@@ -59,17 +60,14 @@ package object crypto {
     algorithms.secureHash(withoutChecksum).take(checksumLength)
   }
 
-  lazy val context: CryptoContext = {
-    cryptoSettings match {
-      case CryptoSettings.WavesCryptoSettings => new WavesCryptoContext
-    }
-  }
+  lazy val context: CryptoContext = cryptoSettings.cryptoContext
+  def rideContext: BaseGlobal     = cryptoSettings.rideContext
 
   type KeyPair    = context.KeyPair0
   type PublicKey  = context.PublicKey0
   type PrivateKey = context.PrivateKey0
 
-  val algorithms = context.algorithms
+  def algorithms = context.algorithms
 
   def keyStore(file: Option[File], password: Array[Char]): KeyStore[KeyPair] =
     context.keyStore(file, password)
@@ -77,6 +75,7 @@ package object crypto {
   object PublicKey {
     def apply(bytes: Array[Byte]): PublicKey               = algorithms.publicKeyFromBytes(bytes)
     def sessionKeyFromBytes(bytes: Array[Byte]): PublicKey = algorithms.sessionKeyFromBytes(bytes)
+    def fromJavaPk(pk: JavaPublicKey): PublicKey           = algorithms.wrapPublicKey(pk)
   }
 
   val DigestSize: Int             = algorithms.DigestSize
@@ -85,6 +84,8 @@ package object crypto {
   val SessionKeyLength: Int       = algorithms.SessionKeyLength
   val SignatureLength: Int        = algorithms.SignatureLength
   val WrappedStructureLength: Int = algorithms.WrappedStructureLength
+
+  val strictKeyLength: Boolean = algorithms.strictKeyLength
 
   type Message = Array[Byte]
   type Digest  = Array[Byte]
@@ -124,6 +125,20 @@ package object crypto {
 
   def verify(signature: Array[Byte], message: MessageToSign, publicKey: PublicKey): Boolean =
     algorithms.verify(Signature(signature), message, publicKey)
+
+  def verify(signature: Array[Byte], message: Array[Byte], certChain: CertChain, timestamp: Long): Either[CryptoError, Unit] =
+    algorithms.verify(signature, message, certChain, timestamp)
+
+  def getCaCerts(fingerprints: List[String]): Either[CryptoError, List[X509Certificate]] =
+    algorithms.getCaCerts(fingerprints: List[String])
+
+  def validateCertChain(certChain: CertChain, timestamp: Long): Either[CryptoError, Unit] =
+    algorithms.validateCertChain(certChain, timestamp)
+
+  def validateCertChains(certChains: List[CertChain], timestamp: Long): Either[CryptoError, Unit] =
+    certChains
+      .traverse(chain => algorithms.validateCertChain(chain, timestamp))
+      .void
 
   def encrypt(data: Array[Byte], senderPrivateKey: PrivateKey, recipientPublicKey: PublicKey): Either[CryptoError, EncryptedForSingle] =
     context.algorithms.encrypt(data, senderPrivateKey, recipientPublicKey)

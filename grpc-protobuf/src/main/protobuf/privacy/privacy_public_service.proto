@@ -83,6 +83,7 @@ message SendDataMetadata {
   AtomicBadge atomic_badge = 8;
   google.protobuf.StringValue password = 9;
   bool broadcast_tx = 10;
+  repeated bytes certificates = 11;
 }
 
 message PolicyIdRequest {

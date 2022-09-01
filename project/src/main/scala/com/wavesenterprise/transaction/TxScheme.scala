@@ -18,6 +18,8 @@ sealed abstract class TxScheme(
     val versionToBlockchainFeatures: PartialFunction[Int, Seq[BlockchainFeature]] = PartialFunction.empty,
     val additionalImports: Set[String] = Set.empty,
     val additionalJsonFields: Seq[(String, String)] = Seq.empty,
+    val versionToAdditionalTypeScriptFields: Int => Seq[(String, String)] = _ => Seq.empty,
+    val versionToAdditionalTypeScriptImports: Int => Set[String] = _ => Set.empty,
     val sealedTraitExtensions: Seq[String] = Seq.empty,
     val caseClassCompanionExtensions: Seq[String] = Seq.empty,
     val versionExtensions: PartialFunction[Int, Seq[String]] = PartialFunction.empty,
@@ -26,8 +28,12 @@ sealed abstract class TxScheme(
     val cacheSerializable: Boolean = true,
     /** Specifies a post-condition methods for transaction creating */
     val ensures: Seq[String] = Seq.empty,
-    val isContainer: Boolean = false
+    val isContainer: Boolean = false,
+    private val unsupportedTypeScriptVersions: Set[Int] = Set.empty,
+    val unusedImports: Set[String] = Set.empty
 ) extends EnumEntry {
+
+  val supportedTypeScriptVersions: Set[Int] = supportedVersions -- unsupportedTypeScriptVersions
 
   def protobufPackageName: String = {
     val protoPackage = packageName.replace(".transaction", ".transaction.protobuf")
@@ -45,6 +51,8 @@ sealed abstract class TxScheme(
   def lowerCamelCaseEntryName: String = {
     CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, entryName)
   }
+
+  def typeScriptEntryName: String = entryName.replaceFirst("Transaction", "")
 }
 
 /**
@@ -62,7 +70,7 @@ object TxScheme extends Enum[TxScheme] {
         supportedVersions = Set(1),
         fields = Seq(
           senderField,
-          "target"   as PUBLIC_KEY_ACCOUNT -> Json(f => s"$f.address"),
+          "target"   as PUBLIC_KEY_ACCOUNT -> Set(Json(f => s"$f.address"), TypeScriptCustomName("targetPubKey")),
           "nodeName" as NODE_NAME          -> Validation(f => s"validateNodeName($f)"),
           "opType"   as PERMISSION_OP_TYPE -> Validation(f => s"validateOpType($f, nodeName)"),
           timestampField,
@@ -108,11 +116,13 @@ object TxScheme extends Enum[TxScheme] {
         fields = Seq(
           "chainId" as BYTE -> Set(Validation(f => s"validateChainId($f)"), Override),
           senderField,
-          "name"        as SHORT_BYTE_ARRAY -> Set(Validation(f => s"validateName($f)"), Json(f => s"new String($f, StandardCharsets.UTF_8)")),
-          "description" as SHORT_BYTE_ARRAY -> Set(Validation(f => s"validateDescription($f)"), Json(f => s"new String($f, StandardCharsets.UTF_8)")),
-          "quantity"    as LONG -> Validation(f => s"""validatePositiveAmount($f, "assets")"""),
-          "decimals"    as BYTE -> Validation(f => s"validateDecimals($f)"),
-          "reissuable"  as BOOLEAN,
+          "name" as SHORT_BYTE_ARRAY -> Set(Validation(f => s"validateName($f)"), Json(f => s"new String($f, StandardCharsets.UTF_8)")),
+          "description" as SHORT_BYTE_ARRAY -> Set(Validation(f => s"validateDescription($f)"),
+                                                   Json(f => s"new String($f, StandardCharsets.UTF_8)"),
+                                                   TypeScriptLimit(1000)),
+          "quantity"   as LONG -> Validation(f => s"""validatePositiveAmount($f, "assets")"""),
+          "decimals"   as BYTE -> Validation(f => s"validateDecimals($f)"),
+          "reissuable" as BOOLEAN,
           feeField,
           timestampField,
           "script" as SCRIPT.? -> Json(f => s"$f.map(_.bytes().base64)"),
@@ -279,8 +289,10 @@ object TxScheme extends Enum[TxScheme] {
         supportedVersions = Set(1, 2),
         fields = Seq(
           senderField,
-          "author" as PUBLIC_KEY_ACCOUNT     -> Set(Json(f => s"$f.address"), ProtobufCustomName("authorPublicKey")),
-          "data"   as SHORT_LIST(DATA_ENTRY) -> Validation(f => s"validateData($f)"),
+          "author" as PUBLIC_KEY_ACCOUNT -> Set(Json(f => s"$f.address"),
+                                                ProtobufCustomName("authorPublicKey"),
+                                                TypeScriptCustomName("authorPublicKey")),
+          "data" as SHORT_LIST(DATA_ENTRY) -> Validation(f => s"validateData($f)"),
           timestampField,
           feeField,
           "feeAssetId" as ASSET_ID.? -> Set(Override, InConstructor(2)),
@@ -314,8 +326,11 @@ object TxScheme extends Enum[TxScheme] {
           timestampField,
           "amount" as LONG -> Validation(f => s"""validatePositiveAmount($f, assetId.map(_.base58).getOrElse("WEST"))"""),
           feeField.copy(fieldToValidation = Some(f => s"validateFee($f)")),
-          "recipient"   as ADDRESS_OR_ALIAS     -> Json(f => s"$f.stringRepr"),
-          "attachment"  as SHORT_BYTE_ARRAY     -> Set(Validation(f => s"""validateAttachment($f)"""), Json(f => s"Base58.encode($f)")),
+          "recipient" as ADDRESS_OR_ALIAS -> Json(f => s"$f.stringRepr"),
+          "attachment" as SHORT_BYTE_ARRAY -> Set(Validation(f => s"""validateAttachment($f)"""),
+                                                  Json(f => s"Base58.encode($f)"),
+                                                  TypeScriptCustomType("Base58WithLength"),
+                                                  TypeScriptLimit(192)),
           "atomicBadge" as OPTION(ATOMIC_BADGE) -> Set(Override, InConstructor(3)),
           proofsField,
           "checkedAssets" as BIG_LIST(SHORT_BYTE_STR) -> Set(Override, InBody({ case _ => "assetId.toList" }))
@@ -352,8 +367,11 @@ object TxScheme extends Enum[TxScheme] {
           "transfers" as TRANSFER_BATCH -> Set(Validation(f => s"validateMassTransfers($f, ${feeField.name})"), Json(f => s"$f.map(_.toDescriptor)")),
           timestampField,
           feeField,
-          "attachment" as SHORT_BYTE_ARRAY -> Set(Validation(f => s"""validateAttachment($f)"""), Json(f => s"Base58.encode($f)")),
-          "feeAssetId" as ASSET_ID.?       -> Set(Override, InConstructor(2)),
+          "attachment" as SHORT_BYTE_ARRAY -> Set(Validation(f => s"""validateAttachment($f)"""),
+                                                  Json(f => s"Base58.encode($f)"),
+                                                  TypeScriptCustomType("Base58WithLength"),
+                                                  TypeScriptLimit(192)),
+          "feeAssetId" as ASSET_ID.? -> Set(Override, InConstructor(2)),
           proofsField,
           "checkedAssets" as BIG_LIST(SHORT_BYTE_STR) -> Set(Override, InBody({ case _ => "assetId.toList" }))
         ),
@@ -387,7 +405,7 @@ object TxScheme extends Enum[TxScheme] {
           timestampField,
           feeField,
           "permissionOp" as PERMISSION_OP        -> Set(Validation(f => s"validatePermissionOp(timestamp, $f)"), NoJson),
-          "atomicBadge"  as OPTION(ATOMIC_BADGE) -> Set(Override, InConstructor(2)),
+          "atomicBadge"  as OPTION(ATOMIC_BADGE) -> Set(Override, InConstructor(2), NoTypeScript),
           proofsField
         ),
         additionalJsonFields = Seq(
@@ -399,7 +417,25 @@ object TxScheme extends Enum[TxScheme] {
           "com.wavesenterprise.transaction.validation.PermitValidation._",
           "com.wavesenterprise.transaction.AtomicInnerTransaction"
         ),
-        versionExtensions = { case 2           => Seq("AtomicInnerTransaction") },
+        versionExtensions = { case 2 => Seq("AtomicInnerTransaction") },
+        versionToAdditionalTypeScriptFields = v => {
+          val v1Imports = Seq(
+            "opType"              -> "new PermissionOpType(true)",
+            "role"                -> "new PermissionRole(true)",
+            "duplicate_timestamp" -> "new Long(true)",
+            "dueTimestamp"        -> "new PermissionDueTimestamp(false)"
+          )
+          v match {
+            case 1 => v1Imports
+            case 2 => v1Imports :+ ("atomicBadge" -> "new AtomicBadge(false)")
+            case _ => Seq.empty
+          }
+        },
+        versionToAdditionalTypeScriptImports = {
+          case 1 => Set("PermissionOpType", "PermissionRole", "PermissionDueTimestamp")
+          case 2 => Set("PermissionOpType", "PermissionRole", "PermissionDueTimestamp", "AtomicBadge")
+          case _ => Set.empty
+        },
         versionToBlockchainFeatures = { case 2 => Seq(BlockchainFeature.AtomicTransactionSupport) }
       )
 
@@ -474,7 +510,8 @@ object TxScheme extends Enum[TxScheme] {
           case 3 => Seq(BlockchainFeature.SponsoredFeesSupport, BlockchainFeature.AtomicTransactionSupport)
         },
         additionalImports = Set("com.wavesenterprise.transaction.AtomicInnerTransaction"),
-        versionExtensions = { case 3 => Seq("AtomicInnerTransaction") }
+        versionExtensions = { case 3 => Seq("AtomicInnerTransaction") },
+        unsupportedTypeScriptVersions = Set(1, 2)
       )
 
   // endregion Policy
@@ -578,7 +615,9 @@ object TxScheme extends Enum[TxScheme] {
         caseClassCompanionExtensions = Seq("ContractTransactionValidation"),
         cacheSerializable = false,
         additionalImports = Set("com.wavesenterprise.transaction.AtomicInnerTransaction"),
-        sealedTraitExtensions = Seq("AtomicInnerTransaction")
+        sealedTraitExtensions = Seq("AtomicInnerTransaction"),
+        unsupportedTypeScriptVersions = Set(1, 2),
+        unusedImports = Set("com.wavesenterprise.serialization.ModelsBinarySerializer")
       )
 
   case object DisableContractTransaction
@@ -656,9 +695,13 @@ object TxScheme extends Enum[TxScheme] {
             excludeFromSealedTrait = true
           ),
           senderField,
-          "script"      as SCRIPT.?         -> Json(f => s"$f.map(_.bytes().base64)"),
-          "name"        as SHORT_BYTE_ARRAY -> Set(Validation(f => s"validateName($f)"), Json(f => s"new String($f, StandardCharsets.UTF_8)")),
-          "description" as SHORT_BYTE_ARRAY -> Set(Validation(f => s"validateDescription($f)"), Json(f => s"new String($f, StandardCharsets.UTF_8)")),
+          "script" as SCRIPT.? -> Json(f => s"$f.map(_.bytes().base64)"),
+          "name" as SHORT_BYTE_ARRAY -> Set(Validation(f => s"validateName($f)"),
+                                            Json(f => s"new String($f, StandardCharsets.UTF_8)"),
+                                            TypeScriptLimit(128)),
+          "description" as SHORT_BYTE_ARRAY -> Set(Validation(f => s"validateDescription($f)"),
+                                                   Json(f => s"new String($f, StandardCharsets.UTF_8)"),
+                                                   TypeScriptLimit(Short.MaxValue)),
           feeField,
           timestampField,
           proofsField
@@ -689,7 +732,7 @@ object TxScheme extends Enum[TxScheme] {
         supportedVersions = Set(1),
         fields = Seq(
           senderField,
-          "miner" as new OPTION_BASE(PUBLIC_KEY_ACCOUNT) with SkipForProof,
+          "miner" as new OPTION_BASE(PUBLIC_KEY_ACCOUNT) with SkipForProof -> NoTypeScript,
           "transactions" as SHORT_LIST(ATOMIC_INNER_TRANSACTION) -> Set(
             Json(f => s"$f.map(_.json())"),
             Validation(f => s"validateInnerTransactions($f, miner, sender.toAddress)")

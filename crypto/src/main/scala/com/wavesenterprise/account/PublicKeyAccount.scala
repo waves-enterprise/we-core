@@ -42,9 +42,11 @@ object PublicKeyAccount {
 
   def fromBytes(bytes: Array[Byte]): Either[CryptoError, PublicKeyAccount] = {
     (for {
-      _ <- Either.cond(bytes.length == crypto.KeyLength,
-                       (),
-                       s"Bad public key bytes length: expected: '${crypto.KeyLength}', found: '${bytes.length}'")
+      _ <- Either.cond(
+        bytes.length == crypto.KeyLength || !crypto.strictKeyLength,
+        (),
+        s"Bad public key bytes length: expected: '${crypto.KeyLength}', found: '${bytes.length}'"
+      )
       account <- Either
         .catchNonFatal(PublicKeyAccount(bytes))
         .leftMap { ex =>
@@ -55,9 +57,11 @@ object PublicKeyAccount {
 
   def fromBase58String(s: String): Either[CryptoError, PublicKeyAccount] = {
     (for {
-      _ <- Either.cond(s.length <= crypto.KeyStringLength,
-                       (),
-                       s"Bad public key string length: expected: '${crypto.KeyStringLength}', found: '${s.length}'")
+      _ <- Either.cond(
+        s.length <= crypto.KeyStringLength || !crypto.strictKeyLength,
+        (),
+        s"Bad public key string length: expected: '${crypto.KeyStringLength}', found: '${s.length}'"
+      )
       bytes   <- Base58.decode(s).toEither.leftMap(ex => s"Unable to decode base58: ${ex.getMessage}")
       account <- fromBytes(bytes).leftMap(_.message)
     } yield account).leftMap { err =>

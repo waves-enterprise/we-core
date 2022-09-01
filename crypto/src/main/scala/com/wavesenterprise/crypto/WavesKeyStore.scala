@@ -134,10 +134,16 @@ class WavesKeyStore(storageFolder: Option[File], password: Array[Char], chainId:
 
 object WavesKeyStore {
   private case class WalletFileData(entries: Seq[FileEntry])
+
+  private object WalletFileData {
+    implicit val walletFileDataFormat: Format[WalletFileData] = Json.format[WalletFileData]
+  }
+
   private case class FileEntry(publicKey: ByteStr, privateKey: ByteStr)
 
-  private implicit val entryFormat: Format[FileEntry]               = Json.format[FileEntry]
-  private implicit val walletFileDataFormat: Format[WalletFileData] = Json.format[WalletFileData]
+  private object FileEntry {
+    implicit val entryFormat: Format[FileEntry] = Json.format[FileEntry]
+  }
 
   private val aes = new AesEncryption
 

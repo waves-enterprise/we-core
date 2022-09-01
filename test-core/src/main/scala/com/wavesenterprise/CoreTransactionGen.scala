@@ -5,7 +5,7 @@ import com.wavesenterprise.account.PublicKeyAccount._
 import com.wavesenterprise.account._
 import com.wavesenterprise.acl.OpType.{Add, Remove}
 import com.wavesenterprise.acl.{OpType, PermissionOp, PermissionsGen, Role}
-import com.wavesenterprise.lang.Global
+import com.wavesenterprise.lang.WavesGlobal
 import com.wavesenterprise.lang.ScriptVersion.Versions.V1
 import com.wavesenterprise.lang.v1.compiler.CompilerV1
 import com.wavesenterprise.lang.v1.evaluator.ctx.impl.{CryptoContext, PureContext}
@@ -125,7 +125,7 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
   val scriptGen = BOOLgen(100).map {
     case (expr, _) =>
       val typed =
-        CompilerV1(PureContext.build(V1).compilerContext |+| CryptoContext.compilerContext(Global), expr).explicitGet()
+        CompilerV1(PureContext.build(V1).compilerContext |+| CryptoContext.compilerContext(WavesGlobal), expr).explicitGet()
       ScriptV1(typed._1).explicitGet()
   }
 

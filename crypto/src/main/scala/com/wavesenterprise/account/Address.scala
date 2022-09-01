@@ -82,7 +82,7 @@ object Address extends ScorexLogging {
       _ <- Either.cond(
         checkSum.sameElements(checkSumGenerated),
         (),
-        s"Bad address checksum. Address is corrupted or generated using a different crypto (check 'waves-crypto' config parameter)."
+        s"Bad address checksum. Address is corrupted or generated using a different crypto (check 'node.crypto.type' config parameter)."
       )
     } yield new AddressImpl(ByteStr(addressBytes))).left.map(InvalidAddress)
   }

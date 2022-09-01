@@ -1,0 +1,75 @@
+image: ${REGISTRY}/it/docker:19.03.1
+
+services:
+  - name: ${REGISTRY}/it/docker:19.03.1-dind
+    alias: docker
+
+variables:
+  GIT_STRATEGY: "clone"
+
+stages:
+  - compile
+  - test
+  - publish
+
+.create-environment: &create-environment
+  image: ${REGISTRY}/it/hseeberger/scala-sbt:11.0.14.1_1.6.2_2.12.15
+  tags:
+    - wavesenterprise
+  before_script:
+    - cat "$SBT_CREDENTIALS" > /root/.sbt/.credentials
+
+### Compile jobs
+compile:
+  <<: *create-environment
+  stage: compile
+  script:
+    - sbt 'version; scalafmtCheckAll; compile; Test / compile'
+  artifacts:
+    paths:
+      - "target"
+      - "project/target"
+      - "project/project/target"
+      - "*/target"
+      - "*/project/target"
+      - "*/project/project/target"
+      - "*/*/target"
+      - "*/*/project/target"
+      - "*/*/project/project/target"
+    expire_in: 3 day
+
+### Testing jobs
+test-core:
+  <<: *create-environment
+  stage: test
+  script:
+    - sbt -mem 2048 test lang/test
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    NODE_HOST: docker
+  cache: [ ]
+  artifacts:
+    reports:
+      junit:
+        - target/test-reports/*.xml
+        - lang/jvm/target/test-reports/*.xml
+  dependencies:
+    - compile
+
+publish-nexus-artifacts:
+  <<: *create-environment
+  stage: publish
+  needs:
+    - compile
+    - test-core
+  script:
+    - cat "$SBT_CREDENTIALS_SONATYPE" > /root/.sbt/sonatype_credentials
+    - echo $PGP_KEY | base64 --decode > pgp.key && gpg --batch --import pgp.key
+    - sbt -mem 2048 ";core/publishSigned;testCore/publishSigned;protobufArchives/publishSigned"
+  cache: [ ]
+  only:
+    - tags
+    - branches
+  dependencies:
+    - compile

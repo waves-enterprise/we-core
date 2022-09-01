@@ -2,7 +2,7 @@ package com.wavesenterprise.utils
 
 import cats.kernel.Monoid
 import shapeless.{:+:, CNil}
-import com.wavesenterprise.lang.{Global, ScriptVersion}
+import com.wavesenterprise.lang.{WavesGlobal, ScriptVersion}
 import com.wavesenterprise.lang.v1.CTX
 import com.wavesenterprise.lang.v1.compiler.Types._
 import com.wavesenterprise.lang.v1.evaluator.ctx.impl.waves.WavesContext
@@ -36,7 +36,7 @@ object DocExport {
         isTokenContext = true
       )
 
-      val cryptoContext = CryptoContext.build(Global)
+      val cryptoContext = CryptoContext.build(WavesGlobal)
 
       abstract class TypeDoc {
         val name: String

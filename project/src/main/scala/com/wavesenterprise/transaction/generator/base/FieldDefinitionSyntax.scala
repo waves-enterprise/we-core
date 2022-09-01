@@ -16,15 +16,19 @@ object FieldDefinitionSyntax {
     def as(typeWithOptions: (FieldType, Set[FieldGenerationOption]))(implicit d: DummyImplicit): FieldScheme = {
       val (tpe, options) = typeWithOptions
 
-      val maybeIsEssential     = options.collectFirst { case Essential                     => () }
-      val maybeExcludeFromBody = options.collectFirst { case ExcludeFromBinaryBody         => () }
-      val maybeIsOverride      = options.collectFirst { case Override                      => () }
-      val maybeExcludeFromJson = options.collectFirst { case NoJson                        => () }
-      val maybeInConstructor   = options.collectFirst { case inConstructor: InConstructor  => inConstructor.versions }
-      val maybeValidation      = options.collectFirst { case validation: Validation        => validation.fieldToCode }
-      val maybeInBody          = options.collectFirst { case inBody: InBody                => inBody }
-      val maybeCustomJson      = options.collectFirst { case json: Json                    => json.fieldToCode }
-      val specialProtoName     = options.collectFirst { case ProtobufCustomName(protoName) => protoName }
+      val maybeIsEssential           = options.collectFirst { case Essential                     => () }
+      val maybeExcludeFromBody       = options.collectFirst { case ExcludeFromBinaryBody         => () }
+      val maybeIsOverride            = options.collectFirst { case Override                      => () }
+      val maybeExcludeFromJson       = options.collectFirst { case NoJson                        => () }
+      val maybeExcludeFromTypeScript = options.collectFirst { case NoTypeScript                  => () }
+      val maybeInConstructor         = options.collectFirst { case inConstructor: InConstructor  => inConstructor.versions }
+      val maybeValidation            = options.collectFirst { case validation: Validation        => validation.fieldToCode }
+      val maybeInBody                = options.collectFirst { case inBody: InBody                => inBody }
+      val maybeCustomJson            = options.collectFirst { case json: Json                    => json.fieldToCode }
+      val typeScriptLimit            = options.collectFirst { case TypeScriptLimit(tsLimit)      => tsLimit }
+      val specialTypeScriptName      = options.collectFirst { case TypeScriptCustomName(tsName)  => tsName }
+      val specialTypeScriptType      = options.collectFirst { case TypeScriptCustomType(tsType)  => tsType }
+      val specialProtoName           = options.collectFirst { case ProtobufCustomName(protoName) => protoName }
 
       FieldScheme(
         name = name,
@@ -39,6 +43,10 @@ object FieldDefinitionSyntax {
         fieldToJson = maybeCustomJson,
         inJson = maybeExcludeFromJson.isEmpty,
         excludeFormSealedTrait = maybeInBody.exists(_.excludeFromSealedTrait),
+        typeScriptLimit = typeScriptLimit,
+        inTypeScript = maybeExcludeFromTypeScript.isEmpty,
+        specialTypeScriptName = specialTypeScriptName,
+        specialTypeScriptType = specialTypeScriptType,
         specialProtoName = specialProtoName
       )
     }

@@ -155,7 +155,7 @@ object Types {
     "SponsorFeeTransaction",
     addProofsIfNeeded(
       List(
-        "assetId"              -> BYTEVECTOR,
+        "assetId"   -> BYTEVECTOR,
         "isEnabled" -> BOOLEAN
       ) ++ header ++ proven,
       proofsEnabled

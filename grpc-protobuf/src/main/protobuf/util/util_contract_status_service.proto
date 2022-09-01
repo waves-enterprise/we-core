@@ -18,7 +18,7 @@ message ContractExecutionRequest {
 }
 
 message ContractExecutionResponse {
-  string sender = 1;
+  string sender = 1; // DEPRECATED! use `senderAddress` or `senderPublicKey` fields instead
   string tx_id = 2;
   enum Status {
     SUCCESS = 0;
@@ -30,4 +30,6 @@ message ContractExecutionResponse {
   string message = 5;
   int64 timestamp = 6;
   string signature = 7;
+  string senderAddress = 8;
+  string senderPublicKey = 9;
 }

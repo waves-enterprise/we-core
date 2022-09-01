@@ -2,7 +2,7 @@ package com.wavesenterprise.docker.validator
 
 import com.google.common.io.ByteStreams.newDataOutput
 import com.wavesenterprise.account.Address
-import com.wavesenterprise.serialization.BinarySerializer
+import com.wavesenterprise.serialization.ModelsBinarySerializer
 import enumeratum.values.{ByteEnum, ByteEnumEntry}
 import play.api.libs.json._
 
@@ -44,7 +44,7 @@ object ValidationPolicy {
       //noinspection UnstableApiUsage
       val output = newDataOutput()
       output.writeByte(ValidationPolicyDescriptor.MajorityWithOneOf.value)
-      BinarySerializer.writeAddresses(addresses, output)
+      ModelsBinarySerializer.writeAddresses(addresses, output)
       output.toByteArray
     }
   }
@@ -56,7 +56,7 @@ object ValidationPolicy {
       case ValidationPolicyDescriptor.Majority.value =>
         Majority -> (position + 1)
       case ValidationPolicyDescriptor.MajorityWithOneOf.value =>
-        val (addresses, end) = BinarySerializer.parseAddresses(bytes, position + 1)
+        val (addresses, end) = ModelsBinarySerializer.parseAddresses(bytes, position + 1)
         MajorityWithOneOf(addresses) -> end
     }
 

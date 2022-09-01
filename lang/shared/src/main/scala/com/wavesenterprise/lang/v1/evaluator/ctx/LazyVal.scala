@@ -14,11 +14,11 @@ sealed trait LazyVal {
 object LazyVal {
   private case class LazyValImpl(v: TrampolinedExecResult[EVALUATED], lc: LogCallback) extends LazyVal {
     override val value: TrampolinedExecResult[EVALUATED] = EitherT(
-        Coeval.evalOnce(
-          v.value
-            .flatTap(a => Coeval.evalOnce(lc(a)))
-            .apply()
-        )
+      Coeval.evalOnce(
+        v.value
+          .flatTap(a => Coeval.evalOnce(lc(a)))
+          .apply()
+      )
     )
   }
 

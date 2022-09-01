@@ -245,7 +245,7 @@ object Parser {
   private def blockOr(otherExpr: Pos => EXPR)(implicit c: fastparse.P[Any]): P[EXPR] = {
     // Hack to force parse of "\n". Otherwise it is treated as a separator
     def newLineSep(implicit c: fastparse.P[Any]) = {
-      P(CharsWhileIn(" \t\r").repX  ~~ "\n").repX(1)
+      P(CharsWhileIn(" \t\r").repX ~~ "\n").repX(1)
     }
 
     P(

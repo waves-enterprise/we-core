@@ -45,11 +45,11 @@ object TypeInferrer {
 
     (placeholder, argType) match {
       case (_, NOTHING) => Right(None)
-      case (tp @ TYPEPARAM(char), _) =>
+      case (tp @ TYPEPARAM(_), _) =>
         Right(Some(MatchResult(argType, tp)))
-      case (tp @ PARAMETERIZEDLIST(innerTypeParam), LIST(t)) => matchTypes(t, innerTypeParam, knownTypes)
-      case (tp @ PARAMETERIZEDLIST(_), _)                    => Left(err)
-      case (tp @ PARAMETERIZEDUNION(l), _) =>
+      case (_ @PARAMETERIZEDLIST(innerTypeParam), LIST(t)) => matchTypes(t, innerTypeParam, knownTypes)
+      case (_ @PARAMETERIZEDLIST(_), _)                    => Left(err)
+      case (_ @PARAMETERIZEDUNION(l), _) =>
         val conctretes = UNION.create(
           l.filter(_.isInstanceOf[REAL])
             .map(_.asInstanceOf[REAL]))

@@ -23,7 +23,7 @@ object TxScalaGenerator
         scheme.fields.flatMap(_.tpe.scalaImports) +
         s"${scheme.protobufPackageName}.{${scheme.entryName} => Pb${scheme.entryName}}" +
         s"${TxScheme.BaseProtoPackage}.{Transaction => PbTransaction}"
-    ).filterNot { imp =>
+    ).diff(scheme.unusedImports).filterNot { imp =>
       // No need to include imports of the current package
       imp.startsWith(scheme.packageName) && !imp.drop(scheme.packageName.length + 1).contains(".")
     }

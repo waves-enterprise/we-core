@@ -1,14 +1,12 @@
 package com.wavesenterprise.serialization
 
 import com.google.common.io.ByteArrayDataOutput
-import com.google.common.primitives.{Ints, Longs, Shorts}
-import com.wavesenterprise.account.{Address, AddressOrAlias}
+import com.google.common.primitives.{Ints, Shorts}
 import com.wavesenterprise.state.ByteStr
-import com.wavesenterprise.transaction.AtomicBadge
-import com.wavesenterprise.transaction.smart.script.{Script, ScriptReader}
-import com.wavesenterprise.transaction.transfer.ParsedTransfer
 
+import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets.UTF_8
+import java.security.cert.{CertificateFactory, X509Certificate}
 
 object BinarySerializer {
 
@@ -124,11 +122,6 @@ object BinarySerializer {
     ByteStr(strBytes) -> strEnd
   }
 
-  def parseScript(bytes: Array[Byte], offset: Offset = 0): (Script, Offset) = {
-    val (scriptBytes, scriptEnd) = BinarySerializer.parseShortByteArray(bytes, offset)
-    ScriptReader.fromBytesUnsafe(scriptBytes) -> scriptEnd
-  }
-
   def writeBigByteArray(arr: Array[Byte], output: ByteArrayDataOutput): Unit = {
     output.writeInt(arr.length)
     output.write(arr)
@@ -141,70 +134,37 @@ object BinarySerializer {
     result -> end
   }
 
-  def writeAtomicBadge(atomicBadge: AtomicBadge, output: ByteArrayDataOutput): Unit = {
-    val writeableField = atomicBadge.trustedSender
-    BinarySerializer.writeByteIterable(writeableField, addressWriter, output)
+  def writeX509Cert(value: X509Certificate, output: ByteArrayDataOutput): Unit =
+    writeShortByteArray(value.getEncoded, output)
+
+  def parseX509Cert(bytes: Array[Byte], offset: Offset = 0): (X509Certificate, Offset) = {
+    val (certBytes, end) = parseShortByteArray(bytes, offset)
+    x509CertFromBytes(certBytes) -> end
   }
 
-  def parseAtomicBadge(bytes: Array[Byte], offset: Offset = 0): (AtomicBadge, Offset) = {
-    val (readableField, end) = BinarySerializer.parseOption(bytes, addressReader, offset)
-    AtomicBadge(readableField) -> end
+  def x509CertFromBytes(certBytes: Array[Byte]): X509Certificate = {
+    val factory = CertificateFactory.getInstance("X.509")
+    val cert    = factory.generateCertificate(new ByteArrayInputStream(certBytes))
+    cert.asInstanceOf[X509Certificate]
   }
 
-  def writeAddresses(addresses: Seq[Address], output: ByteArrayDataOutput): Unit =
-    BinarySerializer.writeShortIterable(addresses, addressWriter, output)
-
-  def parseAddresses(bytes: Array[Byte], offset: Offset = 0): (List[Address], Offset) = {
-    val (readableField, end) = BinarySerializer.parseShortList(bytes, addressReader, offset)
-    readableField -> end
-  }
-
-  def writeTransferBatch(batch: Seq[ParsedTransfer], output: ByteArrayDataOutput): Unit = {
-    output.writeShort(batch.size)
-    batch.foreach { transfer =>
-      output.write(transfer.recipient.bytes.arr)
-      output.writeLong(transfer.amount)
-    }
-  }
-
-  def parseTransferBatch(bytes: Array[Byte], offset: Offset = 0): (List[ParsedTransfer], Offset) = {
-    val (length, start) = shortCountReader(bytes, offset)
-
-    val (reversedResult, end) = (1 to length).foldLeft((List.empty[ParsedTransfer], start)) {
-      case ((acc, pos), _) =>
-        val (addressOrAlias, nextPos) = AddressOrAlias.fromBytesUnsafe(bytes, pos)
-        val amount                    = Longs.fromByteArray(bytes.slice(nextPos, nextPos + Longs.BYTES))
-        (ParsedTransfer(addressOrAlias, amount) :: acc) -> (nextPos + Longs.BYTES)
-    }
-
-    reversedResult.reverse -> end
-  }
-
-  private def byteCountWriter(count: Int, output: ByteArrayDataOutput): Unit = {
+  private[serialization] def byteCountWriter(count: Int, output: ByteArrayDataOutput): Unit = {
     require(count.isValidByte)
     output.writeByte(count)
   }
 
-  private def shortCountWriter(count: Int, output: ByteArrayDataOutput): Unit = {
+  private[serialization] def shortCountWriter(count: Int, output: ByteArrayDataOutput): Unit = {
     require(count.isValidShort)
     output.writeShort(count)
   }
 
-  private def shortCountReader(data: Array[Byte], offset: Offset): (Int, Offset) = {
+  private[serialization] def shortCountReader(data: Array[Byte], offset: Offset): (Int, Offset) = {
     val count = Shorts.fromBytes(data(offset), data(offset + 1))
     (count, offset + Shorts.BYTES)
   }
 
-  private def intCountReader(data: Array[Byte], offset: Offset): (Int, Offset) = {
+  private[serialization] def intCountReader(data: Array[Byte], offset: Offset): (Int, Offset) = {
     val count = Ints.fromBytes(data(offset), data(offset + 1), data(offset + 2), data(offset + 3))
     (count, offset + Ints.BYTES)
-  }
-
-  private def addressReader(bytes: Array[Byte], pos: Int): (Address, Int) = {
-    Address.fromBytesUnsafe(bytes.slice(pos, pos + Address.AddressLength)) -> (pos + Address.AddressLength)
-  }
-
-  private def addressWriter(value: Address, output: ByteArrayDataOutput): Unit = {
-    output.write(value.bytes.arr)
   }
 }

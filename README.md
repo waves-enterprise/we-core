@@ -11,21 +11,12 @@ The library could also be used to integrate with the node.
 ## 2. Using we-core
 * Gradle
 
-        // add repository
-        maven {
-              url "https://artifacts.wavesenterprise.com/repository/we-public"
-        }
-
         dependencies {
-              implementation 'com.wavesenterprise:we-core:1.8.5'
+              implementation 'com.wavesenterprise:we-core:1.11.0'
         }
 * SBT
 
-      // add repository
-      // https://www.scala-sbt.org/1.x/docs/Resolvers.html
-      resolvers += "WE Nexus Public" at "https://artifacts.wavesenterprise.com/repository/we-public"
-
-      libraryDependencies += "com.wavesenterprise" % "we-core" % "1.8.5"
+      libraryDependencies += "com.wavesenterprise" % "we-core" % "1.11.0"
 ---
 ## 3. Code walkthrough
 
@@ -37,6 +28,7 @@ Classes from `com.wavesenterprise.javadsl` package should be considered for bett
 
       import com.wavesenterprise.crypto.CryptoInitializer;
       import com.wavesenterprise.settings.javadsl.CryptoSettings;
+      import com.wavesenterprise.account.AddressScheme;
 
       CryptoInitializer.init(CryptoSettings.WAVES_CRYPTO_SETTINGS);
       AddressScheme.setAddressSchemaByte('T');

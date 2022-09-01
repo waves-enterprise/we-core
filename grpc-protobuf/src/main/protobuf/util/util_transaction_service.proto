@@ -16,3 +16,8 @@ message TransactionInfoResponse {
   int32 height = 1;
   Transaction transaction = 2;
 }
+
+message TransactionWithCertChain {
+  Transaction transaction = 1;
+  repeated bytes certificates = 2;
+}

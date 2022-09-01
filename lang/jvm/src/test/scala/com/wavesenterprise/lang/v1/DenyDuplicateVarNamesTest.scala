@@ -23,7 +23,7 @@ class DenyDuplicateVarNamesTest extends PropSpec with ScalaCheckPropertyChecks w
 
   property("deny duplicates in if branch")(test(IF(TRUE, BLOCK(LET("x", TRUE), TRUE), BLOCK(LET("x", TRUE), TRUE))) should produce("x"))
 
-  property("deny duplicates in funcitoncall")(
+  property("deny duplicates in function call")(
     test(FUNCTION_CALL(FunctionHeader.User("foo"), List(BLOCK(LET("x", TRUE), TRUE), BLOCK(LET("x", TRUE), TRUE)))) should produce("x"))
 
 }

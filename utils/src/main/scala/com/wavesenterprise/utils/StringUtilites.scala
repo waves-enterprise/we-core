@@ -2,6 +2,9 @@ package com.wavesenterprise.utils
 
 object StringUtilites {
 
+  def dashes(s: String): String =
+    s.replace("\n", "\n--")
+
   object ValidateAsciiAndRussian {
     def findNotValid(s: String): Option[String] = {
       //finding for for all symbols except ascii non-control and  russian letters

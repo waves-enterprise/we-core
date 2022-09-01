@@ -13,11 +13,11 @@ import src.main.scala.com.wavesenterprise.transaction.generator.scala.TxAdapterG
 object TxSchemePlugin extends AutoPlugin {
 
   override lazy val projectSettings = Seq(
-    (sourceGenerators in Compile) += codeGenerator
+    (Compile / sourceGenerators) += codeGenerator
   )
 
   lazy val codeGenerator = Def.task {
-    val path = (sourceManaged in Compile).value
+    val path = (Compile / sourceManaged).value
     generate(path)
   }
 

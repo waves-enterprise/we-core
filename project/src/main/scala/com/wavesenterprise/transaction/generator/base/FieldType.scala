@@ -63,6 +63,8 @@ sealed abstract class FieldType(
       * We need to know if the field is message type to generate the correct code. */
     val isMessageProtoType: Boolean = false,
     val isCustomProofSource: Boolean = false,
+    /** Not every field is used in TypeScript representation. */
+    val typeScriptType: Option[String] = None
 ) extends EnumEntry {
 
   def ? : FieldType.OPTION = FieldType.OPTION(this)
@@ -85,7 +87,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "Int",
         protoType = "int32",
-        scalaImports = Set("com.google.common.primitives.Ints")
+        scalaImports = Set("com.google.common.primitives.Ints"),
+        typeScriptType = Some("Integer")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -103,7 +106,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "Long",
         protoType = "int64",
-        scalaImports = Set("com.google.common.primitives.Longs")
+        scalaImports = Set("com.google.common.primitives.Longs"),
+        typeScriptType = Some("Long")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -121,7 +125,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "Byte",
         protoType = "int32",
-        scalaImports = Set(ProtoAdapterImport)
+        scalaImports = Set(ProtoAdapterImport),
+        typeScriptType = Some("Byte")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -142,7 +147,8 @@ object FieldType extends Enum[FieldType] {
   case object BOOLEAN
       extends FieldType(
         scalaType = "Boolean",
-        protoType = "bool"
+        protoType = "bool",
+        typeScriptType = Some("Bool")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -163,9 +169,11 @@ object FieldType extends Enum[FieldType] {
         scalaImports = Set(
           "com.wavesenterprise.transaction.smart.script.Script",
           "com.wavesenterprise.serialization.BinarySerializer",
+          "com.wavesenterprise.serialization.ModelsBinarySerializer",
           "com.wavesenterprise.transaction.smart.script.ScriptReader",
           ProtoAdapterImport
-        )
+        ),
+        typeScriptType = Some("Base64")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -175,7 +183,7 @@ object FieldType extends Enum[FieldType] {
     }
 
     override val binaryReader: BinaryReader = { c =>
-      s"val (${c.field}, ${c.field}End) = BinarySerializer.parseScript(${c.bytes}, ${c.offset})"
+      s"val (${c.field}, ${c.field}End) = ModelsBinarySerializer.parseScript(${c.bytes}, ${c.offset})"
     }
 
     override val protoToVanillaAdapter: Option[ProtoAdapter] = Some { c =>
@@ -191,7 +199,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "String",
         protoType = "string",
-        scalaImports = Set("com.google.common.primitives.Longs", "com.wavesenterprise.serialization.BinarySerializer")
+        scalaImports = Set("com.google.common.primitives.Longs", "com.wavesenterprise.serialization.BinarySerializer"),
+        typeScriptType = Some("StringWithLength")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -234,7 +243,8 @@ object FieldType extends Enum[FieldType] {
           "com.wavesenterprise.serialization.BinarySerializer",
           "com.wavesenterprise.state.ByteStr",
           ProtoAdapterImport
-        )
+        ),
+        typeScriptType = Some("Base58WithLength")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -260,7 +270,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "AssetId",
         protoType = "bytes",
-        scalaImports = Set("com.wavesenterprise.state.ByteStr", "com.wavesenterprise.transaction.{AssetId, AssetIdLength}", ProtoAdapterImport)
+        scalaImports = Set("com.wavesenterprise.state.ByteStr", "com.wavesenterprise.transaction.{AssetId, AssetIdLength}", ProtoAdapterImport),
+        typeScriptType = Some("AssetId")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -286,7 +297,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "Array[Byte]",
         protoType = "bytes",
-        scalaImports = Set("com.wavesenterprise.serialization.BinarySerializer", ProtoAdapterImport)
+        scalaImports = Set("com.wavesenterprise.serialization.BinarySerializer", ProtoAdapterImport),
+        typeScriptType = Some("ByteArrayWithSize")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -312,7 +324,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "PublicKeyAccount",
         protoType = "bytes",
-        scalaImports = Set("com.wavesenterprise.account.PublicKeyAccount", "com.wavesenterprise.crypto.KeyLength")
+        scalaImports = Set("com.wavesenterprise.account.PublicKeyAccount", "com.wavesenterprise.crypto.KeyLength"),
+        typeScriptType = Some("Base58")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -338,7 +351,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "Address",
         protoType = "bytes",
-        scalaImports = Set("com.wavesenterprise.account.Address")
+        scalaImports = Set("com.wavesenterprise.account.Address"),
+        typeScriptType = Some("ArrayOfStringsWithLength")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -364,7 +378,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "Alias",
         protoType = "bytes",
-        scalaImports = Set("com.wavesenterprise.account.Alias")
+        scalaImports = Set("com.wavesenterprise.account.Alias"),
+        typeScriptType = Some("Alias")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -391,7 +406,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "AddressOrAlias",
         protoType = "bytes",
-        scalaImports = Set("com.wavesenterprise.account.AddressOrAlias")
+        scalaImports = Set("com.wavesenterprise.account.AddressOrAlias"),
+        typeScriptType = Some("Recipient")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -458,7 +474,8 @@ object FieldType extends Enum[FieldType] {
         protoImports = underlay.protoImports ++ (underlay.protoType match {
           case "int32" | "int64" | "bool" | "string" | "bytes" => Set("google/protobuf/wrappers.proto")
           case _                                               => Set.empty
-        })
+        }),
+        typeScriptType = underlay.typeScriptType
       )
       with WrapperType
       with BinarySerializableType
@@ -525,7 +542,8 @@ object FieldType extends Enum[FieldType] {
         scalaImports = Set("com.wavesenterprise.serialization.BinarySerializer") ++
           underlay.scalaImports ++
           underlayTypeImportsForProto(underlay),
-        protoImports = underlay.protoImports
+        protoImports = underlay.protoImports,
+        typeScriptType = Some("List")
       )
       with WrapperType
       with BinarySerializableType
@@ -591,7 +609,8 @@ object FieldType extends Enum[FieldType] {
         scalaImports = Set("com.wavesenterprise.serialization.BinarySerializer") ++
           underlay.scalaImports ++
           underlayTypeImportsForProto(underlay),
-        protoImports = underlay.protoImports
+        protoImports = underlay.protoImports,
+        typeScriptType = Some("ArrayOfStringsWithLength")
       )
       with WrapperType
       with BinarySerializableType
@@ -660,7 +679,8 @@ object FieldType extends Enum[FieldType] {
           "scala.language.existentials",
           ProtoAdapterImport
         ),
-        protoImports = Set("data_entry.proto")
+        protoImports = Set("data_entry.proto"),
+        typeScriptType = Some("DataEntry")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -693,7 +713,8 @@ object FieldType extends Enum[FieldType] {
           "scala.language.existentials",
           ProtoAdapterImport
         ),
-        protoImports = Set("data_entry.proto")
+        protoImports = Set("data_entry.proto"),
+        typeScriptType = Some("DockerParamEntry")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -784,7 +805,8 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "PolicyDataHash",
         protoType = "bytes",
-        scalaImports = Set("com.wavesenterprise.privacy.PolicyDataHash")
+        scalaImports = Set("com.wavesenterprise.privacy.PolicyDataHash"),
+        typeScriptType = Some("Base58WithLength")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -812,7 +834,8 @@ object FieldType extends Enum[FieldType] {
         scalaType = "OpType",
         protoType = "OpType",
         scalaImports = Set("com.wavesenterprise.acl.OpType", ProtoAdapterImport),
-        protoImports = Set("op_type.proto")
+        protoImports = Set("op_type.proto"),
+        typeScriptType = Some("PermissionOpType")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -868,21 +891,23 @@ object FieldType extends Enum[FieldType] {
         scalaImports = Set(
           "com.wavesenterprise.transaction.transfer.ParsedTransfer",
           "com.wavesenterprise.serialization.BinarySerializer",
+          "com.wavesenterprise.serialization.ModelsBinarySerializer",
           ProtoAdapterImport,
           "cats.implicits._"
         ),
         protoType = "repeated Transfer",
-        protoImports = Set("transfer.proto")
+        protoImports = Set("transfer.proto"),
+        typeScriptType = Some("Transfers")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
 
     override val binaryWriter: BinaryWriter = { c =>
-      s"BinarySerializer.writeTransferBatch(${c.field}, ${c.output})"
+      s"ModelsBinarySerializer.writeTransferBatch(${c.field}, ${c.output})"
     }
 
     override val binaryReader: BinaryReader = { c =>
-      s"val (${c.field}, ${c.field}End) = BinarySerializer.parseTransferBatch(${c.bytes}, ${c.offset})"
+      s"val (${c.field}, ${c.field}End) = ModelsBinarySerializer.parseTransferBatch(${c.bytes}, ${c.offset})"
     }
 
     override val protoToVanillaAdapter: Option[ProtoAdapter] = Some { c =>
@@ -899,7 +924,8 @@ object FieldType extends Enum[FieldType] {
         scalaType = "Option[String]",
         scalaImports = Set("com.wavesenterprise.serialization.BinarySerializer"),
         protoType = "google.protobuf.StringValue",
-        protoImports = Set("google/protobuf/wrappers.proto")
+        protoImports = Set("google/protobuf/wrappers.proto"),
+        typeScriptType = Some("StringWithLength")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -926,7 +952,8 @@ object FieldType extends Enum[FieldType] {
           "com.wavesenterprise.transaction.docker.ExecutedContractTransaction"
         ),
         protoImports = Set("managed/atomic_inner_transaction.proto"),
-        isCustomProofSource = true
+        isCustomProofSource = true,
+        typeScriptType = Some("AtomicInnerTransaction")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -965,19 +992,25 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "AtomicBadge",
         protoType = "AtomicBadge",
-        scalaImports = Set("com.wavesenterprise.transaction.AtomicBadge", "com.wavesenterprise.serialization.BinarySerializer", ProtoAdapterImport),
+        scalaImports = Set(
+          "com.wavesenterprise.transaction.AtomicBadge",
+          "com.wavesenterprise.serialization.BinarySerializer",
+          "com.wavesenterprise.serialization.ModelsBinarySerializer",
+          ProtoAdapterImport
+        ),
         protoImports = Set("atomic_badge.proto"),
-        isMessageProtoType = true
+        isMessageProtoType = true,
+        typeScriptType = Some("AtomicBadge")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
 
     override val binaryWriter: BinaryWriter = { c =>
-      s"BinarySerializer.writeAtomicBadge(${c.field}, ${c.output})"
+      s"ModelsBinarySerializer.writeAtomicBadge(${c.field}, ${c.output})"
     }
 
     override val binaryReader: BinaryReader = { c =>
-      s"val (${c.field}, ${c.field}End) = BinarySerializer.parseAtomicBadge(${c.bytes}, ${c.offset})"
+      s"val (${c.field}, ${c.field}End) = ModelsBinarySerializer.parseAtomicBadge(${c.bytes}, ${c.offset})"
     }
 
     override val protoToVanillaAdapter: Option[ProtoAdapter] = Some { c =>
@@ -998,7 +1031,8 @@ object FieldType extends Enum[FieldType] {
           "com.wavesenterprise.docker.validator.ValidationPolicy",
           ProtoAdapterImport
         ),
-        protoImports = Set("validation_policy.proto")
+        protoImports = Set("validation_policy.proto"),
+        typeScriptType = Some("ValidationPolicy")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -1029,7 +1063,8 @@ object FieldType extends Enum[FieldType] {
           "com.wavesenterprise.docker.ContractApiVersion",
           ProtoAdapterImport
         ),
-        protoImports = Set("contract_api_version.proto")
+        protoImports = Set("contract_api_version.proto"),
+        typeScriptType = Some("ContractApiVersion")
       )
       with BinarySerializableType
       with ProtoCompatibleType {

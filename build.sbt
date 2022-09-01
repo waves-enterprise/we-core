@@ -1,21 +1,22 @@
-import com.typesafe.sbt.SbtGit.GitKeys.gitUncommittedChanges
 import com.typesafe.sbt.git.JGit
 import com.wavesenterprise.grpc.GrpcApiVersionGenerator
-import com.wavesenterprise.transaction.generator.{TxSchemePlugin, TxSchemeProtoPlugin}
-import org.eclipse.jgit.submodule.SubmoduleWalk.IgnoreSubmoduleMode
+import com.wavesenterprise.transaction.generator.{TxSchemePlugin, TxSchemeProtoPlugin, TxSchemeTypeScriptPlugin}
 import sbt.Keys.{credentials, sourceGenerators, _}
-import sbt.internal.inc.ReflectUtilities
-import sbt.librarymanagement.ivy.IvyDependencyResolution
 import sbt.{Compile, Credentials, Def, Path, _}
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 import java.io.File
+import scala.jdk.CollectionConverters._
 
 enablePlugins(GitVersioning)
-scalafmtOnCompile in ThisBuild := true
+ThisBuild / scalafmtOnCompile := true
 
 Global / cancelable := true
 Global / onChangedBuildSource := ReloadOnSourceChanges
+
+run / fork := true
+
+name := "we-core"
 
 inThisBuild(
   Seq(
@@ -32,37 +33,19 @@ inThisBuild(
     licenses ++= Seq(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")
     ),
-    developers ++= List(
-      Developer(
-        id = "vaan",
-        name = "Vadim Anufriev",
-        email = "vanufriev@web3tech.ru",
-        url = url("https://vaan.io/")
-      ),
-      Developer(
-        id = "squadgazzz",
-        name = "Ilia Zhavoronkov",
-        email = "izhavoronkov89@list.ru",
-        url = url("https://www.linkedin.com/in/ilya-zhavoronkov/")
-      ),
-      Developer(
-        id = "sathembite",
-        name = "Anton Mazur",
-        email = "sathembite@gmail.com",
-        url = url("https://github.com/AntonMazur")
-      ),
-      Developer(
-        id = "kantefier",
-        name = "Kirill Nebogin",
-        email = "kinebogin@gmail.com",
-        url = url("https://github.com/kantefier")
-      ),
-      Developer(
-        id = "gamzaliev",
-        name = "Ruslan Gamzaliev",
-        email = "gamzaliev.ruslan.94@gmail.com",
-        url = url("https://github.com/gamzaliev")
+    scmInfo := Some(
+      ScmInfo(
+        url("https://github.com/waves-enterprise/we-core"),
+        "scm:git@github.com:waves-enterprise/we-core.git"
       )
+    ),
+    developers ++= List(
+      Developer("vaan", "Vadim Anufriev", "vanufriev@web3tech.ru", url("https://vaan.io/")),
+      Developer("squadgazzz", "Ilia Zhavoronkov", "izhavoronkov89@list.ru", url("https://www.linkedin.com/in/ilya-zhavoronkov/")),
+      Developer("sathembite", "Anton Mazur", "sathembite@gmail.com", url("https://github.com/AntonMazur")),
+      Developer("kantefier", "Kirill Nebogin", "kinebogin@gmail.com", url("https://github.com/kantefier")),
+      Developer("gamzaliev", "Ruslan Gamzaliev", "gamzaliev.ruslan.94@gmail.com", url("https://github.com/gamzaliev")),
+      Developer("1estart", "Artemiy Pospelov", "artemiywaves@gmail.com", url("https://github.com/1estart"))
     ),
     crossPaths := false,
     scalacOptions ++= Seq(
@@ -76,10 +59,6 @@ inThisBuild(
     )
   )
 )
-
-fork in run := true
-
-name := "we-core"
 
 /**
   * You have to put your credentials in a local file ~/.sbt/.credentials
@@ -99,20 +78,17 @@ credentials += {
       println("Using credentials from environment for artifacts.wavesenterprise.com")
       Credentials("Sonatype Nexus Repository Manager", "artifacts.wavesenterprise.com", username, password)
 
-    case _ =>
+    case _ if isSnapshotVersion.value =>
       val localCredentialsFile = Path.userHome / ".sbt" / ".credentials"
       println(s"Going to use ${localCredentialsFile.getAbsolutePath} as credentials for artifacts.wavesenterprise.com")
       Credentials(localCredentialsFile)
+
+    case _ =>
+      val localCredentialsFile = Path.userHome / ".sbt" / "sonatype_credentials"
+      println(s"Going to use ${localCredentialsFile.getAbsolutePath} as credentials for s01.oss.sonatype.org")
+      Credentials(localCredentialsFile)
   }
 }
-
-excludeDependencies ++= Seq(
-  // workaround for https://github.com/sbt/sbt/issues/3618
-  // include "jakarta.ws.rs" % "jakarta.ws.rs-api" instead
-  ExclusionRule("javax.ws.rs", "javax.ws.rs-api")
-)
-
-libraryDependencies += "jakarta.ws.rs" % "jakarta.ws.rs-api" % "2.1.5"
 
 val coreVersionSource = Def.task {
   // WARNING!!!
@@ -121,7 +97,7 @@ val coreVersionSource = Def.task {
   // In case of not updating the version cores build from headless sources will fail to connect to newer versions
   val FallbackVersion = (1, 0, 0)
 
-  val coreVersionFile: File = (sourceManaged in Compile).value / "com" / "wavesenterprise" / "CoreVersion.scala"
+  val coreVersionFile: File = (Compile / sourceManaged).value / "com" / "wavesenterprise" / "CoreVersion.scala"
   val versionExtractor      = """(\d+)\.(\d+)\.(\d+).*""".r
   val (major, minor, patch) = version.value match {
     case versionExtractor(ma, mi, pa) => (ma.toInt, mi.toInt, pa.toInt)
@@ -144,30 +120,42 @@ val coreVersionSource = Def.task {
 
 normalizedName := s"${name.value}"
 
-gitUncommittedChanges in ThisBuild := JGit(baseDirectory.value).porcelain
-  .status()
-  .setIgnoreSubmodules(IgnoreSubmoduleMode.ALL)
-  .call()
-  .hasUncommittedChanges
+lazy val branchName = Def.setting[String](sys.env.getOrElse("CI_COMMIT_REF_NAME", git.gitCurrentBranch.value))
 
-version in ThisBuild := {
-  val suffix = git.makeUncommittedSignifierSuffix(git.gitUncommittedChanges.value, Some("DIRTY"))
-  val releaseVersion = git.releaseVersion(
-    git.gitCurrentTags.value,
-    git.gitTagToVersionNumber.value,
-    suffix
-  )
-  lazy val describedExtended = git.gitDescribedVersion.value.map { described =>
-    val commitHashLength            = 7
-    val tagVersionWithoutCommitHash = described.take(described.length - commitHashLength - 2)
-    val tagVersionWithCommitsAhead  = tagVersionWithoutCommitHash.take(tagVersionWithoutCommitHash.lastIndexOf('-'))
-    import scala.sys.process._
-    val branchName = sys.env.getOrElse("CI_COMMIT_REF_NAME", "git rev-parse --abbrev-ref HEAD".!!.trim)
-    s"$tagVersionWithCommitsAhead-$branchName-SNAPSHOT"
+/**
+  * The version is generated by the first possible method in the following order:
+  *   Release version – {Tag}[-DIRTY]. When the tag corresponding to the version pattern is set on the last commit;
+  *   Snapshot version – {Tag}-{Commits-ahead}-{Branch-name}-{Commit-hash}[-DIRTY]-SNAPSHOT. When the `git describe --tags` is worked;
+  *   Fallback version – {Current-date}-SNAPSHOT.
+  */
+ThisBuild / version := {
+  if (git.gitUncommittedChanges.value) {
+    val changes = JGit(baseDirectory.value).porcelain
+      .status()
+      .call()
+      .getUncommittedChanges
+      .asScala
+      .mkString("\n")
+
+    println(s"Uncommitted changes detected:\n$changes")
   }
-  releaseVersion
-    .orElse(describedExtended)
-    .getOrElse(git.formattedDateVersion.value)
+
+  val uncommittedChangesSuffix = git.makeUncommittedSignifierSuffix(git.gitUncommittedChanges.value, Some("DIRTY"))
+  val snapshotSuffix           = "SNAPSHOT"
+
+  val releaseVersion = git.releaseVersion(git.gitCurrentTags.value, git.gitTagToVersionNumber.value, uncommittedChangesSuffix)
+
+  lazy val snapshotVersion = git.gitDescribedVersion.value.map { described =>
+    val commitHashLength                          = 7
+    val (tagVersionWithoutCommitHash, commitHash) = described.splitAt(described.length - commitHashLength)
+    val tagVersionWithCommitsAhead                = tagVersionWithoutCommitHash.dropRight(2)
+    val branchSuffix                              = branchName.value
+    s"$tagVersionWithCommitsAhead-$branchSuffix-$commitHash$uncommittedChangesSuffix-$snapshotSuffix"
+  }
+
+  lazy val fallbackVersion = s"${git.formattedDateVersion.value}-$snapshotSuffix"
+
+  (releaseVersion orElse snapshotVersion) getOrElse fallbackVersion
 }
 
 scalacOptions ++= Seq(
@@ -182,33 +170,17 @@ scalacOptions ++= Seq(
   "-language:postfixOps"
 )
 
-scalaModuleInfo ~= (_.map(_.withOverrideScalaVersion(true)))
-
-// for sbt plugins sources resolving
-updateSbtClassifiers / dependencyResolution := IvyDependencyResolution((updateSbtClassifiers / ivyConfiguration).value)
-resolvers ++= Seq(
-  Resolver.bintrayRepo("ethereum", "maven"),
-  Resolver.bintrayRepo("dnvriend", "maven"),
-  Resolver.sbtPluginRepo("releases")
-)
-
-javaOptions in run ++= Seq(
-  "-XX:+IgnoreUnrecognizedVMOptions"
-)
-
 Test / fork := true
-Test / javaOptions ++= Seq(
-  "-XX:+IgnoreUnrecognizedVMOptions",
-  "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED",
-  "-Dnode.waves-crypto=true"
-)
 Test / parallelExecution := true
+Test / javaOptions ++= Seq("-Dnode.crypto.type=WAVES")
 
 inConfig(Compile)(
   Seq(
+    packageDoc / publishArtifact := !isSnapshotVersion.value,
+    packageSrc / publishArtifact := true,
+    packageBin / publishArtifact := true,
     sourceGenerators += coreVersionSource
-  )
-)
+  ))
 
 inConfig(Test)(
   Seq(
@@ -219,37 +191,10 @@ inConfig(Test)(
     testOptions += Tests.Setup({ _ =>
       sys.props("sbt-testing") = "true"
     }),
-    publishArtifact in packageDoc := false,
-    publishArtifact in packageSrc := false,
-    publishArtifact in packageBin := false
+    packageDoc / publishArtifact := false,
+    packageSrc / publishArtifact := false,
+    packageBin / publishArtifact := false
   ))
-
-// https://stackoverflow.com/a/48592704/4050580
-def allProjects: List[ProjectReference] =
-  ReflectUtilities.allVals[Project](this).values.toList map { p =>
-    p: ProjectReference
-  }
-
-addCommandAlias(
-  "checkPR",
-  """;
-    |set scalacOptions in ThisBuild ++= Seq("-Xfatal-warnings");
-    |Global / checkPRRaw;
-    |set scalacOptions in ThisBuild -= "-Xfatal-warnings";
-  """.stripMargin
-)
-lazy val checkPRRaw = taskKey[Unit]("Build a project and run unit tests")
-checkPRRaw in Global := {
-  try {
-    clean.all(ScopeFilter(inProjects(allProjects: _*), inConfigurations(Compile))).value
-  } finally {
-    test.all(ScopeFilter(inProjects(langJVM, core), inConfigurations(Test))).value
-    (langJS / Compile / fastOptJS).value
-  }
-}
-
-lazy val publishingRepo: Some[Resolver] =
-  Some("releases" at "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2")
 
 lazy val lang =
   crossProject(JSPlatform, JVMPlatform)
@@ -270,27 +215,20 @@ lazy val lang =
       resolvers += Resolver.bintrayIvyRepo("portable-scala", "sbt-plugins"),
       resolvers += Resolver.sbtPluginRepo("releases")
     )
-    .settings(
-      publishTo := publishingRepo,
-      publishConfiguration := publishConfiguration.value.withOverwrite(true),
-      publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
-    )
     .jsSettings(
       scalaJSLinkerConfig ~= {
         _.withModuleKind(ModuleKind.CommonJSModule)
       }
     )
     .jvmSettings(
-      credentials += Credentials(Path.userHome / ".sbt" / ".credentials"),
       name := "RIDE Compiler",
       normalizedName := "lang",
       description := "The RIDE smart contract language compiler",
       licenses := Seq(("MIT", url("https://github.com/wavesplatform/Waves/blob/master/LICENSE"))),
       libraryDependencies ++= Seq(
         "org.scala-js"                      %% "scalajs-stubs" % "1.0.0-RC1" % "provided",
-        "com.github.spullara.mustache.java" % "compiler"       % "0.9.5"
-      ) ++ Dependencies.logging
-        .map(_ % "test") // scrypto logs an error if a signature verification was failed
+        "com.github.spullara.mustache.java" % "compiler" % "0.9.5"
+      ) ++ Dependencies.logging.map(_       % "test") // scrypto logs an error if a signature verification was failed
     )
 
 lazy val langJS = lang.js
@@ -300,69 +238,33 @@ lazy val langJVM = lang.jvm
   .aggregate(crypto, utils)
   .settings(
     moduleName := "we-lang",
-  )
-
-lazy val utils = (project in file("utils"))
-  .settings(
-    moduleName := "we-utils",
-    libraryDependencies ++= Seq(
-      Dependencies.pureConfig,
-      Dependencies.serialization,
-      Dependencies.monix.value,
-      Dependencies.logging,
-      Dependencies.catsCore,
-      Dependencies.scorex
-    ).flatten,
-  )
-  .settings(
-    publishTo := publishingRepo,
+    publishTo := publishingRepo.value,
     publishConfiguration := publishConfiguration.value.withOverwrite(true),
     publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
+    Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
 
-lazy val models = (project in file("models"))
+lazy val utils = project
+  .settings(
+    publishTo := publishingRepo.value,
+    Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
+  )
+
+lazy val models = project
   .enablePlugins(TxSchemePlugin)
-  .dependsOn(crypto)
-  .dependsOn(langJVM)
-  .dependsOn(grpcProtobuf)
-  .dependsOn(transactionProtobuf)
+  .dependsOn(crypto, langJVM, grpcProtobuf, transactionProtobuf)
   .aggregate(crypto, langJVM, grpcProtobuf, transactionProtobuf)
   .settings(
-    moduleName := "we-models",
-    Compile / unmanagedSourceDirectories += sourceManaged.value / "main" / "com" / "wavesenterprise" / "models",
-    libraryDependencies ++= Seq(
-      Dependencies.pureConfig,
-      Dependencies.catsCore,
-      Dependencies.monix.value,
-      Dependencies.protobuf,
-      Dependencies.scodec.value,
-      Dependencies.serialization,
-      Dependencies.commonsNet
-    ).flatten
-  )
-  .settings(
-    credentials += Credentials(Path.userHome / ".sbt" / ".credentials"),
-    publishTo := publishingRepo,
-    publishConfiguration := publishConfiguration.value.withOverwrite(true),
-    publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
+    publishTo := publishingRepo.value,
+    Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
 
-lazy val crypto: Project = project
+lazy val crypto = project
   .dependsOn(utils)
   .aggregate(utils)
   .settings(
-    moduleName := "we-crypto",
-    libraryDependencies ++= Seq(
-      Dependencies.scorex,
-      Dependencies.catsCore,
-      Dependencies.logging,
-      Dependencies.enumeratum,
-      Dependencies.bouncyCastle,
-      Dependencies.serialization
-    ).flatten,
-    publishTo := publishingRepo,
-    publishConfiguration := publishConfiguration.value.withOverwrite(true),
-    publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
+    publishTo := publishingRepo.value,
+    Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
 
 lazy val testCore: Project = (project in file("test-core"))
@@ -372,48 +274,65 @@ lazy val testCore: Project = (project in file("test-core"))
     moduleName := "we-test-core",
     libraryDependencies ++= Seq(Dependencies.commonsLang, Dependencies.netty).flatten,
     scalacOptions += "-Yresolve-term-conflict:object",
-  )
-  .settings(
-    publishTo := publishingRepo,
+    publishTo := publishingRepo.value,
     publishConfiguration := publishConfiguration.value.withOverwrite(true),
     publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
+    Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
 
-val grpcProtobufVersion = "1.5"
+val grpcProtobufVersion = "1.6"
 
 lazy val grpcProtobuf = (project in file("grpc-protobuf"))
-  .enablePlugins(AkkaGrpcPlugin)
-  .enablePlugins(GrpcApiVersionGenerator)
+  .enablePlugins(AkkaGrpcPlugin, GrpcApiVersionGenerator)
   .dependsOn(transactionProtobuf)
   .aggregate(transactionProtobuf)
   .settings(
-    moduleName := "we-grpc-protobuf",
     version := {
       val suffix = git.makeUncommittedSignifierSuffix(git.gitUncommittedChanges.value, Some("DIRTY"))
-      grpcProtobufVersion + suffix
+      if (isSnapshotVersion.value) {
+        s"$grpcProtobufVersion-${branchName.value}-SNAPSHOT"
+      } else {
+        grpcProtobufVersion + suffix
+      }
     },
-    scalacOptions += "-Yresolve-term-conflict:object",
-    libraryDependencies ++= Dependencies.protobuf,
-  )
-  .settings(
-    publishTo := publishingRepo,
-    publishConfiguration := publishConfiguration.value.withOverwrite(true),
-    publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
+    publishTo := publishingRepo.value,
+    Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
 
 lazy val transactionProtobuf = (project in file("transaction-protobuf"))
-  .enablePlugins(TxSchemeProtoPlugin)
-  .enablePlugins(AkkaGrpcPlugin)
+  .enablePlugins(TxSchemeProtoPlugin, AkkaGrpcPlugin)
   .settings(
     moduleName := "we-transaction-protobuf",
     scalacOptions += "-Yresolve-term-conflict:object",
     libraryDependencies ++= Dependencies.protobuf,
-  )
-  .settings(
-    publishTo := publishingRepo,
+    publishTo := publishingRepo.value,
     publishConfiguration := publishConfiguration.value.withOverwrite(true),
     publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
+    Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
+
+lazy val typeScriptZipTask = taskKey[File]("archive-typescript")
+
+lazy val typeScriptZipSetting: Def.Setting[Task[File]] = typeScriptZipTask := {
+  val tsDirectory: File = new sbt.File("./transactions-factory")
+  val zipName           = s"we-transaction_typescript_${(transactionProtobuf / version).value}.zip"
+  IO.delete((tsDirectory * "we-transaction_typescript_*.zip").get)
+
+  val filesToZip: Set[(File, String)] = Set(
+    tsDirectory \ "src" \ "Transactions.ts",
+    tsDirectory \ "src" \ "constants.ts",
+    tsDirectory \ "tests" \ "Tests.ts"
+  ).flatMap(_.get())
+    .map { file =>
+      (file, tsDirectory.toURI.relativize(file.toURI).getPath)
+    }
+
+  val outputZip = new sbt.File(tsDirectory, zipName)
+  println(s"Typescript archive has been created: '${outputZip.getAbsolutePath}'")
+  IO.zip(filesToZip, outputZip, None)
+
+  outputZip
+}
 
 lazy val protobufZipTask = taskKey[File]("archive-protobuf")
 
@@ -421,8 +340,8 @@ lazy val protobufZipSetting: Def.Setting[Task[File]] = protobufZipTask := {
   (transactionProtobuf / Compile / compile).value
   (grpcProtobuf / Compile / compile).value
 
-  val txProtoDir   = (sourceDirectory in transactionProtobuf).value / "main" / "protobuf"
-  val grpcProtoDir = (sourceDirectory in grpcProtobuf).value / "main" / "protobuf"
+  val txProtoDir   = (transactionProtobuf / sourceDirectory).value / "main" / "protobuf"
+  val grpcProtoDir = (grpcProtobuf / sourceDirectory).value / "main" / "protobuf"
   val zipName      = s"we_protobuf_${version.value}.zip"
 
   IO.delete(new sbt.File("./target/") * "we_protobuf_*.zip" get)
@@ -435,35 +354,65 @@ lazy val protobufZipSetting: Def.Setting[Task[File]] = protobufZipTask := {
 
   val outputZip = new sbt.File("./target/", zipName)
 
-  IO.zip(filesToZip, outputZip)
+  IO.zip(filesToZip, outputZip, None)
   println(s"Protobuf archive has been created: '${outputZip.getAbsolutePath}'")
   outputZip
 }
+
+lazy val transactionTypeScript = (project in file("transactions-factory"))
+  .enablePlugins(TxSchemeTypeScriptPlugin)
+  .settings(
+    scalacOptions += "-Yresolve-term-conflict:object",
+    publish / skip := true
+  )
 
 lazy val protobufArchives = (project in file("we-transaction-protobuf"))
   .dependsOn(grpcProtobuf)
   .settings(
     name := "we-transaction-protobuf-archive",
-    credentials += Credentials(Path.userHome / ".sbt" / ".credentials"),
-    publish / skip := true,
-    publishArtifact in (Compile, packageSrc) := false,
-    publishArtifact in (Compile, packageBin) := false,
-    publishArtifact in (Compile, packageDoc) := false,
+    publish / skip := !isSnapshotVersion.value,
+    publishTo := publishingRepo.value,
+    Compile / packageSrc / publishArtifact := false,
+    Compile / packageBin / publishArtifact := false,
+    Compile / packageDoc / publishArtifact := false,
     protobufZipSetting,
-    artifact in (Compile, protobufZipTask) ~= ((art: Artifact) => art.withType("zip").withExtension("zip")),
-    addArtifact(artifact in (Compile, protobufZipTask), protobufZipTask)
+    Compile / protobufZipTask / artifact ~= ((art: Artifact) => art.withType("zip").withExtension("zip")),
+    addArtifact(Compile / protobufZipTask / artifact, protobufZipTask)
+  )
+
+lazy val typescriptArchives = (project in file("we-transaction-typescript"))
+  .dependsOn(transactionTypeScript)
+  .settings(
+    name := "we-transaction-typescript-archive",
+    publishTo := publishingRepo.value,
+    Compile / packageSrc / publishArtifact := false,
+    Compile / packageBin / publishArtifact := false,
+    Compile / packageDoc / publishArtifact := false,
+    publishMavenStyle := false,
+    typeScriptZipSetting,
+    artifact ~= ((art: Artifact) => art.withType("zip").withExtension("zip")),
+    addArtifact(artifact, typeScriptZipTask)
   )
 
 addCommandAlias(
   "compileAll",
-  "; cleanAll; transactionProtobuf/compile; compile; test:compile"
+  "; clean; transactionProtobuf/compile; compile; test:compile"
 )
+
+lazy val isSnapshotVersion: Def.Initialize[Boolean] = version(_ endsWith "-SNAPSHOT")
+
+lazy val publishingRepo: Def.Initialize[Some[Resolver]] = isSnapshotVersion {
+  case true =>
+    Some("Sonatype Nexus Snapshots Repository Manager" at "https://artifacts.wavesenterprise.com/repository/we-snapshots")
+  case _ =>
+    Some("releases" at "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2")
+}
 
 lazy val core = project
   .in(file("."))
   .dependsOn(models)
   .dependsOn(testCore % "test->test")
-  .aggregate(models)
+  .aggregate(grpcProtobuf, transactionProtobuf, transactionTypeScript, crypto, models, utils)
   .settings(
     moduleName := "we-core",
     addCompilerPlugin(Dependencies.kindProjector),
@@ -474,88 +423,10 @@ lazy val core = project
       Dependencies.docker,
       Dependencies.asyncHttpClient,
       Dependencies.netty
-    ).flatten
+    ).flatten,
+    publishTo := publishingRepo.value,
+    cleanFiles += (transactionProtobuf / sourceDirectory).value / "main" / "protobuf" / "managed",
+    cleanFiles += (grpcProtobuf / sourceDirectory).value / "main" / "protobuf" / "managed",
+    cleanFiles ++= ((transactionTypeScript / baseDirectory).value * "we-transaction_typescript_*.zip").get,
+    cleanFiles += (transactionTypeScript / baseDirectory).value / "node_modules"
   )
-  .settings(
-    credentials += Credentials(Path.userHome / ".sbt" / ".credentials"),
-    publishTo := publishingRepo,
-    publishConfiguration := publishConfiguration.value.withOverwrite(true),
-    publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
-  )
-
-lazy val javaHomeProguardOption = Def.task[String] {
-  (for {
-    versionStr <- sys.props
-      .get("java.version")
-      .toRight("failed to get system property java.version")
-    javaHome <- sys.props
-      .get("java.home")
-      .toRight("failed to get system property java.home")
-    version <- "^(\\d+).*".r
-      .findFirstMatchIn(versionStr)
-      .map(_.group(1))
-      .toRight(s"java.version system property has wrong format: '$versionStr'")
-  } yield {
-    if (version.toInt > 8)
-      s"-libraryjars $javaHome/jmods/java.base.jmod"
-    else ""
-  }) match {
-    case Right(path) => path
-    case Left(error) => sys.error(error)
-  }
-}
-
-lazy val extLibrariesProguardExclusions = Def.task[Seq[String]] {
-  libraryDependencies.value
-    .map(_.organization.toLowerCase)
-    .distinct
-    .filterNot(org => org.startsWith("com.wavesenterprise") && org.startsWith("com.wavesplatform"))
-    .flatMap { org =>
-      Seq(
-        s"-keep class $org.** { *; }",
-        s"-keep interface $org.** { *; }",
-        s"-keep enum $org.** { *; }"
-      )
-    }
-}
-
-/* ********************************************************* */
-
-def printMessage(msg: String): Unit = {
-  println(" " + ">" * 3 + " " + msg)
-}
-
-def printMessageTask(msg: String) = Def.task {
-  printMessage(msg)
-}
-
-/* ********************************************************* */
-
-lazy val cleanProtobufManagedDirs = Def.sequential(
-  Def.task[Unit] {
-    IO.delete((sourceDirectory in transactionProtobuf).value / "main" / "protobuf" / "managed")
-  },
-  Def.task[Unit] {
-    IO.delete((sourceDirectory in grpcProtobuf).value / "main" / "protobuf" / "managed")
-  }
-)
-
-lazy val cleanAll = taskKey[Unit]("Clean all sub-projects")
-
-cleanAll := Def
-  .sequential(
-    printMessageTask("Clean grpcProtobuf"),
-    clean in grpcProtobuf,
-    printMessageTask("Clean transactionProtobuf"),
-    clean in transactionProtobuf,
-    cleanProtobufManagedDirs,
-    printMessageTask("Clean core"),
-    clean in core,
-    printMessageTask("Clean crypto"),
-    clean in crypto,
-    printMessageTask("Clean models"),
-    clean in models,
-    printMessageTask("Clean utils"),
-    clean in utils
-  )
-  .value

@@ -5,22 +5,16 @@ option java_package = "com.wavesenterprise.protobuf.constants";
 option csharp_namespace = "WavesEnterprise";
 option go_package = "wavesenterprise.com/weproto";
 
-enum CryptoAlgo {
-  reserved 1;
-  UNKNOWN_CRYPTO_ALGO = 0;
-  reserved 2;
-  AES = 3;
-}
-
-enum CryptoType {
-  UNKNOWN_CRYPTO_TYPE = 0;
-  reserved 1;
-  CURVE_25519 = 2;
-}
-
 enum ConsensusType {
   UNKNOWN_CONSENSUS_TYPE = 0;
   POA = 1;
   POS = 2;
   CFT = 3;
+}
+
+enum PkiMode {
+  UNKNOWN_PKI_MODE = 0;
+  ON = 1;
+  OFF = 2;
+  TEST = 3;
 }

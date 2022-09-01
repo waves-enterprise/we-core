@@ -5,7 +5,7 @@ import com.wavesenterprise.lang.v1.evaluator.ctx.EvaluationContext
 
 sealed trait ScriptVersion { self =>
   type ExprT = Terms.EXPR
-  type CtxT = EvaluationContext
+  type CtxT  = EvaluationContext
   val value: Int
 }
 

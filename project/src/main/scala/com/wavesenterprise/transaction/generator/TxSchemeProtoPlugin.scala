@@ -11,11 +11,11 @@ import sbt._
 object TxSchemeProtoPlugin extends AutoPlugin {
 
   override lazy val projectSettings = Seq(
-    (sourceGenerators in Compile) += codeGenerator
+    (Compile / sourceGenerators) += codeGenerator
   )
 
   lazy val codeGenerator = Def.task {
-    val path = (sourceDirectory in Compile).value / "protobuf" / "managed"
+    val path = (Compile / sourceDirectory).value / "protobuf" / "managed"
     generate(path)
   }
 

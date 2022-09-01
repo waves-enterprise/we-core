@@ -15,8 +15,14 @@ case class FieldScheme(
     fieldToJson: Option[String => String] = None,
     inJson: Boolean = true,
     excludeFormSealedTrait: Boolean = false,
+    typeScriptLimit: Option[Int] = None,
+    private val inTypeScript: Boolean = true,
+    private val specialTypeScriptName: Option[String] = None,
+    private val specialTypeScriptType: Option[String] = None,
     private val specialProtoName: Option[String] = None
 ) {
+  def typeScriptName: String         = specialTypeScriptName.getOrElse(name)
+  def typeScriptType: Option[String] = specialTypeScriptType.orElse(tpe.typeScriptType).filter(_ => inTypeScript)
   def protoName: String              = specialProtoName.getOrElse(name)
   def protoSnakeCaseName: String     = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, protoName)
 }

@@ -8,7 +8,9 @@ import scala.annotation.meta.field
 import scala.scalajs.js.annotation._
 
 @JSExportTopLevel("CTX")
-case class CTX(@(JSExport @field) types: Seq[DefinedType], @(JSExport @field) vars: Map[String, ((FINAL, String), LazyVal)], @(JSExport @field) functions: Array[BaseFunction]) {
+case class CTX(@(JSExport @field) types: Seq[DefinedType],
+               @(JSExport @field) vars: Map[String, ((FINAL, String), LazyVal)],
+               @(JSExport @field) functions: Array[BaseFunction]) {
   lazy val typeDefs = types.map(t => t.name -> t).toMap
   lazy val evaluationContext: EvaluationContext = {
     if (functions.map(_.header).distinct.size != functions.size) {

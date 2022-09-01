@@ -294,13 +294,13 @@ class IntegrationTest extends PropSpec with ScalaCheckPropertyChecks with Script
       PureContext.build(V1).evaluationContext,
       EvaluationContext(
         typeDefs = Map.empty,
-        letDefs = Map("x"                -> LazyVal(EitherT.pure(CONST_LONG(3l)))),
+        letDefs = Map("x"                -> LazyVal(EitherT.pure(CONST_LONG(3L)))),
         functions = Map(doubleFst.header -> doubleFst)
       )
     )
 
-    val expr = FUNCTION_CALL(PureContext.sumLong.header, List(FUNCTION_CALL(doubleFst.header, List(CONST_LONG(1000l))), REF("x")))
-    ev[CONST_LONG](context, expr) shouldBe evaluated(2003l)
+    val expr = FUNCTION_CALL(PureContext.sumLong.header, List(FUNCTION_CALL(doubleFst.header, List(CONST_LONG(1000L))), REF("x")))
+    ev[CONST_LONG](context, expr) shouldBe evaluated(2003L)
   }
 
   property("context won't change after execution of an inner block") {
@@ -308,7 +308,7 @@ class IntegrationTest extends PropSpec with ScalaCheckPropertyChecks with Script
       PureContext.build(V1).evaluationContext,
       EvaluationContext(
         typeDefs = Map.empty,
-        letDefs = Map("x" -> LazyVal(EitherT.pure(CONST_LONG(3l)))),
+        letDefs = Map("x" -> LazyVal(EitherT.pure(CONST_LONG(3L)))),
         functions = Map.empty
       )
     )
@@ -317,7 +317,7 @@ class IntegrationTest extends PropSpec with ScalaCheckPropertyChecks with Script
       function = PureContext.sumLong.header,
       args = List(
         BLOCK(
-          let = LET("x", CONST_LONG(5l)),
+          let = LET("x", CONST_LONG(5L)),
           body = REF("x")
         ),
         REF("x")

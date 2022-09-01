@@ -33,7 +33,7 @@ import scala.util.Try
 
 class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matchers with ScriptGen with NoShrink {
 
-  val global     = Global
+  val global     = WavesGlobal
   val algorithms = WavesAlgorithms
   def generateTestKeyPair() = {
     val kp = algorithms.generateSessionKey()
@@ -423,7 +423,7 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
 
   property("fromBase58String(String) works as the native one") {
     val gen = for {
-      len <- Gen.choose(0, Global.MaxBase58Bytes)
+      len <- Gen.choose(0, WavesGlobal.MaxBase58Bytes)
       xs  <- Gen.containerOfN[Array, Byte](len, Arbitrary.arbByte.arbitrary)
     } yield Base58.encode(xs)
 
@@ -435,7 +435,7 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
   }
 
   property("fromBase58String(String) input is 100 chars max") {
-    import Global.{MaxBase58String => Max}
+    import WavesGlobal.{MaxBase58String => Max}
     val gen = for {
       len <- Gen.choose(Max + 1, Max * 2)
       xs  <- Gen.containerOfN[Array, Byte](len, Arbitrary.arbByte.arbitrary)
@@ -478,7 +478,7 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
     val environment = emptyBlockchainEnvironment()
     val ctx         = defaultFullContext(environment)
 
-    val gen = Gen.nonEmptyContainerOf[Array, Byte](Arbitrary.arbByte.arbitrary).map { seed =>
+    val gen: Gen[Array[Byte]] = Gen.resultOf { (_: Byte) =>
       val (_, pk) = generateTestKeyPair()
       pk.getEncoded
     }
@@ -498,7 +498,7 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
     val environment = Common.emptyBlockchainEnvironment()
     val ctx         = defaultFullContext(environment)
 
-    val gen = Gen.nonEmptyContainerOf[Array, Byte](Arbitrary.arbByte.arbitrary).map { seed =>
+    val gen: Gen[String] = Gen.resultOf { (_: Byte) =>
       val (_, pk) = generateTestKeyPair()
       Base58.encode(addressFromPublicKey(environment.chainId, pk.getEncoded))
     }
@@ -516,7 +516,7 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
     val environment = Common.emptyBlockchainEnvironment()
     val ctx         = defaultFullContext(environment)
 
-    val gen = Gen.nonEmptyContainerOf[Array, Byte](Arbitrary.arbByte.arbitrary).map { seed =>
+    val gen = Gen.resultOf { (_: Byte) =>
       val (_, pk) = generateTestKeyPair()
       EnvironmentFunctions.AddressPrefix + Base58.encode(addressFromPublicKey(environment.chainId, pk.getEncoded))
     }
@@ -533,7 +533,7 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
     val environment = Common.emptyBlockchainEnvironment()
     val ctx         = defaultFullContext(environment)
 
-    val gen = Gen.nonEmptyContainerOf[Array, Byte](Arbitrary.arbByte.arbitrary).map { seed =>
+    val gen = Gen.resultOf { (_: Byte) =>
       val (_, pk) = generateTestKeyPair()
       EnvironmentFunctions.AddressPrefix + Base58.encode(addressFromPublicKey(environment.chainId, pk.getEncoded) :+ (1: Byte))
     }
@@ -570,7 +570,6 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
     val ctx         = defaultFullContext(environment)
 
     val gen = for {
-      seed    <- Gen.nonEmptyContainerOf[Array, Byte](Arbitrary.arbByte.arbitrary)
       chainId <- Gen.choose[Byte](0, 100)
       if chainId != environment.chainId
     } yield {
@@ -590,13 +589,12 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
     val ctx         = defaultFullContext(environment)
 
     val gen = for {
-      seed <- Gen.nonEmptyContainerOf[Array, Byte](Arbitrary.arbByte.arbitrary)
+      wrongCheckSum <- Gen.containerOfN[Array, Byte](EnvironmentFunctions.ChecksumLength, Arbitrary.arbByte.arbitrary)
       bytes = {
         val (_, pk) = generateTestKeyPair()
         addressFromPublicKey(environment.chainId, pk.getEncoded)
       }
       checkSum = bytes.takeRight(EnvironmentFunctions.ChecksumLength)
-      wrongCheckSum <- Gen.containerOfN[Array, Byte](EnvironmentFunctions.ChecksumLength, Arbitrary.arbByte.arbitrary)
       if !checkSum.sameElements(wrongCheckSum)
     } yield EnvironmentFunctions.AddressPrefix + Base58.encode(bytes.dropRight(EnvironmentFunctions.ChecksumLength) ++ wrongCheckSum)
 

@@ -29,7 +29,7 @@ trait CommonGlobal extends BaseGlobal {
   def sha256(message: Array[Byte]): Array[Byte] = Sha256.hash(message)
 }
 
-object Global extends CommonGlobal {
+object WavesGlobal extends CommonGlobal {
   def curve25519verify(message: Array[Byte], sig: Array[Byte], pub: Array[Byte]): Boolean = Curve25519.verify(Signature(sig), message, PublicKey(pub))
 
   def keccak256(message: Array[Byte]): Array[Byte]  = Keccak256.hash(message)

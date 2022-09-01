@@ -5,8 +5,7 @@ import com.wavesenterprise.lang.v1.compiler.Types.CASETYPEREF
 import com.wavesenterprise.lang.v1.FunctionHeader
 import scodec.bits.ByteVector
 
-object
-Terms {
+object Terms {
   sealed abstract class EXPR
   sealed abstract class DECLARATION
   sealed trait EVALUATED
@@ -29,16 +28,16 @@ Terms {
 
   case class FUNCTION_CALL(function: FunctionHeader, args: List[EXPR]) extends EXPR
 
-case class CaseObj(caseType: CASETYPEREF, fields: Map[String, EVALUATED]) extends EVALUATED{
-  override def toString: String = {
-    s"""
+  case class CaseObj(caseType: CASETYPEREF, fields: Map[String, EVALUATED]) extends EVALUATED {
+    override def toString: String = {
+      s"""
        |${caseType.name} {
        |  ${fields.map({ case (k, v) => s"$k -> $v" }).mkString(", ")}
        |}
      """.stripMargin
+    }
   }
-}
 
-case class ARR(xs: IndexedSeq[EVALUATED]) extends EVALUATED
+  case class ARR(xs: IndexedSeq[EVALUATED]) extends EVALUATED
 
 }

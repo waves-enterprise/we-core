@@ -13,7 +13,7 @@ object JavaAdapter {
   lazy val compiler =
     new CompilerV1(
       Monoid.combineAll(Seq(
-        CryptoContext.compilerContext(com.wavesenterprise.lang.Global),
+        CryptoContext.compilerContext(com.wavesenterprise.lang.WavesGlobal),
         WavesContext.build(version, null, false).compilerContext,
         PureContext.build(version).compilerContext
       )))

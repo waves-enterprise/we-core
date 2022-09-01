@@ -10,7 +10,7 @@ abstract class CryptoContext {
   type PublicKey0  = KeyPair0#PublicKey0
   type PrivateKey0 = KeyPair0#PrivateKey0
 
-  val algorithms: CryptoAlgorithms[KeyPair0]
+  def algorithms: CryptoAlgorithms[KeyPair0]
 
   def keyStore(file: Option[File], password: Array[Char]): KeyStore[KeyPair0]
 }

@@ -51,6 +51,27 @@ object FieldGenerationOption {
   case object NoJson extends FieldGenerationOption
 
   /**
+    * Defines a data field that is not included in the TypeScript representation.
+    */
+  case object NoTypeScript extends FieldGenerationOption
+
+  /**
+    * Defines a limit for TypeScript representation.
+    */
+  case class TypeScriptLimit(limit: Int) extends FieldGenerationOption
+
+  /**
+    * Defines a custom field name for TypeScript representation.
+    */
+  case class TypeScriptCustomName(name: String) extends FieldGenerationOption
+
+  /**
+    * Defines a custom field name for TypeScript representation.
+    * Temporal solution. Has to be removed after waves-api refactoring by frond-end.
+    */
+  case class TypeScriptCustomType(typeName: String) extends FieldGenerationOption
+
+  /**
     * Defines a custom field name for Protobuf representation.
     */
   case class ProtobufCustomName(name: String) extends FieldGenerationOption

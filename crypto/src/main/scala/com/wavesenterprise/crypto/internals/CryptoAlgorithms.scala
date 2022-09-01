@@ -1,15 +1,19 @@
 package com.wavesenterprise.crypto.internals
 
-import java.security.{Provider, SecureRandom}
-import java.util
-import scorex.util.encode.Base58
+import cats.implicits._
+import com.wavesenterprise.certs.CertChain
+import com.wavesenterprise.crypto.internals.pki.Models.ExtendedKeyUsage
+import monix.eval.Coeval
+import org.slf4j.{Logger, LoggerFactory}
 import scorex.crypto.hash.{Blake2b256, Keccak256}
 import scorex.crypto.signatures.{Curve25519, PrivateKey => PrivateKeyS, PublicKey => PublicKeyS, Signature => SignatureS}
+import scorex.util.encode.Base58
 
+import java.security.cert._
+import java.security.{Provider, SecureRandom, KeyStore => JavaKeyStore, PublicKey => JavaPublicKey}
+import java.util
 import scala.annotation.tailrec
 import scala.util.Try
-import cats.syntax.either._
-import org.slf4j.{Logger, LoggerFactory}
 
 trait CryptoAlgorithms[KP <: KeyPair] {
   type KeyPair0    = KP
@@ -22,13 +26,21 @@ trait CryptoAlgorithms[KP <: KeyPair] {
   val SessionKeyLength: Int
   val WrappedStructureLength: Int
 
+  val strictKeyLength: Boolean
+
   protected val log: Logger = LoggerFactory.getLogger(this.getClass)
+
+  def pkiRequiredOids: Set[ExtendedKeyUsage]                   = Set.empty
+  def crlCheckIsEnabled: Boolean                               = false
+  def maybeTrustKeyStoreProvider: Option[Coeval[JavaKeyStore]] = None
 
   def generateKeyPair(): KeyPair0
 
   def generateSessionKey(): KeyPair0
 
   def publicKeyFromBytes(bytes: Array[Byte]): PublicKey0
+
+  def wrapPublicKey(publicKey: JavaPublicKey): PublicKey0
 
   def sessionKeyFromBytes(bytes: Array[Byte]): PublicKey0
 
@@ -40,9 +52,14 @@ trait CryptoAlgorithms[KP <: KeyPair] {
 
   def verify(signature: Array[Byte], message: Array[Byte], publicKey: PublicKey0): Boolean
 
-  def verify(signature: Array[Byte], message: Array[Byte], publicKey: Array[Byte]): Boolean = {
+  def verify(signature: Array[Byte], message: Array[Byte], publicKey: Array[Byte]): Boolean =
     verify(signature, message, publicKeyFromBytes(publicKey))
-  }
+
+  def verify(signature: Array[Byte], message: Array[Byte], certChain: CertChain, timestamp: Long): Either[CryptoError, Unit]
+
+  def getCaCerts(fingerprints: List[String]): Either[CryptoError, List[X509Certificate]]
+
+  def validateCertChain(certChain: CertChain, timestamp: Long): Either[CryptoError, Unit]
 
   def buildEncryptor(senderPrivateKey: PrivateKey0,
                      recipientPublicKey: PublicKey0,
@@ -121,13 +138,16 @@ case class EncryptedForMany(encryptedData: Array[Byte], recipientPubKeyToWrapped
 }
 
 object WavesAlgorithms extends CryptoAlgorithms[WavesKeyPair] {
-  override val DigestSize: Int        = 32
-  override val SignatureLength: Int   = 64
-  override val KeyLength: Int         = 32
-  override val SessionKeyLength: Int  = 32
-  override val WrappedStructureLength = 48
-  private val secureRandom            = createSecureRandomInstance()
-  private val aesEncryption           = new AesEncryption
+  override val DigestSize: Int          = 32
+  override val SignatureLength: Int     = 64
+  override val KeyLength: Int           = 32
+  override val SessionKeyLength: Int    = 32
+  override val WrappedStructureLength   = 48
+  override val strictKeyLength: Boolean = true
+  private val secureRandom              = createSecureRandomInstance()
+  private val aesEncryption             = new AesEncryption
+
+  private val pkiNotSupportedError = PkiError("Not implemented for Waves crypto algorithms")
 
   override def generateKeyPair(): WavesKeyPair = {
     val (_, pair) = generateKeyPairWithSeed()
@@ -137,6 +157,9 @@ object WavesAlgorithms extends CryptoAlgorithms[WavesKeyPair] {
   override def generateSessionKey(): WavesKeyPair = generateKeyPair()
 
   override def publicKeyFromBytes(bytes: Array[Byte]): WavesPublicKey = WavesPublicKey(bytes)
+
+  override def wrapPublicKey(publicKey: JavaPublicKey): WavesPublicKey =
+    publicKeyFromBytes(publicKey.getEncoded)
 
   override def sessionKeyFromBytes(bytes: Array[Byte]): PublicKey0 = publicKeyFromBytes(bytes)
 
@@ -150,6 +173,9 @@ object WavesAlgorithms extends CryptoAlgorithms[WavesKeyPair] {
     else
       Curve25519.verify(SignatureS(signature), message, PublicKeyS(publicKey.getEncoded))
   }
+
+  override def verify(signature: Array[Byte], message: Array[Byte], certChain: CertChain, timestamp: Long): Either[CryptoError, Unit] =
+    Left(pkiNotSupportedError)
 
   override def fastHash(input: Array[Byte]): Array[Byte] = Blake2b256.hash(input)
 
@@ -319,4 +345,8 @@ object WavesAlgorithms extends CryptoAlgorithms[WavesKeyPair] {
   }
 
   override def sslProvider: Option[Provider] = None
+
+  override def getCaCerts(fingerprints: List[String]): Either[CryptoError, List[X509Certificate]] = Left(pkiNotSupportedError)
+
+  override def validateCertChain(certChain: CertChain, timestamp: Long): Either[CryptoError, Unit] = Left(pkiNotSupportedError)
 }

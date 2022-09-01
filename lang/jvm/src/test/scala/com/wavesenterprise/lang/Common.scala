@@ -19,7 +19,7 @@ import scala.util.{Left, Right, Try}
 object Common {
   import com.wavesenterprise.lang.v1.evaluator.ctx.impl.converters._
 
-  val global = Global
+  val global = WavesGlobal
 
   def ev[T <: EVALUATED](context: EvaluationContext = PureContext.build(V1).evaluationContext, expr: EXPR): Either[ExecutionError, T] =
     EvaluatorV1[T](context, expr)
@@ -44,7 +44,7 @@ object Common {
   def produce(errorMessage: String): ProduceError = new ProduceError(errorMessage)
 
   val multiplierFunction: NativeFunction =
-    NativeFunction("MULTIPLY", 1, 10005, LONG, "test ultiplication", ("x1", LONG, "x1"), ("x2", LONG, "x2")) {
+    NativeFunction("MULTIPLY", 1, 10005, LONG, "test multiplication", ("x1", LONG, "x1"), ("x2", LONG, "x2")) {
       case CONST_LONG(x1: Long) :: CONST_LONG(x2: Long) :: Nil => Try(x1 * x2).map(CONST_LONG).toEither.left.map(_.toString)
       case _                                                   => ??? // suppress pattern match warning
     }
@@ -93,7 +93,7 @@ object Common {
 
   def addressFromString(chainId: Byte, str: String): Either[String, Option[Array[Byte]]] = {
     val base58String = if (str.startsWith(EnvironmentFunctions.AddressPrefix)) str.drop(EnvironmentFunctions.AddressPrefix.length) else str
-    global.base58Decode(base58String, Global.MaxAddressLength) match {
+    global.base58Decode(base58String, WavesGlobal.MaxAddressLength) match {
       case Left(e) => Left(e)
       case Right(addressBytes) =>
         val version = addressBytes.head

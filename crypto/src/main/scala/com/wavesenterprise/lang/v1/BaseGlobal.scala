@@ -1,14 +1,10 @@
 package com.wavesenterprise.lang.v1
 
-/**
-  * This is a hack class for IDEA. The Global class is in JS/JVM modules.
-  * And IDEA can't find the Global class in the "shared" module, but it must!
-  */
 trait BaseGlobal {
-  val MaxBase58Bytes = 64
-  val MaxBase58String = 100
-  val MaxBase64Bytes = 32 * 1024
-  val MaxBase64String = 44 * 1024
+  val MaxBase58Bytes   = 64
+  val MaxBase58String  = 100
+  val MaxBase64Bytes   = 32 * 1024
+  val MaxBase64String  = 44 * 1024
   val MaxLiteralLength = 12 * 1024
   val MaxAddressLength = 36
 

@@ -9,7 +9,7 @@ import shapeless._
 
 case class CompilerContext(predefTypes: Map[String, DefinedType], varDefs: VariableTypes, functionDefs: FunctionTypes, tmpArgsIdx: Int = 0) {
   private lazy val allFuncDefs: FunctionTypes = predefTypes.collect {
-    case (_, t @ CaseType(typeName, fields)) =>
+    case (_, _ @CaseType(typeName, fields)) =>
       typeName -> List(FunctionTypeSignature(CASETYPEREF(typeName, fields), fields, FunctionHeader.User(typeName)))
   } ++ functionDefs
 
@@ -27,7 +27,7 @@ object CompilerContext {
   type VariableTypes = Map[String, (FINAL, String)]
   type FunctionTypes = Map[String, List[FunctionTypeSignature]]
 
-  val empty = CompilerContext(Map.empty, Map.empty, Map.empty, 0)
+  val empty = CompilerContext(Map.empty, Map.empty, Map.empty)
 
   implicit val monoid: Monoid[CompilerContext] = new Monoid[CompilerContext] {
     override val empty: CompilerContext = CompilerContext.empty

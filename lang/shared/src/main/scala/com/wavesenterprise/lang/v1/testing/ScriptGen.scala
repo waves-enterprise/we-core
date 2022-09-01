@@ -130,7 +130,7 @@ trait ScriptGen {
   private def toString[T](part: PART[T])(implicit ct: ClassTag[T]): String = part match {
     case PART.VALID(_, x: String)      => x
     case PART.VALID(_, xs: ByteVector) => Base58.encode(xs.toArray)
-    case _                                => throw new RuntimeException(s"Can't stringify $part")
+    case _                             => throw new RuntimeException(s"Can't stringify $part")
   }
 
   def toString(expr: EXPR): Gen[String] = expr match {
@@ -138,8 +138,8 @@ trait ScriptGen {
     case REF(_, x)              => withWhitespaces(toString(x))
     case CONST_STRING(_, x)     => withWhitespaces(s"""\"${toString(x)}\"""")
     case CONST_BYTEVECTOR(_, x) => withWhitespaces(s"""base58'${toString(x)}'""")
-    case _: TRUE                   => withWhitespaces("true")
-    case _: FALSE                  => withWhitespaces("false")
+    case _: TRUE                => withWhitespaces("true")
+    case _: FALSE               => withWhitespaces("false")
     case BINARY_OP(_, x, op: BinaryOperation, y) =>
       for {
         arg1 <- toString(x)

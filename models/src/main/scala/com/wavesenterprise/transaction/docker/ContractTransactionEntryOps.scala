@@ -7,7 +7,7 @@ import com.wavesenterprise.transaction.ValidationError
 import java.nio.charset.StandardCharsets.UTF_8
 
 /**
-  * Byte serialize and deserialize operations for [[DataEntry]] objects for docker contract transactions
+  * Byte serialize and deserialize operations for [[com.wavesenterprise.state.DataEntry]] objects for docker contract transactions
   */
 object ContractTransactionEntryOps extends DataEntryOps {
 

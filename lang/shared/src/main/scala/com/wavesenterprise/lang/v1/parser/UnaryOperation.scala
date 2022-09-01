@@ -5,7 +5,7 @@ import fastparse._
 
 sealed abstract class UnaryOperation {
   val func: String
-  def parser[_:P]: P[Any]
+  def parser[_: P]: P[Any]
   def expr(start: Int, end: Int, op: EXPR): EXPR
 }
 
@@ -19,16 +19,16 @@ object UnaryOperation {
   )
 
   case object NEGATIVE_OP extends UnaryOperation {
-    val func = "-"
-    override def parser[_:P]: P[Any] = P("-" ~ !CharIn("0-9"))
+    val func                          = "-"
+    override def parser[_: P]: P[Any] = P("-" ~ !CharIn("0-9"))
     override def expr(start: Int, end: Int, op: EXPR): EXPR = {
       FUNCTION_CALL(Pos(start, end), PART.VALID(Pos(start, end), "-"), List(op))
     }
   }
 
   case object NOT_OP extends UnaryOperation {
-    val func = "!"
-    override def parser[_:P]: P[Any] = P("!")
+    val func                          = "!"
+    override def parser[_: P]: P[Any] = P("!")
     override def expr(start: Int, end: Int, op: EXPR): EXPR = {
       FUNCTION_CALL(Pos(start, end), PART.VALID(Pos(start, end), "!"), List(op))
     }

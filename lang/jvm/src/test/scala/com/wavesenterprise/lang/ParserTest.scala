@@ -36,7 +36,7 @@ class ParserTest extends PropSpec with ScalaCheckPropertyChecks with Matchers wi
       case '\n' => "\\n"
       case '\r' => "\\r"
       case '\t' => "\\t"
-      case x    => x.toChar.toString
+      case x    => x.toString
     }.mkString
 
   private def cleanOffsets(l: LET): LET =
@@ -57,7 +57,7 @@ class ParserTest extends PropSpec with ScalaCheckPropertyChecks with Matchers wi
     case x: BINARY_OP        => x.copy(position = Pos(0, 0), a = cleanOffsets(x.a), b = cleanOffsets(x.b))
     case x: IF               => x.copy(position = Pos(0, 0), cond = cleanOffsets(x.cond), ifTrue = cleanOffsets(x.ifTrue), ifFalse = cleanOffsets(x.ifFalse))
     case x: BLOCK            => x.copy(position = Pos(0, 0), let = cleanOffsets(x.let), body = cleanOffsets(x.body))
-    case x: FUNCTION_CALL    => x.copy(position = Pos(0, 0), name = cleanOffsets(x.name), args = x.args.map(cleanOffsets(_)))
+    case x: FUNCTION_CALL    => x.copy(position = Pos(0, 0), name = cleanOffsets(x.name), args = x.args.map(cleanOffsets))
     case _                   => throw new NotImplementedError(s"toString for ${expr.getClass.getSimpleName}")
   }
 
@@ -161,7 +161,7 @@ class ParserTest extends PropSpec with ScalaCheckPropertyChecks with Matchers wi
   }
 
   property("literal too long") {
-    import Global.MaxLiteralLength
+    import WavesGlobal.MaxLiteralLength
     val longLiteral = "A" * (MaxLiteralLength + 1)
     val to          = 8 + MaxLiteralLength
     parse(s"base58'$longLiteral'") shouldBe
