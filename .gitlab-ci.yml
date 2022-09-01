@@ -1,0 +1,24 @@
+image: "node:16-slim"
+
+stages:
+ - publish
+
+before_script:
+  - apt-get update && apt-get install git -y
+
+publish:
+ stage: publish
+ script:
+    # Конфигурация git
+    - git config --global user.email support@wavesenterprise.com;
+    - git config --global user.name wavesenterprise;
+    #   
+    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+    - yarn
+    - yarn publish --new-version ${VERSION}
+ tags:
+   - wavesenterprise
+ only:
+   variables:
+     - $VERSION
+
