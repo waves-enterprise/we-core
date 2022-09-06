@@ -60,6 +60,8 @@ inThisBuild(
   )
 )
 
+ThisBuild / versionScheme := Some("semver-spec")
+
 /**
   * You have to put your credentials in a local file ~/.sbt/.credentials
   * File structure:
@@ -84,7 +86,7 @@ credentials += {
       Credentials(localCredentialsFile)
 
     case _ =>
-      val localCredentialsFile = Path.userHome / ".sbt" / "sonatype_credentials"
+      val localCredentialsFile = Path.userHome / ".sbt" / ".sonatype-credentials"
       println(s"Going to use ${localCredentialsFile.getAbsolutePath} as credentials for s01.oss.sonatype.org")
       Credentials(localCredentialsFile)
   }
@@ -170,10 +172,6 @@ scalacOptions ++= Seq(
   "-language:postfixOps"
 )
 
-Test / fork := true
-Test / parallelExecution := true
-Test / javaOptions ++= Seq("-Dnode.crypto.type=WAVES")
-
 inConfig(Compile)(
   Seq(
     packageDoc / publishArtifact := !isSnapshotVersion.value,
@@ -185,8 +183,10 @@ inConfig(Compile)(
 inConfig(Test)(
   Seq(
     logBuffered := false,
+    fork := true,
     parallelExecution := true,
     testListeners := Seq.empty,
+    javaOptions ++= Seq("-Dnode.crypto.type=WAVES"),
     testOptions += Tests.Argument("-oIDOF", "-u", "target/test-reports"),
     testOptions += Tests.Setup({ _ =>
       sys.props("sbt-testing") = "true"
@@ -234,13 +234,10 @@ lazy val lang =
 lazy val langJS = lang.js
 lazy val langJVM = lang.jvm
   .dependsOn(crypto)
-  .dependsOn(utils)
-  .aggregate(crypto, utils)
+  .aggregate(crypto)
   .settings(
     moduleName := "we-lang",
     publishTo := publishingRepo.value,
-    publishConfiguration := publishConfiguration.value.withOverwrite(true),
-    publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
     Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
 
@@ -252,8 +249,8 @@ lazy val utils = project
 
 lazy val models = project
   .enablePlugins(TxSchemePlugin)
-  .dependsOn(crypto, langJVM, grpcProtobuf, transactionProtobuf)
-  .aggregate(crypto, langJVM, grpcProtobuf, transactionProtobuf)
+  .dependsOn(langJVM, grpcProtobuf)
+  .aggregate(langJVM, grpcProtobuf)
   .settings(
     publishTo := publishingRepo.value,
     Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
@@ -275,8 +272,6 @@ lazy val testCore: Project = (project in file("test-core"))
     libraryDependencies ++= Seq(Dependencies.commonsLang, Dependencies.netty).flatten,
     scalacOptions += "-Yresolve-term-conflict:object",
     publishTo := publishingRepo.value,
-    publishConfiguration := publishConfiguration.value.withOverwrite(true),
-    publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
     Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
 
@@ -295,37 +290,13 @@ lazy val grpcProtobuf = (project in file("grpc-protobuf"))
 lazy val transactionProtobuf = (project in file("transaction-protobuf"))
   .enablePlugins(TxSchemeProtoPlugin, AkkaGrpcPlugin)
   .settings(
+    version := s"$grpcProtobufVersion-${version.value}",
     moduleName := "we-transaction-protobuf",
     scalacOptions += "-Yresolve-term-conflict:object",
     libraryDependencies ++= Dependencies.protobuf,
     publishTo := publishingRepo.value,
-    publishConfiguration := publishConfiguration.value.withOverwrite(true),
-    publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
     Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
-
-lazy val typeScriptZipTask = taskKey[File]("archive-typescript")
-
-lazy val typeScriptZipSetting: Def.Setting[Task[File]] = typeScriptZipTask := {
-  val tsDirectory: File = new sbt.File("./transactions-factory")
-  val zipName           = s"we-transaction_typescript_${(transactionProtobuf / version).value}.zip"
-  IO.delete((tsDirectory * "we-transaction_typescript_*.zip").get)
-
-  val filesToZip: Set[(File, String)] = Set(
-    tsDirectory \ "src" \ "Transactions.ts",
-    tsDirectory \ "src" \ "constants.ts",
-    tsDirectory \ "tests" \ "Tests.ts"
-  ).flatMap(_.get())
-    .map { file =>
-      (file, tsDirectory.toURI.relativize(file.toURI).getPath)
-    }
-
-  val outputZip = new sbt.File(tsDirectory, zipName)
-  println(s"Typescript archive has been created: '${outputZip.getAbsolutePath}'")
-  IO.zip(filesToZip, outputZip, None)
-
-  outputZip
-}
 
 lazy val protobufZipTask = taskKey[File]("archive-protobuf")
 
@@ -337,7 +308,7 @@ lazy val protobufZipSetting: Def.Setting[Task[File]] = protobufZipTask := {
   val grpcProtoDir = (grpcProtobuf / sourceDirectory).value / "main" / "protobuf"
   val zipName      = s"we_protobuf_${version.value}.zip"
 
-  IO.delete(new sbt.File("./target/") * "we_protobuf_*.zip" get)
+  IO.delete((new sbt.File("./target/") * "we_protobuf_*.zip").get)
 
   val filesToZip = for {
     pathFinder    <- Set(txProtoDir, grpcProtoDir)
@@ -362,35 +333,16 @@ lazy val transactionTypeScript = (project in file("transactions-factory"))
 lazy val protobufArchives = (project in file("we-transaction-protobuf"))
   .dependsOn(grpcProtobuf)
   .settings(
-    name := "we-transaction-protobuf-archive",
-    publish / skip := !isSnapshotVersion.value,
+    version := s"$grpcProtobufVersion-${version.value}",
+    name := "we-protobuf-archive",
     publishTo := publishingRepo.value,
     Compile / packageSrc / publishArtifact := false,
     Compile / packageBin / publishArtifact := false,
-    Compile / packageDoc / publishArtifact := false,
+    Compile / packageDoc / publishArtifact := !isSnapshotVersion.value,
     protobufZipSetting,
     Compile / protobufZipTask / artifact ~= ((art: Artifact) => art.withType("zip").withExtension("zip")),
     addArtifact(Compile / protobufZipTask / artifact, protobufZipTask)
   )
-
-lazy val typescriptArchives = (project in file("we-transaction-typescript"))
-  .dependsOn(transactionTypeScript)
-  .settings(
-    name := "we-transaction-typescript-archive",
-    publishTo := publishingRepo.value,
-    Compile / packageSrc / publishArtifact := false,
-    Compile / packageBin / publishArtifact := false,
-    Compile / packageDoc / publishArtifact := false,
-    publishMavenStyle := false,
-    typeScriptZipSetting,
-    artifact ~= ((art: Artifact) => art.withType("zip").withExtension("zip")),
-    addArtifact(artifact, typeScriptZipTask)
-  )
-
-addCommandAlias(
-  "compileAll",
-  "; clean; transactionProtobuf/compile; compile; test:compile"
-)
 
 lazy val isSnapshotVersion: Def.Initialize[Boolean] = version(_ endsWith "-SNAPSHOT")
 
@@ -403,9 +355,8 @@ lazy val publishingRepo: Def.Initialize[Some[Resolver]] = isSnapshotVersion {
 
 lazy val core = project
   .in(file("."))
-  .dependsOn(models)
-  .dependsOn(testCore % "test->test")
-  .aggregate(grpcProtobuf, transactionProtobuf, transactionTypeScript, crypto, models, utils)
+  .dependsOn(models, testCore % "test->test")
+  .aggregate(transactionTypeScript, testCore, protobufArchives)
   .settings(
     moduleName := "we-core",
     addCompilerPlugin(Dependencies.kindProjector),

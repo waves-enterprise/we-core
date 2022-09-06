@@ -43,7 +43,7 @@ test-core:
   <<: *create-environment
   stage: test
   script:
-    - sbt -mem 2048 test lang/test
+    - sbt -mem 2048 test
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
@@ -64,9 +64,9 @@ publish-nexus-artifacts:
     - compile
     - test-core
   script:
-    - cat "$SBT_CREDENTIALS_SONATYPE" > /root/.sbt/sonatype_credentials
+    - cat "$SBT_CREDENTIALS_SONATYPE" > /root/.sbt/.sonatype-credentials
     - echo $PGP_KEY | base64 --decode > pgp.key && gpg --batch --import pgp.key
-    - sbt -mem 2048 ";core/publishSigned;testCore/publishSigned;protobufArchives/publishSigned"
+    - sbt -mem 2048 core/publishSigned
   cache: [ ]
   only:
     - tags
