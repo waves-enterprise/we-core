@@ -1,7 +1,7 @@
 package com.wavesenterprise.serialization
 
 import com.google.common.io.ByteArrayDataOutput
-import com.google.common.primitives.{Ints, Shorts}
+import com.google.common.primitives.{Ints, Longs, Shorts}
 import com.wavesenterprise.state.ByteStr
 
 import java.io.ByteArrayInputStream
@@ -147,6 +147,19 @@ object BinarySerializer {
     val cert    = factory.generateCertificate(new ByteArrayInputStream(certBytes))
     cert.asInstanceOf[X509Certificate]
   }
+
+  @inline
+  def parseLong(bytes: Array[Byte], offset: Offset = 0): (Long, Offset) =
+    Longs.fromBytes(
+      bytes(offset),
+      bytes(offset + 1),
+      bytes(offset + 2),
+      bytes(offset + 3),
+      bytes(offset + 4),
+      bytes(offset + 5),
+      bytes(offset + 6),
+      bytes(offset + 7)
+    ) -> (offset + Longs.BYTES)
 
   private[serialization] def byteCountWriter(count: Int, output: ByteArrayDataOutput): Unit = {
     require(count.isValidByte)

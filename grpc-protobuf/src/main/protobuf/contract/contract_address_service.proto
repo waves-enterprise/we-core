@@ -35,11 +35,11 @@ message AddressDataResponse {
 
 message AssetBalanceRequest {
   bytes address = 1;
-  google.protobuf.BytesValue assetId = 2;
+  google.protobuf.BytesValue asset_id = 2;
 }
 
 message AssetBalanceResponse {
-  google.protobuf.BytesValue assetId = 1;
+  google.protobuf.BytesValue assed_id = 1;
   int64 amount = 2;
   int32 decimals = 3;
 }

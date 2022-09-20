@@ -332,6 +332,22 @@ const PolicyDataHashV3 = {
   atomicBadge: new AtomicBadge(false)
 }
 
+const CreateContractV5 = {
+  tx_type: new TxType(true, TRANSACTION_TYPES.CreateContract),
+  version: new TxVersion(true, TRANSACTION_VERSIONS.V5),
+  senderPublicKey: new Base58(true),
+  image: new StringWithLength(true),
+  imageHash: new StringWithLength(true),
+  contractName: new StringWithLength(true),
+  params: new List(DockerParamEntry),
+  fee: new Long(true),
+  timestamp: new Long(true),
+  feeAssetId: new AssetId(false),
+  atomicBadge: new AtomicBadge(false),
+  validationPolicy: new ValidationPolicy(true),
+  apiVersion: new ContractApiVersion(true)
+}
+
 const CreateContract = {
   tx_type: new TxType(true, TRANSACTION_TYPES.CreateContract),
   version: new TxVersion(true, TRANSACTION_VERSIONS.V1),
@@ -385,6 +401,19 @@ const CreateContractV4 = {
   atomicBadge: new AtomicBadge(false),
   validationPolicy: new ValidationPolicy(true),
   apiVersion: new ContractApiVersion(true)
+}
+
+const CallContractV5 = {
+  tx_type: new TxType(true, TRANSACTION_TYPES.CallContract),
+  version: new TxVersion(true, TRANSACTION_VERSIONS.V5),
+  senderPublicKey: new Base58(true),
+  contractId: new Base58WithLength(true),
+  params: new List(DockerParamEntry),
+  fee: new Long(true),
+  timestamp: new Long(true),
+  contractVersion: new Integer(true),
+  feeAssetId: new AssetId(false),
+  atomicBadge: new AtomicBadge(false)
 }
 
 const CallContract = {
@@ -593,12 +622,14 @@ export const TRANSACTIONS = {
     V3: createTransactionsFactory(PolicyDataHashV3)
   },
   CreateContract: {
+    V5: createTransactionsFactory(CreateContractV5),
     V1: createTransactionsFactory(CreateContract),
     V2: createTransactionsFactory(CreateContractV2),
     V3: createTransactionsFactory(CreateContractV3),
     V4: createTransactionsFactory(CreateContractV4)
   },
   CallContract: {
+    V5: createTransactionsFactory(CallContractV5),
     V1: createTransactionsFactory(CallContract),
     V2: createTransactionsFactory(CallContractV2),
     V3: createTransactionsFactory(CallContractV3),

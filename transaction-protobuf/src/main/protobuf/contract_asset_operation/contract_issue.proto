@@ -1,0 +1,17 @@
+syntax = "proto3";
+package wavesenterprise;
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.transaction.protobuf.docker";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+message ContractIssue {
+  string asset_id = 1;
+  string name = 2;
+  string description = 3;
+  int64 quantity = 4;
+  int32 decimals = 5;
+  bool is_reissuable = 6;
+  int32 nonce = 7;
+}

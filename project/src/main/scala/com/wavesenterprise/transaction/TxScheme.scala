@@ -5,7 +5,7 @@ import com.wavesenterprise.transaction.generator.base.EssentialFields._
 import com.wavesenterprise.transaction.generator.base.FieldDefinitionSyntax._
 import com.wavesenterprise.transaction.generator.base.FieldGenerationOption.{Validation, _}
 import com.wavesenterprise.transaction.generator.base.FieldType._
-import com.wavesenterprise.transaction.generator.base.{BinaryHeaderType, BlockchainFeature, _}
+import com.wavesenterprise.transaction.generator.base._
 import enumeratum._
 
 import scala.collection.immutable
@@ -524,7 +524,7 @@ object TxScheme extends Enum[TxScheme] {
       extends TxScheme(
         packageName = dockerTxPackage,
         typeId = 103,
-        supportedVersions = Set(1, 2, 3, 4),
+        supportedVersions = Set(1, 2, 3, 4, 5),
         fields = Seq(
           senderField,
           "image"        as SHORT_STRING                    -> Validation(f => s"validateImage($f)"),
@@ -534,10 +534,11 @@ object TxScheme extends Enum[TxScheme] {
           "params"       as SHORT_LIST(CONTRACT_DATA_ENTRY) -> Set(Override, Validation(f => s"validateParams($f)")),
           feeField,
           timestampField,
-          "feeAssetId"       as ASSET_ID.?           -> Set(Override, InConstructor(2, 3, 4)),
-          "atomicBadge"      as OPTION(ATOMIC_BADGE) -> Set(Override, InConstructor(3, 4)),
-          "validationPolicy" as VALIDATION_POLICY    -> Set(InConstructor(4), Validation(f => s"validateValidationPolicy($f)")),
-          "apiVersion"       as CONTRACT_API_VERSION -> InConstructor(4),
+          "feeAssetId"       as ASSET_ID.?                       -> Set(Override, InConstructor(2, 3, 4, 5)),
+          "atomicBadge"      as OPTION(ATOMIC_BADGE)             -> Set(Override, InConstructor(3, 4, 5)),
+          "validationPolicy" as VALIDATION_POLICY                -> Set(InConstructor(4, 5), Validation(f => s"validateValidationPolicy($f)")),
+          "apiVersion"       as CONTRACT_API_VERSION             -> InConstructor(4, 5),
+          "payments"         as SHORT_LIST(CONTRACT_TRANSFER_IN) -> Set(Override, InConstructor(5)),
           proofsField
         ),
         ensures = Seq("validateSize"),
@@ -560,64 +561,100 @@ object TxScheme extends Enum[TxScheme] {
               BlockchainFeature.SponsoredFeesSupport,
               BlockchainFeature.ContractValidationsSupport
             )
+          case 5 =>
+            Seq(
+              BlockchainFeature.ContractsGrpcSupport,
+              BlockchainFeature.AtomicTransactionSupport,
+              BlockchainFeature.SponsoredFeesSupport,
+              BlockchainFeature.ContractValidationsSupport,
+              BlockchainFeature.ContractNativeTokenSupport
+            )
         },
         sealedTraitExtensions = Seq("ExecutableTransaction"),
         caseClassCompanionExtensions = Seq("ContractTransactionValidation"),
-        additionalImports = Set("com.wavesenterprise.transaction.AtomicInnerTransaction"),
-        versionExtensions = { case 3 | 4 => Seq("AtomicInnerTransaction") }
+        additionalImports = Set(
+          "com.wavesenterprise.transaction.AtomicInnerTransaction",
+          "com.wavesenterprise.transaction.PaymentsV1ToContract",
+          "com.wavesenterprise.transaction.ValidationPolicyAndApiVersionSupport"
+        ),
+        versionExtensions = {
+          case 3 => Seq("AtomicInnerTransaction")
+          case 4 => Seq("AtomicInnerTransaction", "ValidationPolicyAndApiVersionSupport")
+          case 5 => Seq("AtomicInnerTransaction", "ValidationPolicyAndApiVersionSupport", "PaymentsV1ToContract")
+        }
       )
 
   case object CallContractTransaction
       extends TxScheme(
         packageName = dockerTxPackage,
         typeId = 104,
-        supportedVersions = Set(1, 2, 3, 4),
+        supportedVersions = Set(1, 2, 3, 4, 5),
         fields = Seq(
           senderField,
           "contractId" as SHORT_BYTE_STR,
           "params"     as SHORT_LIST(CONTRACT_DATA_ENTRY) -> Set(Override, Validation(f => s"validateParams($f)")),
           feeField,
           timestampField,
-          "contractVersion" as INT                  -> Set(Override, InBody({ case 1 => "1" }), InConstructor(2, 3, 4)),
-          "feeAssetId"      as ASSET_ID.?           -> Set(Override, InConstructor(3, 4)),
-          "atomicBadge"     as OPTION(ATOMIC_BADGE) -> Set(Override, InConstructor(4)),
+          "contractVersion" as INT                              -> Set(Override, InBody({ case 1 => "1" }), InConstructor(2, 3, 4, 5)),
+          "feeAssetId"      as ASSET_ID.?                       -> Set(Override, InConstructor(3, 4, 5)),
+          "atomicBadge"     as OPTION(ATOMIC_BADGE)             -> Set(Override, InConstructor(4, 5)),
+          "payments"        as SHORT_LIST(CONTRACT_TRANSFER_IN) -> Set(Override, InConstructor(5)),
           proofsField
         ),
         ensures = Seq("validateSize"),
         versionToBlockchainFeatures = {
-          case 3 => Seq(BlockchainFeature.SponsoredFeesSupport)
-          case 4 => Seq(BlockchainFeature.SponsoredFeesSupport, BlockchainFeature.AtomicTransactionSupport)
+          case 3 =>
+            Seq(BlockchainFeature.SponsoredFeesSupport)
+          case 4 =>
+            Seq(BlockchainFeature.SponsoredFeesSupport, BlockchainFeature.AtomicTransactionSupport)
+          case 5 =>
+            Seq(BlockchainFeature.SponsoredFeesSupport, BlockchainFeature.AtomicTransactionSupport, BlockchainFeature.ContractNativeTokenSupport)
         },
         sealedTraitExtensions = Seq("ExecutableTransaction"),
         caseClassCompanionExtensions = Seq("ContractTransactionValidation"),
-        additionalImports = Set("com.wavesenterprise.transaction.AtomicInnerTransaction"),
-        versionExtensions = { case 4 => Seq("AtomicInnerTransaction") }
+        additionalImports = Set(
+          "com.wavesenterprise.transaction.AtomicInnerTransaction",
+          "com.wavesenterprise.transaction.PaymentsV1ToContract"
+        ),
+        versionExtensions = {
+          case 4 => Seq("AtomicInnerTransaction")
+          case 5 => Seq("AtomicInnerTransaction", "PaymentsV1ToContract")
+        }
       )
 
   case object ExecutedContractTransaction
       extends TxScheme(
         packageName = dockerTxPackage,
         typeId = 105,
-        supportedVersions = Set(1, 2),
+        supportedVersions = Set(1, 2, 3),
         fields = Seq(
           senderField,
           "tx"               as EXECUTABLE_TRANSACTION,
           "results"          as SHORT_LIST(CONTRACT_DATA_ENTRY) -> Set(Override, Validation(f => s"validateResults($f)")),
-          "resultsHash"      as SHORT_BYTE_STR -> InConstructor(2),
-          "validationProofs" as SHORT_LIST(VALIDATION_PROOF) -> InConstructor(2),
+          "resultsHash"      as SHORT_BYTE_STR -> InConstructor(2, 3),
+          "validationProofs" as SHORT_LIST(VALIDATION_PROOF) -> InConstructor(2, 3),
           timestampField,
           feeField.copy(versionToBodyValue = { case _ => "0" }),
-          "atomicBadge" as OPTION(ATOMIC_BADGE) -> Set(Override, InBody({ case _ => "None" })),
+          "atomicBadge"     as OPTION(ATOMIC_BADGE)                 -> Set(Override, InBody({ case _ => "None" })),
+          "assetOperations" as SHORT_LIST(CONTRACT_ASSET_OPERATION) -> InConstructor(3),
           proofsField
         ),
         ensures = Seq("validateSize"),
-        versionToBlockchainFeatures = { case 2 => Seq(BlockchainFeature.ContractValidationsSupport) },
+        versionToBlockchainFeatures = {
+          case 2 => Seq(BlockchainFeature.ContractValidationsSupport)
+          case 3 => Seq(BlockchainFeature.ContractValidationsSupport, BlockchainFeature.ContractNativeTokenSupport)
+        },
         caseClassCompanionExtensions = Seq("ContractTransactionValidation"),
         cacheSerializable = false,
-        additionalImports = Set("com.wavesenterprise.transaction.AtomicInnerTransaction"),
+        additionalImports = Set(
+          "com.wavesenterprise.transaction.AtomicInnerTransaction",
+          "com.wavesenterprise.transaction.ValidatorProvable"
+        ),
         sealedTraitExtensions = Seq("AtomicInnerTransaction"),
-        unsupportedTypeScriptVersions = Set(1, 2),
-        unusedImports = Set("com.wavesenterprise.serialization.ModelsBinarySerializer")
+        unsupportedTypeScriptVersions = Set(1, 2, 3),
+        versionExtensions = {
+          case version if version >= 2 => Seq("ValidatorProvable")
+        }
       )
 
   case object DisableContractTransaction
@@ -672,8 +709,14 @@ object TxScheme extends Enum[TxScheme] {
         },
         sealedTraitExtensions = Seq("ExecutableTransaction"),
         caseClassCompanionExtensions = Seq("ContractTransactionValidation"),
-        additionalImports = Set("com.wavesenterprise.transaction.AtomicInnerTransaction"),
-        versionExtensions = { case 3 | 4 => Seq("AtomicInnerTransaction") }
+        additionalImports = Set(
+          "com.wavesenterprise.transaction.AtomicInnerTransaction",
+          "com.wavesenterprise.transaction.ValidationPolicyAndApiVersionSupport"
+        ),
+        versionExtensions = {
+          case 3 => Seq("AtomicInnerTransaction")
+          case 4 => Seq("AtomicInnerTransaction", "ValidationPolicyAndApiVersionSupport")
+        }
       )
 
   // endregion Docker
@@ -717,9 +760,9 @@ object TxScheme extends Enum[TxScheme] {
           case 1 =>
             Seq(
               BlockchainFeature.EvalFeature("""Seq((script.map(_.version.value) match {
-                                              |  case Some(1) | None => BlockchainFeature.SmartAccounts
-                                              |  case _              => BlockchainFeature.SmartAccountTrading
-                                              |}))""".stripMargin)
+                                            |  case Some(1) | None => BlockchainFeature.SmartAccounts
+                                            |  case _              => BlockchainFeature.SmartAccountTrading
+                                            |}))""".stripMargin)
             )
         }
       )
