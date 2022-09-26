@@ -9,6 +9,6 @@ option go_package = "wavesenterprise.com/weproto";
 import "google/protobuf/wrappers.proto";
 
 message ContractTransferIn {
-  google.protobuf.BytesValue asset_id = 1;
+  google.protobuf.StringValue asset_id = 1;
   int64 amount = 2;
 }

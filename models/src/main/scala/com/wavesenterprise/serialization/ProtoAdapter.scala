@@ -182,14 +182,16 @@ object ProtoAdapter {
 
   def toProto(contractTransferIn: ContractTransferInV1): PbContractTransferIn =
     PbContractTransferIn(
-      contractTransferIn.assetId.map(_.arr).map(ProtoAdapter.byteArrayToByteString),
+      contractTransferIn.assetId.map(_.base58),
       contractTransferIn.amount
     )
 
-  def fromProto(protoContractTransferIn: PbContractTransferIn): Either[ValidationError, ContractTransferInV1] =
-    for {
-      assetId <- protoContractTransferIn.assetId.traverse(byteStrFromProto)
-    } yield ContractTransferInV1(assetId, protoContractTransferIn.amount)
+  def fromProto(protoContractTransferIn: PbContractTransferIn): Either[ValidationError, ContractTransferInV1] = {
+    protoContractTransferIn.assetId
+      .traverse(str => ByteStr.decodeBase58(str).toEither)
+      .leftMap(err => GenericError(s"Error decoding 'assetId' of ContractTransferIn asset operation: $err"))
+      .map(assetId => ContractTransferInV1(assetId, protoContractTransferIn.amount))
+  }
 
   def toProto(validationProof: ValidationProof): PbValidationProof = {
     PbValidationProof(

@@ -33,7 +33,7 @@ message CalculateAssetIdRequest {
 }
 
 message ContractBalancesRequest {
-  repeated AssetId assets_ids = 1;
+  repeated google.protobuf.StringValue assets_ids = 1;
 }
 
 message ContractBalancesResponse {
@@ -41,7 +41,7 @@ message ContractBalancesResponse {
 }
 
 message ContractBalanceResponse {
-  AssetId asset_id = 1;
+  google.protobuf.StringValue asset_id = 1;
   int64 amount = 2;
   int32 decimals = 3;
 }
