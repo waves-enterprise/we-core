@@ -108,35 +108,39 @@ object CryptoSettings extends ScorexLogging {
          """.stripMargin
   }
 
-  private def parsePkiSettings(cryptoCursor: ConfigObjectCursor): Either[ConfigReaderFailures, PkiCryptoSettings] = {
-    for {
-      pkiCursor <- cryptoCursor.atKey("pki").flatMap(_.asObjectCursor)
-      pkiMode   <- pkiCursor.atKey("mode").flatMap(PkiMode.configReader.from)
-      pkiSettings <- pkiMode match {
-        case PkiMode.OFF => Right(DisabledPkiSettings)
-        case PkiMode.ON =>
-          for {
-            crlChecksEnabled <- parseCrlChecks(pkiCursor)
-            _ <- Either.cond(
-              crlChecksEnabled,
-              Unit,
-              ConfigReaderFailures {
-                ThrowableFailure(new IllegalStateException("Setting 'crl-checks-enabled = false' is forbidden for 'pki.mode = ON'"), None)
+  private def parsePkiSettings(cryptoCursor: ConfigObjectCursor): Either[ConfigReaderFailures, PkiCryptoSettings] =
+    cryptoCursor.atKey("pki").flatMap(_.asObjectCursor) match {
+      case Left(failures) =>
+        log.trace(s"$failures, disabled pki settings will be used")
+        Right(DisabledPkiSettings)
+      case Right(pkiCursor) =>
+        for {
+          pkiMode <- pkiCursor.atKey("mode").flatMap(PkiMode.configReader.from)
+          pkiSettings <- pkiMode match {
+            case PkiMode.OFF => Right(DisabledPkiSettings)
+            case PkiMode.ON =>
+              for {
+                crlChecksEnabled <- parseCrlChecks(pkiCursor)
+                _ <- Either.cond(
+                  crlChecksEnabled,
+                  Unit,
+                  ConfigReaderFailures {
+                    ThrowableFailure(new IllegalStateException("Setting 'crl-checks-enabled = false' is forbidden for 'pki.mode = ON'"), None)
+                  }
+                )
+                requiredOids <- parseRequiredOIds(pkiCursor)
+              } yield EnabledPkiSettings(requiredOids, crlChecksEnabled)
+            case PkiMode.TEST =>
+              for {
+                crlChecksEnabled <- parseCrlChecks(pkiCursor)
+                requiredOids     <- parseRequiredOIds(pkiCursor)
+              } yield {
+                log.warn("WARNING: 'node.crypto.pki.mode' is set to 'TEST'. PKI functionality is running in a testing mode.")
+                TestPkiSettings(requiredOids, crlChecksEnabled)
               }
-            )
-            requiredOids <- parseRequiredOIds(pkiCursor)
-          } yield EnabledPkiSettings(requiredOids, crlChecksEnabled)
-        case PkiMode.TEST =>
-          for {
-            crlChecksEnabled <- parseCrlChecks(pkiCursor)
-            requiredOids     <- parseRequiredOIds(pkiCursor)
-          } yield {
-            log.warn("WARNING: 'node.crypto.pki.mode' is set to 'TEST'. PKI functionality is running in a testing mode.")
-            TestPkiSettings(requiredOids, crlChecksEnabled)
           }
-      }
-    } yield pkiSettings
-  }
+        } yield pkiSettings
+    }
 
   private def parseRequiredOIds(cursor: ConfigObjectCursor): Either[ConfigReaderFailures, Set[ExtendedKeyUsage]] =
     cursor
