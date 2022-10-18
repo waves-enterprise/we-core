@@ -1,0 +1,28 @@
+syntax = "proto3";
+package wavesenterprise;
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.protobuf.service.contract";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+service BlockService {
+    rpc GetBlockHeader (BlockHeaderRequest) returns (BlockHeader);
+}
+
+message BlockHeaderRequest {
+    oneof block_ref {
+        string signature = 101;
+        int64 height = 102;
+    }
+}
+
+message BlockHeader {
+    int32 version = 1;
+    int64 height = 2;
+    string block_signature = 3;
+    string reference = 4;
+    string miner_address = 5;
+    int32 tx_count = 6;
+    int64 timestamp = 8;
+}
