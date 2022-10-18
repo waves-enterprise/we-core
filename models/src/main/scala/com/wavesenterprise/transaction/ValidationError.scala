@@ -1,5 +1,7 @@
 package com.wavesenterprise.transaction
 
+import cats.implicits._
+import cats.kernel.Semigroup
 import com.google.common.base.Throwables
 import com.wavesenterprise.account.{Address, Alias, PublicKeyAccount}
 import com.wavesenterprise.acl.{NonEmptyRole, Role}
@@ -19,7 +21,7 @@ import com.wavesenterprise.transaction.assets.exchange.Order
 import com.wavesenterprise.transaction.docker.{ExecutableTransaction, UpdateContractTransaction}
 import com.wavesenterprise.utils.StringUtilites.ValidateAsciiAndRussian.{mapToString, stringToMap}
 
-import scala.util.Either
+import java.security.PublicKey
 
 trait ValidationError
 
@@ -48,7 +50,6 @@ object ValidationError {
   case class ScriptParseError(message: String)                                      extends ValidationError
   case class AlreadyInProcessing(txId: ByteStr)                                     extends ValidationError
   case class AlreadyInTheState(txId: ByteStr, txHeight: Int)                        extends ValidationError
-  case class AccountBalanceError(errs: Map[Address, String])                        extends ValidationError
   case class AliasDoesNotExist(a: Alias)                                            extends ValidationError
   case class AliasIsDisabled(a: Alias)                                              extends ValidationError
   case class OrderValidationError(order: Order, err: String)                        extends ValidationError
@@ -69,6 +70,13 @@ object ValidationError {
   case class CertificatePathBuildError(publicKey: PublicKeyAccount, reason: String) extends ValidationError
   case class CertificateParseError(reason: String)                                  extends ValidationError
 
+  case class BalanceErrors(accountErrs: Map[Address, String] = Map.empty, contractErrs: Map[ByteStr, String] = Map.empty) extends ValidationError
+  implicit val balanceErrorsSemigroup: Semigroup[BalanceErrors] = (lhs: BalanceErrors, rhs: BalanceErrors) => {
+    val accountErrors  = lhs.accountErrs.combine(rhs.accountErrs)
+    val contractErrors = lhs.contractErrs.combine(rhs.contractErrs)
+    BalanceErrors(accountErrors, contractErrors)
+  }
+
   object GenericError {
     def apply(ex: Throwable): GenericError = new GenericError(Throwables.getStackTraceAsString(ex))
   }
@@ -79,6 +87,17 @@ object ValidationError {
 
   case class InvalidSignature(s: Signed, details: Option[InvalidSignature] = None) extends ValidationError {
     override def toString: String = s"InvalidSignature(${s.toString + " reason: " + details})"
+  }
+
+  case class InsufficientFunds(assetId: Option[AssetId], actualBalance: Long, requestedAmount: Long) extends ValidationError {
+    override def toString: String = {
+      val assetNameQuoted = assetId match {
+        case Some(assetId) => s"'${assetId.base58}' asset"
+        case None          => "WEST"
+      }
+      val deltaAmount = actualBalance - requestedAmount
+      s"Insufficient $assetNameQuoted balance: current balance is '$actualBalance', but trying to spend '$requestedAmount' (delta: '$deltaAmount')"
+    }
   }
 
   trait HasScriptType extends ValidationError {

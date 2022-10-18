@@ -13,10 +13,25 @@ import com.wavesenterprise.state._
 import com.wavesenterprise.transaction.ValidationError.GenericError
 import com.wavesenterprise.transaction._
 import com.wavesenterprise.transaction.docker._
+import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation.{
+  ContractBurnV1,
+  ContractIssueV1,
+  ContractReissueV1,
+  ContractTransferOutV1
+}
+import com.wavesenterprise.transaction.docker.assets.{ContractAssetOperation, ContractTransferInV1}
 import com.wavesenterprise.transaction.protobuf.ValidationPolicy.Type
+import com.wavesenterprise.transaction.protobuf.docker.{
+  ContractBurn,
+  ContractIssue,
+  ContractReissue,
+  ContractTransferOut,
+  ContractTransferIn => PbContractTransferIn
+}
 import com.wavesenterprise.transaction.protobuf.{
   AtomicBadge => PbAtomicBadge,
   ContractApiVersion => PbContractApiVersion,
+  ContractAssetOperation => PbContractAssetOperation,
   DataEntry => PbDataEntry,
   ExecutableTransaction => PbExecutableTransaction,
   OpType => PbOpType,
@@ -72,6 +87,110 @@ object ProtoAdapter {
       case PbExecutableTransaction.Transaction.UpdateContractTransaction(value) => UpdateContractTransaction.fromProto(protoTx.version, value)
       case PbExecutableTransaction.Transaction.Empty                            => Left(GenericError("Empty executable transaction"))
     }
+  }
+
+  def toProto(contractAssetOperation: ContractAssetOperation): PbContractAssetOperation = {
+    contractAssetOperation match {
+      case o: ContractAssetOperation.ContractIssueV1 =>
+        val innerOperation = ContractIssue(
+          o.assetId.base58,
+          o.name,
+          o.description,
+          o.quantity,
+          o.decimals,
+          o.isReissuable,
+          o.nonce
+        )
+        PbContractAssetOperation(PbContractAssetOperation.Operation.ContractIssue(innerOperation))
+      case o: ContractAssetOperation.ContractReissueV1 =>
+        val innerOperation = ContractReissue(
+          o.assetId.base58,
+          o.quantity,
+          o.isReissuable
+        )
+        PbContractAssetOperation(PbContractAssetOperation.Operation.ContractReissue(innerOperation))
+      case o: ContractAssetOperation.ContractBurnV1 =>
+        val innerOperation = ContractBurn(
+          o.assetId.map(_.base58),
+          o.amount
+        )
+        PbContractAssetOperation(PbContractAssetOperation.Operation.ContractBurn(innerOperation))
+      case o: ContractAssetOperation.ContractTransferOutV1 =>
+        val innerOperation = ContractTransferOut(
+          o.assetId.map(_.base58),
+          o.recipient.stringRepr,
+          o.amount
+        )
+        PbContractAssetOperation(PbContractAssetOperation.Operation.ContractTransferOut(innerOperation))
+    }
+
+  }
+
+  def fromProto(protoContractAssetOperation: PbContractAssetOperation): Either[ValidationError, ContractAssetOperation] = {
+    protoContractAssetOperation.operation match {
+      case PbContractAssetOperation.Operation.Empty =>
+        Left(GenericError(s"Empty contract asset operation value"))
+      case inner: PbContractAssetOperation.Operation.ContractIssue =>
+        val value = inner.value
+        ByteStr
+          .decodeBase58(value.assetId)
+          .toEither
+          .leftMap(err => GenericError(s"Error decoding 'assetId' of ContractIssue asset operation: $err"))
+          .map { decodedAssetId =>
+            ContractIssueV1(
+              decodedAssetId,
+              value.name,
+              value.description,
+              value.quantity,
+              value.decimals.toByte,
+              value.isReissuable,
+              value.nonce.toByte
+            )
+          }
+
+      case inner: PbContractAssetOperation.Operation.ContractReissue =>
+        val value = inner.value
+        ByteStr
+          .decodeBase58(value.assetId)
+          .toEither
+          .leftMap(err => GenericError(s"Error decoding 'assetId' of ContractReissue asset operation: $err"))
+          .map { decodedAssetId =>
+            ContractReissueV1(decodedAssetId, value.quantity, value.isReissuable)
+          }
+
+      case inner: PbContractAssetOperation.Operation.ContractBurn =>
+        val value = inner.value
+        value.assetId
+          .traverse(str => ByteStr.decodeBase58(str).toEither)
+          .leftMap(err => GenericError(s"Error decoding 'assetId' of ContractBurn asset operation: $err"))
+          .map { assetIdOpt =>
+            ContractBurnV1(assetIdOpt, value.amount)
+          }
+
+      case inner: PbContractAssetOperation.Operation.ContractTransferOut =>
+        val value = inner.value
+        for {
+          assetIdOpt <- value.assetId
+            .traverse(str => ByteStr.decodeBase58(str).toEither)
+            .leftMap(err => GenericError(s"Error decoding 'assetId' of ContractTransferOut asset operation: $err"))
+          recipient <- AddressOrAlias
+            .fromString(value.recipient)
+            .leftMap(ValidationError.fromCryptoError)
+        } yield ContractTransferOutV1(assetIdOpt, recipient, value.amount)
+    }
+  }
+
+  def toProto(contractTransferIn: ContractTransferInV1): PbContractTransferIn =
+    PbContractTransferIn(
+      contractTransferIn.assetId.map(_.base58),
+      contractTransferIn.amount
+    )
+
+  def fromProto(protoContractTransferIn: PbContractTransferIn): Either[ValidationError, ContractTransferInV1] = {
+    protoContractTransferIn.assetId
+      .traverse(str => ByteStr.decodeBase58(str).toEither)
+      .leftMap(err => GenericError(s"Error decoding 'assetId' of ContractTransferIn asset operation: $err"))
+      .map(assetId => ContractTransferInV1(assetId, protoContractTransferIn.amount))
   }
 
   def toProto(validationProof: ValidationProof): PbValidationProof = {

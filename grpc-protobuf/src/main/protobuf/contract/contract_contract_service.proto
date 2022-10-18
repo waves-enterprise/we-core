@@ -1,13 +1,15 @@
 syntax = "proto3";
 package wavesenterprise;
 
+import "contract_asset_operation.proto";
+import "contract_transfer_in.proto";
+import "data_entry.proto";
+import "google/protobuf/wrappers.proto";
+
 option java_multiple_files = true;
 option java_package = "com.wavesenterprise.protobuf.service.contract";
 option csharp_namespace = "WavesEnterprise";
 option go_package = "wavesenterprise.com/weproto";
-
-import "google/protobuf/wrappers.proto";
-import "data_entry.proto";
 
 service ContractService {
 
@@ -20,6 +22,28 @@ service ContractService {
   rpc GetContractKeys (ContractKeysRequest) returns (ContractKeysResponse);
 
   rpc GetContractKey (ContractKeyRequest) returns (ContractKeyResponse);
+
+  rpc GetContractBalances (ContractBalancesRequest) returns (ContractBalancesResponse);
+
+  rpc CalculateAssetId (CalculateAssetIdRequest) returns (AssetId);
+}
+
+message CalculateAssetIdRequest {
+  int32 nonce = 1;
+}
+
+message ContractBalancesRequest {
+  repeated google.protobuf.StringValue assets_ids = 1;
+}
+
+message ContractBalancesResponse {
+  repeated ContractBalanceResponse assets_balances = 1;
+}
+
+message ContractBalanceResponse {
+  google.protobuf.StringValue asset_id = 1;
+  int64 amount = 2;
+  int32 decimals = 3;
 }
 
 message ConnectionRequest {
@@ -44,6 +68,7 @@ message ContractTransaction {
   bytes proofs = 9;
   int64 timestamp = 10;
   AssetId fee_asset_id = 11;
+  repeated ContractTransferIn payments = 12;
 
   oneof data {
     CreateContractTransactionData create_data = 20;
@@ -64,6 +89,7 @@ message CallContractTransactionData {
 message ExecutionSuccessRequest {
   string tx_id = 1;
   repeated DataEntry results = 2;
+  repeated ContractAssetOperation asset_operations = 3;
 }
 
 message ExecutionErrorRequest {

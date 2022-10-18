@@ -6,6 +6,7 @@ import com.wavesenterprise.crypto
 import com.wavesenterprise.docker.validator.{ValidationPolicy, ValidationPolicyDescriptor}
 import com.wavesenterprise.state.{ByteStr, DataEntry}
 import com.wavesenterprise.transaction.ValidationError.{GenericError, InvalidContractKeys}
+import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation
 import com.wavesenterprise.utils.StringUtilites.ValidateAsciiAndRussian._
 import com.wavesenterprise.transaction.{Transaction, ValidationError}
 
@@ -93,9 +94,10 @@ trait ContractTransactionValidation {
 
 object ContractTransactionValidation {
   //noinspection UnstableApiUsage
-  def resultsHash(results: Seq[DataEntry[_]]): ByteStr = {
+  def resultsHash(results: Seq[DataEntry[_]], assetOps: Seq[ContractAssetOperation] = Seq()): ByteStr = {
     val output = newDataOutput()
     results.sorted.foreach(ContractTransactionEntryOps.writeBytes(_, output))
+    assetOps.foreach(_.writeContractAssetOperationBytes(output))
     ByteStr(crypto.fastHash(output.toByteArray))
   }
 }

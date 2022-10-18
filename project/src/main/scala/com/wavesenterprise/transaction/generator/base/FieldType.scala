@@ -106,7 +106,7 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "Long",
         protoType = "int64",
-        scalaImports = Set("com.google.common.primitives.Longs"),
+        scalaImports = Set("com.wavesenterprise.serialization.BinarySerializer"),
         typeScriptType = Some("Long")
       )
       with BinarySerializableType
@@ -117,7 +117,7 @@ object FieldType extends Enum[FieldType] {
     }
 
     override val binaryReader: BinaryReader = { c =>
-      s"val (${c.field}, ${c.field}End) = Longs.fromBytes(${c.bytes}(${c.offset}), ${c.bytes}(${c.offset} + 1), ${c.bytes}(${c.offset} + 2), ${c.bytes}(${c.offset} + 3), ${c.bytes}(${c.offset} + 4), ${c.bytes}(${c.offset} + 5), ${c.bytes}(${c.offset} + 6), ${c.bytes}(${c.offset} + 7)) -> (${c.offset} + Longs.BYTES)"
+      s"val (${c.field}, ${c.field}End) = BinarySerializer.parseLong(${c.bytes}, ${c.offset})"
     }
   }
 
@@ -498,12 +498,12 @@ object FieldType extends Enum[FieldType] {
       underlay match {
         case u: BinarySerializableType =>
           s"""val (${c.field}, ${c.field}End) = {
-           |  def underlayReader(bytes: Array[Byte], pos: Int): (${underlay.scalaType}, Int) = {
-           |    ${u.binaryReader(BinaryDeserializationContext("bytes", "pos", "result"))}
-           |    result -> resultEnd
-           |  }
-           |  BinarySerializer.parseOption(${c.bytes}, underlayReader, ${c.offset})
-           |}""".stripMargin
+             |  def underlayReader(bytes: Array[Byte], pos: Int): (${underlay.scalaType}, Int) = {
+             |    ${u.binaryReader(BinaryDeserializationContext("bytes", "pos", "result"))}
+             |    result -> resultEnd
+             |  }
+             |  BinarySerializer.parseOption(${c.bytes}, underlayReader, ${c.offset})
+             |}""".stripMargin
         case _ => s"{Underlay type $underlay not implemented BinarySerializableType}"
       }
     }
@@ -553,11 +553,11 @@ object FieldType extends Enum[FieldType] {
       underlay match {
         case u: BinarySerializableType =>
           s"""({
-           |  def underlayWriter(value: ${underlay.scalaType}, output: ByteArrayDataOutput): Unit = {
-           |    ${u.binaryWriter(BinarySerializationContext("output", "value", c.forProof))}
-           |  }
-           |  BinarySerializer.writeShortIterable(${c.field}, underlayWriter, ${c.output})
-           |})""".stripMargin
+             |  def underlayWriter(value: ${underlay.scalaType}, output: ByteArrayDataOutput): Unit = {
+             |    ${u.binaryWriter(BinarySerializationContext("output", "value", c.forProof))}
+             |  }
+             |  BinarySerializer.writeShortIterable(${c.field}, underlayWriter, ${c.output})
+             |})""".stripMargin
         case _ => s"{Underlay type $underlay not implemented BinarySerializableType}"
       }
     }
@@ -1075,6 +1075,72 @@ object FieldType extends Enum[FieldType] {
 
     override val binaryReader: BinaryReader = { c =>
       s"val (${c.field}, ${c.field}End) = ContractApiVersion.fromBytesUnsafe(bytes, ${c.offset})"
+    }
+
+    override val protoToVanillaAdapter: Option[ProtoAdapter] = Some { c =>
+      s"ProtoAdapter.fromProto(${c.field})"
+    }
+
+    override val vanillaToProtoAdapter: Option[ProtoAdapter] = Some { c =>
+      s"ProtoAdapter.toProto(${c.field})"
+    }
+  }
+
+  case object CONTRACT_TRANSFER_IN
+      extends FieldType(
+        scalaType = "ContractTransferInV1",
+        protoType = "ContractTransferIn",
+        isMessageProtoType = true,
+        scalaImports = Set(
+          "com.wavesenterprise.transaction.docker.assets.ContractTransferInV1",
+          "com.wavesenterprise.serialization.BinarySerializer",
+          "com.wavesenterprise.transaction.TransactionParsers",
+          ProtoAdapterImport
+        ),
+        protoImports = Set("contract_transfer_in.proto")
+      )
+      with BinarySerializableType
+      with ProtoCompatibleType {
+
+    override val binaryWriter: BinaryWriter = { c =>
+      s"ContractTransferInV1.writeBytes(${c.field}, ${c.output})"
+    }
+
+    override val binaryReader: BinaryReader = { c =>
+      s"val (${c.field}, ${c.field}End) = ContractTransferInV1.fromBytes(${c.bytes}, ${c.offset})"
+    }
+
+    override val protoToVanillaAdapter: Option[ProtoAdapter] = Some { c =>
+      s"ProtoAdapter.fromProto(${c.field})"
+    }
+
+    override val vanillaToProtoAdapter: Option[ProtoAdapter] = Some { c =>
+      s"ProtoAdapter.toProto(${c.field})"
+    }
+  }
+
+  case object CONTRACT_ASSET_OPERATION
+      extends FieldType(
+        scalaType = "ContractAssetOperation",
+        protoType = "ContractAssetOperation",
+        isMessageProtoType = true,
+        scalaImports = Set(
+          "com.wavesenterprise.transaction.docker.assets.ContractAssetOperation",
+          "com.wavesenterprise.serialization.BinarySerializer",
+          "com.wavesenterprise.transaction.TransactionParsers",
+          ProtoAdapterImport
+        ),
+        protoImports = Set("contract_asset_operation.proto")
+      )
+      with BinarySerializableType
+      with ProtoCompatibleType {
+
+    override val binaryWriter: BinaryWriter = { c =>
+      s"ContractAssetOperation.writeBytes(${c.field}, ${c.output})"
+    }
+
+    override val binaryReader: BinaryReader = { c =>
+      s"val (${c.field}, ${c.field}End) = ContractAssetOperation.fromBytes(${c.bytes}, ${c.offset})"
     }
 
     override val protoToVanillaAdapter: Option[ProtoAdapter] = Some { c =>

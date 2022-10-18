@@ -1,0 +1,21 @@
+syntax = "proto3";
+package wavesenterprise;
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.transaction.protobuf";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+import "contract_asset_operation/contract_issue.proto";
+import "contract_asset_operation/contract_reissue.proto";
+import "contract_asset_operation/contract_burn.proto";
+import "contract_asset_operation/contract_transfer_out.proto";
+
+message ContractAssetOperation {
+  oneof operation {
+    ContractIssue contract_issue = 1;
+    ContractReissue contract_reissue = 2;
+    ContractBurn contract_burn = 3;
+    ContractTransferOut contract_transfer_out = 4;
+  }
+}

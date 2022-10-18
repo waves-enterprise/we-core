@@ -7,6 +7,7 @@ import com.wavesenterprise.crypto
 import com.wavesenterprise.docker.validator.ValidationPolicy
 import com.wavesenterprise.serialization.BinarySerializer
 import com.wavesenterprise.state.ByteStr
+import com.wavesenterprise.transaction.ValidationPolicyAndApiVersionSupport
 import com.wavesenterprise.transaction.docker.{CreateContractTransaction, UpdateContractTransaction, _}
 import com.wavesenterprise.utils.DatabaseUtils.ByteArrayDataOutputExt
 import monix.eval.Coeval
@@ -62,13 +63,13 @@ object ContractInfo {
 
   def apply(tx: CreateContractTransaction): ContractInfo = {
     val validationPolicy = tx match {
-      case tx: CreateContractTransactionV4 => tx.validationPolicy
-      case _                               => ValidationPolicy.Default
+      case tx: ValidationPolicyAndApiVersionSupport => tx.validationPolicy
+      case _                                        => ValidationPolicy.Default
     }
 
     val apiVersion = tx match {
-      case tx: CreateContractTransactionV4 => tx.apiVersion
-      case _                               => ContractApiVersion.Initial
+      case tx: ValidationPolicyAndApiVersionSupport => tx.apiVersion
+      case _                                        => ContractApiVersion.Initial
     }
 
     ContractInfo(Coeval.pure(tx.sender),
@@ -83,13 +84,13 @@ object ContractInfo {
 
   def apply(tx: UpdateContractTransaction, contractInfo: ContractInfo): ContractInfo = {
     val validationPolicy = tx match {
-      case tx: UpdateContractTransactionV4 => tx.validationPolicy
-      case _                               => contractInfo.validationPolicy
+      case tx: ValidationPolicyAndApiVersionSupport => tx.validationPolicy
+      case _                                        => contractInfo.validationPolicy
     }
 
     val apiVersion = tx match {
-      case tx: UpdateContractTransactionV4 => tx.apiVersion
-      case _                               => ContractApiVersion.Initial
+      case tx: ValidationPolicyAndApiVersionSupport => tx.apiVersion
+      case _                                        => ContractApiVersion.Initial
     }
 
     contractInfo.copy(image = tx.image,
