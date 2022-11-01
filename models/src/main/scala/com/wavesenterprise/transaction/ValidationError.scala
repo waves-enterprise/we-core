@@ -100,6 +100,10 @@ object ValidationError {
     }
   }
 
+  case object UnsupportedAssetOperations extends ValidationError {
+    override def toString: String = "Asset operations found, but are not supported"
+  }
+
   trait HasScriptType extends ValidationError {
     def isTokenScript: Boolean
   }
