@@ -1,4 +1,3 @@
-
 import com.typesafe.sbt.git.JGit
 import com.wavesenterprise.grpc.GrpcApiVersionGenerator
 import com.wavesenterprise.transaction.generator.{TxSchemePlugin, TxSchemeProtoPlugin, TxSchemeTypeScriptPlugin}
@@ -42,11 +41,11 @@ inThisBuild(
     ),
     developers ++= List(
       Developer("vaan", "Vadim Anufriev", "vanufriev@web3tech.ru", url("https://vaan.io/")),
-      Developer("squadgazzz", "Ilia Zhavoronkov", "izhavoronkov89@list.ru", url("https://www.linkedin.com/in/ilya-zhavoronkov/")),
       Developer("sathembite", "Anton Mazur", "sathembite@gmail.com", url("https://github.com/AntonMazur")),
       Developer("kantefier", "Kirill Nebogin", "kinebogin@gmail.com", url("https://github.com/kantefier")),
       Developer("gamzaliev", "Ruslan Gamzaliev", "gamzaliev.ruslan.94@gmail.com", url("https://github.com/gamzaliev")),
-      Developer("1estart", "Artemiy Pospelov", "artemiywaves@gmail.com", url("https://github.com/1estart"))
+      Developer("1estart", "Artemiy Pospelov", "artemiywaves@gmail.com", url("https://github.com/1estart")),
+      Developer("deadblackclover", "Mark Ikonnikov", "mikonnikov@web3tech.ru", url("https://github.com/deadblackclover")),
     ),
     crossPaths := false,
     scalacOptions ++= Seq(
