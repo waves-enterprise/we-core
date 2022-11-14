@@ -55,11 +55,17 @@ trait CryptoAlgorithms[KP <: KeyPair] {
   def verify(signature: Array[Byte], message: Array[Byte], publicKey: Array[Byte]): Boolean =
     verify(signature, message, publicKeyFromBytes(publicKey))
 
-  def verify(signature: Array[Byte], message: Array[Byte], certChain: CertChain, timestamp: Long): Either[CryptoError, Unit]
+  def verify(
+      signature: Array[Byte],
+      message: Array[Byte],
+      certChain: CertChain,
+      crls: List[X509CRL],
+      timestamp: Long
+  ): Either[CryptoError, Unit]
 
   def getCaCerts(fingerprints: List[String]): Either[CryptoError, List[X509Certificate]]
 
-  def validateCertChain(certChain: CertChain, timestamp: Long): Either[CryptoError, Unit]
+  def validateCertChain(certChain: CertChain, crls: List[X509CRL], timestamp: Long): Either[CryptoError, Unit]
 
   def buildEncryptor(senderPrivateKey: PrivateKey0,
                      recipientPublicKey: PublicKey0,
@@ -174,7 +180,13 @@ object WavesAlgorithms extends CryptoAlgorithms[WavesKeyPair] {
       Curve25519.verify(SignatureS(signature), message, PublicKeyS(publicKey.getEncoded))
   }
 
-  override def verify(signature: Array[Byte], message: Array[Byte], certChain: CertChain, timestamp: Long): Either[CryptoError, Unit] =
+  override def verify(
+      signature: Array[Byte],
+      message: Array[Byte],
+      certChain: CertChain,
+      crls: List[X509CRL],
+      timestamp: Long
+  ): Either[CryptoError, Unit] =
     Left(pkiNotSupportedError)
 
   override def fastHash(input: Array[Byte]): Array[Byte] = Blake2b256.hash(input)
@@ -346,7 +358,9 @@ object WavesAlgorithms extends CryptoAlgorithms[WavesKeyPair] {
 
   override def sslProvider: Option[Provider] = None
 
-  override def getCaCerts(fingerprints: List[String]): Either[CryptoError, List[X509Certificate]] = Left(pkiNotSupportedError)
+  override def getCaCerts(fingerprints: List[String]): Either[CryptoError, List[X509Certificate]] =
+    Left(pkiNotSupportedError)
 
-  override def validateCertChain(certChain: CertChain, timestamp: Long): Either[CryptoError, Unit] = Left(pkiNotSupportedError)
+  override def validateCertChain(certChain: CertChain, crls: List[X509CRL], timestamp: Long): Either[CryptoError, Unit] =
+    Left(pkiNotSupportedError)
 }

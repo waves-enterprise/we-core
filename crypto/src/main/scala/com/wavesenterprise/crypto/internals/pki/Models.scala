@@ -21,7 +21,7 @@ object Models {
     case object DataEncipherment  extends KeyUsage(8)
     case object KeyAgreement      extends KeyUsage(16)
     case object KeyCertSign       extends KeyUsage(32)
-    case object CRLSign           extends KeyUsage(64)
+    case object CrlSign           extends KeyUsage(64)
     case object EncipherOnly      extends KeyUsage(128)
     case object DecipherOnly      extends KeyUsage(256)
 

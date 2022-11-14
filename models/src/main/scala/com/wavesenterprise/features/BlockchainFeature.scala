@@ -28,7 +28,8 @@ object BlockchainFeature extends ShortEnum[BlockchainFeature] {
   case object ContractValidationsSupport           extends BlockchainFeature(162, "Support of Docker contracts validation")
   case object MicroBlockInventoryV2Support         extends BlockchainFeature(173, "Support of micro-block inventory v2")
   case object PrivacyLargeObjectSupport            extends BlockchainFeature(180, "Support of privacy large object subsystem")
-  case object ContractNativeTokenSupport           extends BlockchainFeature(1120, "Support of token operations for smart-contracts")
+  case object ContractNativeTokenSupportAndPkiV1Support
+      extends BlockchainFeature(1120, "Support of token operations for smart-contracts and PKI support v1")
 
   override def values: immutable.IndexedSeq[BlockchainFeature] = findValues
 

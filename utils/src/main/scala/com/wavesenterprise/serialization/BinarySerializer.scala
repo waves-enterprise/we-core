@@ -6,7 +6,7 @@ import com.wavesenterprise.state.ByteStr
 
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets.UTF_8
-import java.security.cert.{CertificateFactory, X509Certificate}
+import java.security.cert.{CertificateFactory, X509CRL, X509Certificate}
 
 object BinarySerializer {
 
@@ -146,6 +146,20 @@ object BinarySerializer {
     val factory = CertificateFactory.getInstance("X.509")
     val cert    = factory.generateCertificate(new ByteArrayInputStream(certBytes))
     cert.asInstanceOf[X509Certificate]
+  }
+
+  def writeX509Crl(value: X509CRL, output: ByteArrayDataOutput): Unit =
+    writeShortByteArray(value.getEncoded, output)
+
+  def parseX509Crl(bytes: Array[Byte], offset: Offset = 0): (X509CRL, Offset) = {
+    val (crlBytes, end) = parseShortByteArray(bytes, offset)
+    x509CrlFromBytes(crlBytes) -> end
+  }
+
+  def x509CrlFromBytes(crlBytes: Array[Byte]): X509CRL = {
+    val factory = CertificateFactory.getInstance("X.509")
+    val crl     = factory.generateCRL(new ByteArrayInputStream(crlBytes))
+    crl.asInstanceOf[X509CRL]
   }
 
   @inline

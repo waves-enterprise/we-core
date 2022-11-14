@@ -567,7 +567,7 @@ object TxScheme extends Enum[TxScheme] {
               BlockchainFeature.AtomicTransactionSupport,
               BlockchainFeature.SponsoredFeesSupport,
               BlockchainFeature.ContractValidationsSupport,
-              BlockchainFeature.ContractNativeTokenSupport
+              BlockchainFeature.ContractNativeTokenSupportAndPkiV1Support
             )
         },
         sealedTraitExtensions = Seq("ExecutableTransaction"),
@@ -608,7 +608,7 @@ object TxScheme extends Enum[TxScheme] {
           case 4 =>
             Seq(BlockchainFeature.SponsoredFeesSupport, BlockchainFeature.AtomicTransactionSupport)
           case 5 =>
-            Seq(BlockchainFeature.SponsoredFeesSupport, BlockchainFeature.AtomicTransactionSupport, BlockchainFeature.ContractNativeTokenSupport)
+            Seq(BlockchainFeature.SponsoredFeesSupport, BlockchainFeature.AtomicTransactionSupport, BlockchainFeature.ContractNativeTokenSupportAndPkiV1Support)
         },
         sealedTraitExtensions = Seq("ExecutableTransaction"),
         caseClassCompanionExtensions = Seq("ContractTransactionValidation"),
@@ -642,7 +642,7 @@ object TxScheme extends Enum[TxScheme] {
         ensures = Seq("validateSize"),
         versionToBlockchainFeatures = {
           case 2 => Seq(BlockchainFeature.ContractValidationsSupport)
-          case 3 => Seq(BlockchainFeature.ContractValidationsSupport, BlockchainFeature.ContractNativeTokenSupport)
+          case 3 => Seq(BlockchainFeature.ContractValidationsSupport, BlockchainFeature.ContractNativeTokenSupportAndPkiV1Support)
         },
         caseClassCompanionExtensions = Seq("ContractTransactionValidation"),
         cacheSerializable = false,
