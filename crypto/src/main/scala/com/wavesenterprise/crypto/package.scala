@@ -14,7 +14,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 import java.security.Provider
 import java.security.{PublicKey => JavaPublicKey}
-import java.security.cert.X509Certificate
+import java.security.cert.{X509CRL, X509Certificate}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Promise}
 
@@ -126,19 +126,27 @@ package object crypto {
   def verify(signature: Array[Byte], message: MessageToSign, publicKey: PublicKey): Boolean =
     algorithms.verify(Signature(signature), message, publicKey)
 
-  def verify(signature: Array[Byte], message: Array[Byte], certChain: CertChain, timestamp: Long): Either[CryptoError, Unit] =
-    algorithms.verify(signature, message, certChain, timestamp)
+  def verify(
+      signature: Array[Byte],
+      message: Array[Byte],
+      certChain: CertChain,
+      crls: List[X509CRL],
+      timestamp: Long
+  ): Either[CryptoError, Unit] =
+    algorithms.verify(signature, message, certChain, crls, timestamp)
 
   def getCaCerts(fingerprints: List[String]): Either[CryptoError, List[X509Certificate]] =
     algorithms.getCaCerts(fingerprints: List[String])
 
-  def validateCertChain(certChain: CertChain, timestamp: Long): Either[CryptoError, Unit] =
-    algorithms.validateCertChain(certChain, timestamp)
+  def validateCertChain(certChain: CertChain, crls: List[X509CRL], timestamp: Long): Either[CryptoError, Unit] =
+    algorithms.validateCertChain(certChain, crls, timestamp)
 
-  def validateCertChains(certChains: List[CertChain], timestamp: Long): Either[CryptoError, Unit] =
-    certChains
-      .traverse(chain => algorithms.validateCertChain(chain, timestamp))
-      .void
+  def validateCertChains(certChains: List[(CertChain, List[X509CRL])], timestamp: Long): Either[CryptoError, Unit] =
+    certChains.traverse {
+      case (chain, crls) => algorithms.validateCertChain(chain, crls, timestamp)
+    }.void
+
+  def crlChecksEnabled: Boolean = algorithms.crlCheckIsEnabled
 
   def encrypt(data: Array[Byte], senderPrivateKey: PrivateKey, recipientPublicKey: PublicKey): Either[CryptoError, EncryptedForSingle] =
     context.algorithms.encrypt(data, senderPrivateKey, recipientPublicKey)

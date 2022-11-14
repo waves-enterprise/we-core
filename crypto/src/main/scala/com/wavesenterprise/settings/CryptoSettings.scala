@@ -13,10 +13,12 @@ import org.reflections.Reflections
 import pureconfig.error.{CannotConvert, ConfigReaderFailures, ThrowableFailure}
 import pureconfig.{ConfigObjectCursor, ConfigReader}
 import com.wavesenterprise.utils.StringUtilites._
-import scala.util.chaining.scalaUtilChainingOps
+import pureconfig.generic.semiauto.deriveReader
 
+import scala.util.chaining.scalaUtilChainingOps
 import scala.collection.JavaConverters._
 import scala.collection.immutable
+import scala.concurrent.duration.FiniteDuration
 
 trait CryptoSettings {
   def byteId: Byte
@@ -128,15 +130,17 @@ object CryptoSettings extends ScorexLogging {
                     ThrowableFailure(new IllegalStateException("Setting 'crl-checks-enabled = false' is forbidden for 'pki.mode = ON'"), None)
                   }
                 )
-                requiredOids <- parseRequiredOIds(pkiCursor)
-              } yield EnabledPkiSettings(requiredOids, crlChecksEnabled)
+                requiredOids           <- parseRequiredOIds(pkiCursor)
+                crlSyncManagerSettings <- parseCrlSyncManagerSettings(pkiCursor)
+              } yield EnabledPkiSettings(requiredOids, crlChecksEnabled, crlSyncManagerSettings)
             case PkiMode.TEST =>
               for {
-                crlChecksEnabled <- parseCrlChecks(pkiCursor)
-                requiredOids     <- parseRequiredOIds(pkiCursor)
+                crlChecksEnabled       <- parseCrlChecks(pkiCursor)
+                requiredOids           <- parseRequiredOIds(pkiCursor)
+                crlSyncManagerSettings <- parseCrlSyncManagerSettings(pkiCursor)
               } yield {
                 log.warn("WARNING: 'node.crypto.pki.mode' is set to 'TEST'. PKI functionality is running in a testing mode.")
-                TestPkiSettings(requiredOids, crlChecksEnabled)
+                TestPkiSettings(requiredOids, crlChecksEnabled, crlSyncManagerSettings)
               }
           }
         } yield pkiSettings
@@ -151,6 +155,9 @@ object CryptoSettings extends ScorexLogging {
 
   private def parseCrlChecks(cursor: ConfigObjectCursor): Either[ConfigReaderFailures, Boolean] =
     cursor.atKey("crl-checks-enabled").flatMap(ConfigReader[Boolean].from)
+
+  private def parseCrlSyncManagerSettings(cursor: ConfigObjectCursor) =
+    cursor.atKey("crl-sync-manager-settings").flatMap(CrlSyncManagerSettings.configReader.from)
 
   private def validatePkiConfig(cryptoSettings: CryptoSettings): Either[ConfigReaderFailures, Unit] =
     Either.cond(
@@ -174,24 +181,48 @@ sealed abstract class PkiCryptoSettings(val isPkiActive: Boolean) { self =>
   }
 }
 
+case class CrlSyncManagerSettings(period: FiniteDuration)
+
+object CrlSyncManagerSettings {
+  val configReader: ConfigReader[CrlSyncManagerSettings] = deriveReader[CrlSyncManagerSettings]
+
+  implicit val toPrintable: Show[CrlSyncManagerSettings] = {
+    case CrlSyncManagerSettings(period) =>
+      s"""
+         |period: $period
+         |""".stripMargin
+  }
+}
+
 object PkiCryptoSettings {
-  case object DisabledPkiSettings                                                               extends PkiCryptoSettings(isPkiActive = false)
-  case class EnabledPkiSettings(requiredOids: Set[ExtendedKeyUsage], crlChecksEnabled: Boolean) extends PkiCryptoSettings(isPkiActive = true)
-  case class TestPkiSettings(requiredOids: Set[ExtendedKeyUsage], crlChecksEnabled: Boolean)    extends PkiCryptoSettings(isPkiActive = true)
+  case object DisabledPkiSettings extends PkiCryptoSettings(isPkiActive = false)
+  case class EnabledPkiSettings(
+      requiredOids: Set[ExtendedKeyUsage],
+      crlChecksEnabled: Boolean,
+      crlSyncManagerSettings: CrlSyncManagerSettings
+  ) extends PkiCryptoSettings(isPkiActive = true)
+
+  case class TestPkiSettings(
+      requiredOids: Set[ExtendedKeyUsage],
+      crlChecksEnabled: Boolean,
+      crlSyncManagerSettings: CrlSyncManagerSettings
+  ) extends PkiCryptoSettings(isPkiActive = true)
 
   implicit val toPrintable: Show[PkiCryptoSettings] = {
     case DisabledPkiSettings => "mode: OFF"
-    case EnabledPkiSettings(requiredOids, crlChecksEnabled) =>
+    case EnabledPkiSettings(requiredOids, crlChecksEnabled, crlSyncManagerSettings) =>
       s"""
          |mode: ON
          |requiredOids: [${requiredOids.map(_.strRepr).mkString(", ")}]
          |crlChecksEnabled: $crlChecksEnabled
+         |crlSyncManagerSettings: ${crlSyncManagerSettings.show}
        """.stripMargin
-    case TestPkiSettings(requiredOids, crlChecksEnabled) =>
+    case TestPkiSettings(requiredOids, crlChecksEnabled, crlSyncManagerSettings) =>
       s"""
          |mode: TEST
          |requiredOids: [${requiredOids.map(_.strRepr).mkString(", ")}]
          |crlChecksEnabled: $crlChecksEnabled
+         |crlSyncManagerSettings: ${crlSyncManagerSettings.show}
        """.stripMargin
   }
 }

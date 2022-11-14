@@ -2,10 +2,12 @@ package com.wavesenterprise.crypto.settings
 
 import com.wavesenterprise.crypto.internals.pki.Models.{CustomExtendedKeyUsage, ExtendedKeyUsage}
 import com.wavesenterprise.settings.PkiCryptoSettings.{DisabledPkiSettings, EnabledPkiSettings}
-import com.wavesenterprise.settings.{CryptoSettings, TestWavesCrypto}
+import com.wavesenterprise.settings.{CrlSyncManagerSettings, CryptoSettings, TestWavesCrypto}
 import org.scalatest.{FreeSpec, Matchers}
 import pureconfig.ConfigSource
 import pureconfig.error.ConfigReaderException
+
+import scala.concurrent.duration._
 
 class CryptoSettingsSpec extends FreeSpec with Matchers {
 
@@ -18,6 +20,9 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
         |    mode = ON
         |    required-oids = ["1.2.3.4.5.6.7.8.9", "192.168.0.1.255.255.255.0", "1.3.6.1.5.5.7.3.3", "3", "EmailProtection"]
         |    crl-checks-enabled = yes
+        |    crl-sync-manager-settings = {
+        |       period = 2 hours
+        |    }
         |  }
         |}
         |""".stripMargin
@@ -31,7 +36,8 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
       ExtendedKeyUsage.EmailProtection
     )
 
-    config.loadOrThrow[CryptoSettings] shouldBe TestWavesCrypto(EnabledPkiSettings(expectedEkus, crlChecksEnabled = true))
+    config.loadOrThrow[CryptoSettings] shouldBe TestWavesCrypto(
+      EnabledPkiSettings(expectedEkus, crlChecksEnabled = true, CrlSyncManagerSettings(2 hours)))
   }
 
   "should ignore crypto.type when waves-crypto is used" in {
@@ -44,6 +50,9 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
         |    mode = ON
         |    required-oids = ["1.2.3.4.5.6.7.8.9", "192.168.0.1.255.255.255.0", "1.3.6.1.5.5.7.3.3", "EmailProtection"]
         |    crl-checks-enabled = yes
+        |    crl-sync-manager-settings = {
+        |       period = 2 hours
+        |    }
         |  }
         |}
         |""".stripMargin
@@ -56,7 +65,8 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
       ExtendedKeyUsage.EmailProtection
     )
 
-    config.loadOrThrow[CryptoSettings] shouldBe TestWavesCrypto(EnabledPkiSettings(expectedEkus, crlChecksEnabled = true))
+    config.loadOrThrow[CryptoSettings] shouldBe TestWavesCrypto(
+      EnabledPkiSettings(expectedEkus, crlChecksEnabled = true, CrlSyncManagerSettings(2 hours)))
   }
 
   "should ignore required-oids when pki is disabled" in {
@@ -68,6 +78,9 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
         |    mode = OFF
         |    required-oids = ["1.2.3.4.5.6.7.8.9", "192.168.0.1.255.255.255.0", "1.3.6.1.5.5.7.3.3", "EmailProtection"]
         |    crl-checks-enabled = no
+        |    crl-sync-manager-settings = {
+        |       period = 2 hours
+        |    }
         |  }
         |}
         |""".stripMargin
@@ -85,6 +98,9 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
         |    mode = ON
         |    required-oids = ["1.2.3.4.5.6.7.8.9", "192.168.0.1.255.255.255.0", "1.3.6.1.5.5.7.3.3", "EmailProtection"]
         |    crl-checks-enabled = yes
+        |    crl-sync-manager-settings = {
+        |       period = 2 hours
+        |    }
         |  }
         |}
         |""".stripMargin
@@ -104,6 +120,9 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
         |    mode = TEST
         |    required-oids = ["1.2.3.4.5.6.7.8.9", "192.168.0.1.255.255.255.0", "1.3.6.1.5.5.7.3.3", "EmailProtection"]
         |    crl-checks-enabled = no
+        |    crl-sync-manager-settings = {
+        |       period = 2 hours
+        |    }
         |  }
         |}
         |""".stripMargin
@@ -125,6 +144,9 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
         |    mode = ENABLED
         |    required-oids = ["1.2.3.4.5.6.7.8.9", "192.168.0.1.255.255.255.0", "1.3.6.1.5.5.7.3.3", "EmailProtection"]
         |    crl-checks-enabled = no
+        |    crl-sync-manager-settings = {
+        |       period = 2 hours
+        |    }
         |  }
         |}
         |""".stripMargin
@@ -146,6 +168,9 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
         |    mode = ENABLED
         |    required-oids = ["1.2.3.4.5.6.7.8.9", "192.168.0.1.255.255.255.0", "1.3.6.1.5.5.7.3.3", "EmailProtection"]
         |    crl-checks-enabled = no
+        |    crl-sync-manager-settings = {
+        |       period = 2 hours
+        |    }
         |  }
         |}
         |""".stripMargin
@@ -167,6 +192,9 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
         |    mode = ON
         |    required-oids = ["1a", "blabla"]
         |    crl-checks-enabled = yes
+        |    crl-sync-manager-settings = {
+        |       period = 2 hours
+        |    }
         |  }
         |}
         |""".stripMargin
@@ -189,6 +217,9 @@ class CryptoSettingsSpec extends FreeSpec with Matchers {
         |    mode = ON
         |    required-oids = ["1.2.3.4.5.6.7.8.9", "192.168.0.1.255.255.255.0", "1.3.6.1.5.5.7.3.3", "EmailProtection"]
         |    crl-checks-enabled = no
+        |    crl-sync-manager-settings = {
+        |       period = 2 hours
+        |    }
         |  }
         |}
         |""".stripMargin
