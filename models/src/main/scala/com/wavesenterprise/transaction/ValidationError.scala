@@ -21,8 +21,6 @@ import com.wavesenterprise.transaction.assets.exchange.Order
 import com.wavesenterprise.transaction.docker.{ExecutableTransaction, UpdateContractTransaction}
 import com.wavesenterprise.utils.StringUtilites.ValidateAsciiAndRussian.{mapToString, stringToMap}
 
-import java.security.PublicKey
-
 trait ValidationError
 
 object ValidationError {

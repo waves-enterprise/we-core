@@ -8,7 +8,7 @@ import com.wavesenterprise.docker.validator.ValidationPolicy
 import com.wavesenterprise.serialization.BinarySerializer
 import com.wavesenterprise.state.ByteStr
 import com.wavesenterprise.transaction.ValidationPolicyAndApiVersionSupport
-import com.wavesenterprise.transaction.docker.{CreateContractTransaction, UpdateContractTransaction, _}
+import com.wavesenterprise.transaction.docker.{CreateContractTransaction, UpdateContractTransaction}
 import com.wavesenterprise.utils.DatabaseUtils.ByteArrayDataOutputExt
 import monix.eval.Coeval
 import play.api.libs.json._
