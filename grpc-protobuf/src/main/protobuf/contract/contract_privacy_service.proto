@@ -14,9 +14,6 @@ service PrivacyService {
 
   rpc GetPolicyHashes (PolicyHashesRequest) returns (PolicyHashesResponse);
 
-  rpc GetPolicyItemData (PolicyItemDataRequest) returns (PolicyItemDataResponse);
-
-  rpc GetPolicyItemInfo (PolicyItemInfoRequest) returns (PolicyItemInfoResponse);
 }
 
 message PolicyRecipientsRequest {
@@ -41,28 +38,6 @@ message PolicyHashesRequest {
 
 message PolicyHashesResponse {
   repeated string hashes = 1;
-}
-
-message PolicyItemDataRequest {
-  string policy_id = 1;
-  string item_hash = 2;
-}
-
-message PolicyItemDataResponse {
-  string data = 1;
-}
-
-message PolicyItemInfoRequest {
-  string policy_id = 1;
-  string item_hash = 2;
-}
-
-message PolicyItemInfoResponse {
-  string sender = 1;
-  string policy_id = 2;
-  string type = 3;
-  PolicyItemFileInfo info = 4;
-  string hash = 5;
 }
 
 message PolicyItemFileInfo {
