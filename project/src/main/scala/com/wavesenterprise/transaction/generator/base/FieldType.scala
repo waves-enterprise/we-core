@@ -199,7 +199,7 @@ object FieldType extends Enum[FieldType] {
       extends FieldType(
         scalaType = "String",
         protoType = "string",
-        scalaImports = Set("com.google.common.primitives.Longs", "com.wavesenterprise.serialization.BinarySerializer"),
+        scalaImports = Set("com.wavesenterprise.serialization.BinarySerializer"),
         typeScriptType = Some("StringWithLength")
       )
       with BinarySerializableType
@@ -1126,7 +1126,6 @@ object FieldType extends Enum[FieldType] {
         isMessageProtoType = true,
         scalaImports = Set(
           "com.wavesenterprise.transaction.docker.assets.ContractAssetOperation",
-          "com.wavesenterprise.serialization.BinarySerializer",
           "com.wavesenterprise.transaction.TransactionParsers",
           ProtoAdapterImport
         ),

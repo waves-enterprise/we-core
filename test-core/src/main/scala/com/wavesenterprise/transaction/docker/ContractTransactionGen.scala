@@ -878,7 +878,7 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
     @tailrec
     def genContractOperations(leftOperations: Int,
                               availableNoncesState: (Map[Byte, AssetId], Set[Byte]),
-                              resultList: List[ContractAssetOperation] = List.empty): Gen[List[ContractAssetOperation]] = leftOperations match {
+                              resultList: List[ContractAssetOperation]): Gen[List[ContractAssetOperation]] = leftOperations match {
       case 0 => Gen.const(resultList)
       case _ =>
         val (usedNoncesAssetIdMap, burnedAssetNonces) = availableNoncesState

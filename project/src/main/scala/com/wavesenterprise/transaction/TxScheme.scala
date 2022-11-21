@@ -608,7 +608,9 @@ object TxScheme extends Enum[TxScheme] {
           case 4 =>
             Seq(BlockchainFeature.SponsoredFeesSupport, BlockchainFeature.AtomicTransactionSupport)
           case 5 =>
-            Seq(BlockchainFeature.SponsoredFeesSupport, BlockchainFeature.AtomicTransactionSupport, BlockchainFeature.ContractNativeTokenSupportAndPkiV1Support)
+            Seq(BlockchainFeature.SponsoredFeesSupport,
+                BlockchainFeature.AtomicTransactionSupport,
+                BlockchainFeature.ContractNativeTokenSupportAndPkiV1Support)
         },
         sealedTraitExtensions = Seq("ExecutableTransaction"),
         caseClassCompanionExtensions = Seq("ContractTransactionValidation"),
@@ -654,7 +656,8 @@ object TxScheme extends Enum[TxScheme] {
         unsupportedTypeScriptVersions = Set(1, 2, 3),
         versionExtensions = {
           case version if version >= 2 => Seq("ValidatorProvable")
-        }
+        },
+        unusedImports = Set("com.wavesenterprise.serialization.ModelsBinarySerializer")
       )
 
   case object DisableContractTransaction
