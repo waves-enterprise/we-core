@@ -85,8 +85,8 @@ object ContractAssetOperation {
     ((ContractAssetOperation.ContractAssetOperationTypes.valuesToEntriesMap(bytes(offset)), bytes(offset + 1)), offset + 2)
 
   final case class ContractTransferOutV1 private (
-      operationType: OperationType = ContractTransferOutV1.operationType,
-      version: Byte = ContractTransferOutV1.version,
+      operationType: OperationType,
+      version: Byte,
       assetId: Option[AssetId],
       recipient: AddressOrAlias,
       amount: Long
@@ -125,8 +125,8 @@ object ContractAssetOperation {
     }
   }
 
-  final case class ContractIssueV1 private (operationType: OperationType = ContractIssueV1.operationType,
-                                            version: Byte = ContractIssueV1.version,
+  final case class ContractIssueV1 private (operationType: OperationType,
+                                            version: Byte,
                                             assetId: ByteStr,
                                             name: String,
                                             description: String,
@@ -184,11 +184,7 @@ object ContractAssetOperation {
     }
   }
 
-  final case class ContractReissueV1 private (operationType: OperationType = ContractReissueV1.operationType,
-                                              version: Byte = ContractReissueV1.version,
-                                              assetId: AssetId,
-                                              quantity: Long,
-                                              isReissuable: Boolean)
+  final case class ContractReissueV1 private (operationType: OperationType, version: Byte, assetId: AssetId, quantity: Long, isReissuable: Boolean)
       extends ContractAssetOperation {
     override def writeContractAssetOperationBytes(output: ByteArrayDataOutput): Unit = {
       output.write(assetId.arr)
@@ -219,10 +215,7 @@ object ContractAssetOperation {
     }
   }
 
-  final case class ContractBurnV1 private (operationType: OperationType = ContractBurnV1.operationType,
-                                           version: Byte = ContractBurnV1.version,
-                                           assetId: Option[AssetId],
-                                           amount: Long)
+  final case class ContractBurnV1 private (operationType: OperationType, version: Byte, assetId: Option[AssetId], amount: Long)
       extends ContractAssetOperation {
     override def writeContractAssetOperationBytes(output: ByteArrayDataOutput): Unit = {
       BinarySerializer.writeByteIterable(assetId, assetIdWriter, output)
