@@ -18,7 +18,7 @@ message ContractExecutionRequest {
 }
 
 message ContractExecutionResponse {
-  string sender = 1; // DEPRECATED! use `senderAddress` or `senderPublicKey` fields instead
+  reserved 1; // DEPRECATED since 1.11.0 (was `sender`). Use `senderAddress` or `senderPublicKey`
   string tx_id = 2;
   enum Status {
     SUCCESS = 0;
