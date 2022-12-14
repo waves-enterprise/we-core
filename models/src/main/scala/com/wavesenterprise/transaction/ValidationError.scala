@@ -35,7 +35,6 @@ object ValidationError {
   case object TooBigArray                                      extends ValidationError
   case object InvalidName                                      extends ValidationError
   case object OverflowError                                    extends ValidationError
-  case object ConstraintsOverflowError                         extends ValidationError
   case object MvccConflictError                                extends ValidationError
   case object ToSelf                                           extends ValidationError
   case object MissingSenderPrivateKey                          extends ValidationError
@@ -67,6 +66,10 @@ object ValidationError {
   case class CertificateNotFound(publicKey: PublicKeyAccount)                       extends ValidationError
   case class CertificatePathBuildError(publicKey: PublicKeyAccount, reason: String) extends ValidationError
   case class CertificateParseError(reason: String)                                  extends ValidationError
+
+  sealed trait ConstraintsOverflowError       extends ValidationError
+  case object CriticalConstraintOverflowError extends ConstraintsOverflowError
+  case object OneConstraintOverflowError      extends ConstraintsOverflowError
 
   case class BalanceErrors(accountErrs: Map[Address, String] = Map.empty, contractErrs: Map[ByteStr, String] = Map.empty) extends ValidationError
   implicit val balanceErrorsSemigroup: Semigroup[BalanceErrors] = (lhs: BalanceErrors, rhs: BalanceErrors) => {
