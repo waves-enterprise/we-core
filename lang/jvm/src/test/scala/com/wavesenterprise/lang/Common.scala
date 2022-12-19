@@ -49,8 +49,8 @@ object Common {
       case _                                                   => ??? // suppress pattern match warning
     }
 
-  val pointTypeA = CaseType("PointA", List("X"  -> LONG, "YA" -> LONG))
-  val pointTypeB = CaseType("PointB", List("X"  -> LONG, "YB" -> LONG))
+  val pointTypeA = CaseType("PointA", List("X" -> LONG, "YA" -> LONG))
+  val pointTypeB = CaseType("PointB", List("X" -> LONG, "YB" -> LONG))
   val pointTypeC = CaseType("PointC", List("YB" -> LONG))
   val pointTypeD = CaseType("PointD", List("YB" -> UNION(LONG, UNIT)))
 
@@ -59,8 +59,8 @@ object Common {
   val BorC    = UNION(pointTypeB.typeRef, pointTypeC.typeRef)
   val CorD    = UNION(pointTypeC.typeRef, pointTypeD.typeRef)
 
-  val pointAInstance  = CaseObj(pointTypeA.typeRef, Map("X"  -> 3L, "YA" -> 40L))
-  val pointBInstance  = CaseObj(pointTypeB.typeRef, Map("X"  -> 3L, "YB" -> 41L))
+  val pointAInstance  = CaseObj(pointTypeA.typeRef, Map("X" -> 3L, "YA" -> 40L))
+  val pointBInstance  = CaseObj(pointTypeB.typeRef, Map("X" -> 3L, "YB" -> 41L))
   val pointCInstance  = CaseObj(pointTypeC.typeRef, Map("YB" -> 42L))
   val pointDInstance1 = CaseObj(pointTypeD.typeRef, Map("YB" -> 43L))
 
@@ -105,7 +105,9 @@ object Common {
           checkSum sameElements checkSumGenerated
         }
 
-        if (version == EnvironmentFunctions.AddressVersion && network == chainId && addressBytes.length == EnvironmentFunctions.AddressLength && checksumCorrect)
+        if (
+          version == EnvironmentFunctions.AddressVersion && network == chainId && addressBytes.length == EnvironmentFunctions.AddressLength && checksumCorrect
+        )
           Right(Some(addressBytes))
         else Right(None)
     }

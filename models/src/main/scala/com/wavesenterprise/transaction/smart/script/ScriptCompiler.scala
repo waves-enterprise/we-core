@@ -60,7 +60,7 @@ object ScriptCompiler extends ScorexLogging {
               .fold[Either[String, ScriptVersion]](Left("Unsupported language version"))(_.asRight)
           case Failure(_) =>
             Left("Can't parse language version")
-      })
+        })
       .getOrElse(V1.asRight)
   }
 

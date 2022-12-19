@@ -93,7 +93,7 @@ trait ContractTransactionValidation {
 }
 
 object ContractTransactionValidation {
-  //noinspection UnstableApiUsage
+  // noinspection UnstableApiUsage
   def resultsHash(results: Seq[DataEntry[_]], assetOps: Seq[ContractAssetOperation] = Seq()): ByteStr = {
     val output = newDataOutput()
     results.sorted.foreach(ContractTransactionEntryOps.writeBytes(_, output))

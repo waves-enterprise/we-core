@@ -74,7 +74,8 @@ class PolicyDataHashV2Specification extends FunSpecLike with ScalaCheckPropertyC
         TransactionParsers
           .parseBytes(encodedTx)
           .fold(
-            ex => fail(ex), {
+            ex => fail(ex),
+            {
               case tx: PolicyDataHashTransactionV2 =>
                 val parsedSignature = tx.proofs.proofs.head.arr
                 assert(signature.length === parsedSignature.length, "Signature lengths should match")

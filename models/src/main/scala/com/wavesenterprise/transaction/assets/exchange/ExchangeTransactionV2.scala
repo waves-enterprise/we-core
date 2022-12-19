@@ -104,14 +104,20 @@ object ExchangeTransactionV2 extends TransactionParserFor[ExchangeTransactionV2]
 
     Try {
       val makeTransaction = for {
-        o1Size         <- read(Ints.fromByteArray, 4)
-        o1Ver          <- readByte
-        _              <- back(if (o1Ver != 1) { 1 } else { 0 })
-        o1             <- read(if (o1Ver == 1) { OrderV1.parseBytes } else { OrderV2.parseBytes }, o1Size).map(_.get)
-        o2Size         <- read(Ints.fromByteArray, 4)
-        o2Ver          <- readByte
-        _              <- back(if (o2Ver != 1) { 1 } else { 0 })
-        o2             <- read(if (o2Ver == 1) { OrderV1.parseBytes } else { OrderV2.parseBytes }, o2Size).map(_.get)
+        o1Size <- read(Ints.fromByteArray, 4)
+        o1Ver  <- readByte
+        _ <- back(if (o1Ver != 1) { 1 }
+        else { 0 })
+        o1 <- read(if (o1Ver == 1) { OrderV1.parseBytes }
+                   else { OrderV2.parseBytes },
+                   o1Size).map(_.get)
+        o2Size <- read(Ints.fromByteArray, 4)
+        o2Ver  <- readByte
+        _ <- back(if (o2Ver != 1) { 1 }
+        else { 0 })
+        o2 <- read(if (o2Ver == 1) { OrderV1.parseBytes }
+                   else { OrderV2.parseBytes },
+                   o2Size).map(_.get)
         price          <- read(Longs.fromByteArray, 8)
         amount         <- read(Longs.fromByteArray, 8)
         buyMatcherFee  <- read(Longs.fromByteArray, 8)

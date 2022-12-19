@@ -65,7 +65,8 @@ class RegisterNodeTransactionV1Specification extends PropSpec with ScalaCheckPro
       TransactionParsers
         .parseBytes(encodedTx)
         .fold(
-          ex => fail(ex), {
+          ex => fail(ex),
+          {
             case tx: RegisterNodeTransactionV1 =>
               val parsedSignature = tx.proofs.proofs.head.arr
               assert(signature.length === parsedSignature.length, "Signature lengths should match")

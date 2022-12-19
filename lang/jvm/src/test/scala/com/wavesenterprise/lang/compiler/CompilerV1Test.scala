@@ -51,7 +51,7 @@ class CompilerV1Test extends PropSpec with ScalaCheckPropertyChecks with Matcher
 
   treeTypeTest("GETTER")(
     ctx = CompilerContext(predefTypes = Map(pointType.name -> pointType),
-                          varDefs = Map("p"                -> (pointType.typeRef -> "Test variable")),
+                          varDefs = Map("p" -> (pointType.typeRef -> "Test variable")),
                           functionDefs = Map.empty),
     expr = Expressions.GETTER(
       AnyPos,
@@ -63,7 +63,7 @@ class CompilerV1Test extends PropSpec with ScalaCheckPropertyChecks with Matcher
 
   treeTypeTest("REF(OBJECT)")(
     ctx = CompilerContext(predefTypes = Map(pointType.name -> pointType),
-                          varDefs = Map("p"                -> (pointType.typeRef -> "Test variable")),
+                          varDefs = Map("p" -> (pointType.typeRef -> "Test variable")),
                           functionDefs = Map.empty),
     expr = Expressions.REF(AnyPos, Expressions.PART.VALID(AnyPos, "p")),
     expectedResult = Right((REF("p"), pointType.typeRef))
@@ -71,7 +71,7 @@ class CompilerV1Test extends PropSpec with ScalaCheckPropertyChecks with Matcher
 
   treeTypeTest("REF x = y")(
     ctx = CompilerContext(predefTypes = Map(pointType.name -> pointType),
-                          varDefs = Map("p"                -> (pointType.typeRef -> "Test variable")),
+                          varDefs = Map("p" -> (pointType.typeRef -> "Test variable")),
                           functionDefs = Map.empty),
     expr = Expressions.REF(AnyPos, Expressions.PART.VALID(AnyPos, "p")),
     expectedResult = Right((REF("p"), pointType.typeRef))

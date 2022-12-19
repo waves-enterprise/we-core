@@ -205,7 +205,7 @@ class IntegrationTest extends PropSpec with ScalaCheckPropertyChecks with Script
           withClue(str) {
             eval[EVALUATED](str) shouldBe evaluated(res)
           }
-    })
+      })
 
     forAll(for {
       (expr, res) <- BOOLgen(50)
@@ -294,7 +294,7 @@ class IntegrationTest extends PropSpec with ScalaCheckPropertyChecks with Script
       PureContext.build(V1).evaluationContext,
       EvaluationContext(
         typeDefs = Map.empty,
-        letDefs = Map("x"                -> LazyVal(EitherT.pure(CONST_LONG(3L)))),
+        letDefs = Map("x" -> LazyVal(EitherT.pure(CONST_LONG(3L)))),
         functions = Map(doubleFst.header -> doubleFst)
       )
     )

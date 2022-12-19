@@ -86,14 +86,18 @@ trait ScriptGen {
       (cnd, vcnd) <- BOOLgen((gas - 3) / 3)
       (t, vt)     <- BOOLgen((gas - 3) / 3)
       (f, vf)     <- BOOLgen((gas - 3) / 3)
-    } yield (IF(Pos(0, 0), cnd, t, f), if (vcnd) { vt } else { vf })
+    } yield (IF(Pos(0, 0), cnd, t, f),
+             if (vcnd) { vt }
+             else { vf })
 
   def IF_INTgen(gas: Int): Gen[(EXPR, Long)] =
     for {
       (cnd, vcnd) <- BOOLgen((gas - 3) / 3)
       (t, vt)     <- INTGen((gas - 3) / 3)
       (f, vf)     <- INTGen((gas - 3) / 3)
-    } yield (IF(Pos(0, 0), cnd, t, f), if (vcnd) { vt } else { vf })
+    } yield (IF(Pos(0, 0), cnd, t, f),
+             if (vcnd) { vt }
+             else { vf })
 
   def STRgen: Gen[EXPR] =
     Gen.identifier.map(PART.VALID[String](Pos(0, 0), _)).map(CONST_STRING(Pos(0, 0), _))

@@ -41,7 +41,7 @@ object ValidationPolicy {
   case class MajorityWithOneOf(addresses: List[Address]) extends ValidationPolicy {
     override def name: String = ValidationPolicyDescriptor.MajorityWithOneOf.name
     override def bytes: Array[Byte] = {
-      //noinspection UnstableApiUsage
+      // noinspection UnstableApiUsage
       val output = newDataOutput()
       output.writeByte(ValidationPolicyDescriptor.MajorityWithOneOf.value)
       ModelsBinarySerializer.writeAddresses(addresses, output)
@@ -78,7 +78,8 @@ object ValidationPolicy {
             .map(addresses => ValidationPolicy.MajorityWithOneOf(addresses))
         case _ =>
           JsError(s"Expected validation policy json object")
-      }, {
+      },
+      {
         case policy @ (Any | Majority) =>
           Json.obj(typeFieldName -> policy.name)
         case policy @ MajorityWithOneOf(addresses) =>

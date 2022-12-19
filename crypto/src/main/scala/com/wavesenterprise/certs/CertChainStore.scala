@@ -174,7 +174,7 @@ class CertChainStore private (
   }
 
   def bytes: Array[Byte] = {
-    //noinspection UnstableApiUsage
+    // noinspection UnstableApiUsage
     val output = newDataOutput()
     BinarySerializer.writeBigIterable(certsByDN.values, BinarySerializer.writeX509Cert, output)
     output.toByteArray

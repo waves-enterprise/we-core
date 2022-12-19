@@ -17,7 +17,7 @@ case class ContractApiVersion(majorVersion: Short, minorVersion: Short) {
   override def toString: String = s"$majorVersion.$minorVersion"
 
   def bytes: Array[Byte] = {
-    //noinspection UnstableApiUsage
+    // noinspection UnstableApiUsage
     val output = newDataOutput(Shorts.BYTES * 2)
     output.writeShort(majorVersion)
     output.writeShort(minorVersion)
@@ -61,7 +61,8 @@ object ContractApiVersion extends {
           JsSuccess(ContractApiVersion(majorVersion.toShort, minorVersion.toShort))
         case _ =>
           JsError(s"Invalid contract api version. Expected string pattern '$StringPattern'")
-      }, { version =>
+      },
+      { version =>
         JsString(version.toString)
       }
     )

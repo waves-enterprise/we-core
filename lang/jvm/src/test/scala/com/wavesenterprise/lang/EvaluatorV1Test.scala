@@ -130,7 +130,8 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
   }
 
   property("successful on deep type resolution") {
-    ev[EVALUATED](expr = IF(FUNCTION_CALL(PureContext.eq.header, List(CONST_LONG(1), CONST_LONG(2))), simpleDeclarationAndUsage(3), CONST_LONG(4))) shouldBe evaluated(
+    ev[EVALUATED](expr =
+      IF(FUNCTION_CALL(PureContext.eq.header, List(CONST_LONG(1), CONST_LONG(2))), simpleDeclarationAndUsage(3), CONST_LONG(4))) shouldBe evaluated(
       4)
   }
 
@@ -145,8 +146,8 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
   }
 
   property("custom type field access") {
-    val pointType     = CaseType("Point", List("X"         -> LONG, "Y" -> LONG))
-    val pointInstance = CaseObj(pointType.typeRef, Map("X" -> 3L, "Y"   -> 4L))
+    val pointType     = CaseType("Point", List("X" -> LONG, "Y" -> LONG))
+    val pointInstance = CaseObj(pointType.typeRef, Map("X" -> 3L, "Y" -> 4L))
     ev[EVALUATED](
       context = Monoid.combine(pureEvalContext,
                                EvaluationContext(
@@ -318,7 +319,7 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
 
     result shouldBe Right(false)
 
-    //it false, because script fails on Alice's signature check, and bobSigned is not evaluated
+    // it false, because script fails on Alice's signature check, and bobSigned is not evaluated
     log.find(_._1 == "bobSigned") shouldBe None
     log.find(_._1 == "aliceSigned") shouldBe Some(("aliceSigned", evaluated(false)))
   }
@@ -703,10 +704,11 @@ class EvaluatorV1Test extends PropSpec with ScalaCheckPropertyChecks with Matche
                                    new CompilerV1(context.compilerContext)
                                      .compile(script, List.empty)
                                      .explicitGet())
-    (r._1, r._2.map {
-      case CONST_BOOLEAN(b) => b
-      case _                => ???
-    })
+    (r._1,
+     r._2.map {
+       case CONST_BOOLEAN(b) => b
+       case _                => ???
+     })
   }
 
   property("checking a hash of some message by crypto function invoking") {

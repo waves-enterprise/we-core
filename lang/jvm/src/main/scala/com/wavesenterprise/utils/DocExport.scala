@@ -53,7 +53,7 @@ object DocExport {
       case class objDoc(override val name: String, fields: java.util.List[Field]) extends TypeDoc {
         override val isObj: Boolean = true; override val needLink: Boolean = true
       }
-      case class ListOf(param: TypeDoc)   extends TypeDoc { override val name: String = "LIST"; val hasParam: Boolean   = true }
+      case class ListOf(param: TypeDoc)   extends TypeDoc { override val name: String = "LIST"; val hasParam: Boolean = true   }
       case class OptionOf(param: TypeDoc) extends TypeDoc { override val name: String = "OPTION"; val hasParam: Boolean = true }
       case class nativeTypeDoc(override val name: String) extends TypeDoc {
         override val isNative: Boolean = true; override val needLink: Boolean = true
@@ -90,19 +90,18 @@ object DocExport {
 
       def getFunctionnsDoc() =
         fullContext.functions
-          .map(
-            f =>
-              FuncDoc(
-                f.name,
-                extType(f.signature.result),
-                f.docString,
-                ((f.argsDoc zip f.signature.args) map { arg =>
-                  VarDoc(arg._1._1, extType(arg._2._2), arg._1._2)
-                }).toList.asJava,
-                f match {
-                  case NativeFunction(_, cost, _, _, _, _) => cost.toString
-                  case _                                   => ""
-                }
+          .map(f =>
+            FuncDoc(
+              f.name,
+              extType(f.signature.result),
+              f.docString,
+              ((f.argsDoc zip f.signature.args) map { arg =>
+                VarDoc(arg._1._1, extType(arg._2._2), arg._1._2)
+              }).toList.asJava,
+              f match {
+                case NativeFunction(_, cost, _, _, _, _) => cost.toString
+                case _                                   => ""
+              }
             ))
 
       case class TransactionDoc(name: String, fields: java.util.List[TransactionField])
@@ -131,17 +130,16 @@ object DocExport {
                       .find(_._1 == name)
                       .fold(TransactionField(true, List[TypeDoc]().asJava))(ft => TransactionField(false, List(typeRepr(ft._2)()).asJava)))
                   .asJava
-            ))
+              ))
         val transactionDocs = transactionsTypes.map { t =>
           val fields = t.fields.toMap
           TransactionDoc(
             t.name,
             transactionsFields
-              .map(
-                field =>
-                  fields
-                    .get(field.name)
-                    .fold(TransactionField(true, List[TypeDoc]().asJava))(ft => TransactionField(false, List(typeRepr(ft)()).asJava)))
+              .map(field =>
+                fields
+                  .get(field.name)
+                  .fold(TransactionField(true, List[TypeDoc]().asJava))(ft => TransactionField(false, List(typeRepr(ft)()).asJava)))
               .asJava
           )
         }
@@ -164,7 +162,7 @@ object DocExport {
 
       val mf      = new DefaultMustacheFactory()
       val doc     = mf.compile(args(2))
-      val output  = new java.io.FileWriter(args(3)) //new java.io.StringWriter
+      val output  = new java.io.FileWriter(args(3)) // new java.io.StringWriter
       val (t, f)  = transactionDocs(transactionsType)
       val commons = transactionDocs(transactionsType, commonFields)
       val transactionClasses = Seq(

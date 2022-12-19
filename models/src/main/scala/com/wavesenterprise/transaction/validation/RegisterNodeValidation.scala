@@ -4,7 +4,7 @@ import com.wavesenterprise.acl.OpType
 import com.wavesenterprise.transaction.ValidationError
 
 object RegisterNodeValidation {
-  val NodeNameMaxLength: Int = 100 //in symbols
+  val NodeNameMaxLength: Int = 100 // in symbols
 
   def validateNodeName(maybeName: Option[String]): Either[ValidationError, Unit] =
     Either.cond(

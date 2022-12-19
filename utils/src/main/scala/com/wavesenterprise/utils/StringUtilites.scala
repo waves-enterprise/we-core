@@ -15,7 +15,7 @@ object StringUtilites {
 
   object ValidateAsciiAndRussian {
     def findNotValid(s: String): Option[String] = {
-      //finding for for all symbols except ascii non-control and  russian letters
+      // finding for for all symbols except ascii non-control and  russian letters
       val pattern = raw"[^\x21-\x7Eа-яА-Я]*".r
       val res = pattern
         .findAllMatchIn(s)

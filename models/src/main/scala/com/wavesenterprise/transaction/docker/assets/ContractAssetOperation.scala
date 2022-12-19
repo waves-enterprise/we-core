@@ -176,9 +176,9 @@ object ContractAssetOperation {
       val (name, nameEnd)                        = BinarySerializer.parseShortString(bytes, assetIdEnd)
       val (description, descriptionEnd)          = BinarySerializer.parseShortString(bytes, nameEnd)
       val (quantity, quantityEnd)                = BinarySerializer.parseLong(bytes, descriptionEnd)
-      val (decimals, decimalsEnd)                = bytes(quantityEnd) -> (quantityEnd + 1)
-      val (isReissuable, isReissuableEnd)        = (bytes(decimalsEnd) == 1) -> (decimalsEnd + 1)
-      val (nonce, nonceEnd)                      = bytes(isReissuableEnd) -> (isReissuableEnd + 1)
+      val (decimals, decimalsEnd)                = bytes(quantityEnd)                                  -> (quantityEnd + 1)
+      val (isReissuable, isReissuableEnd)        = (bytes(decimalsEnd) == 1)                           -> (decimalsEnd + 1)
+      val (nonce, nonceEnd)                      = bytes(isReissuableEnd)                              -> (isReissuableEnd + 1)
 
       (ContractIssueV1(operationType, version, ByteStr(assetId), name, description, quantity, decimals, isReissuable, nonce), nonceEnd)
     }
@@ -209,7 +209,7 @@ object ContractAssetOperation {
       val ((operationType, version), versionEnd) = readContractAssetOperationPrefixFromBytes(bytes, offset)
       val (assetId, assetIdEnd)                  = ByteStr(bytes.slice(versionEnd, versionEnd + AssetIdLength)) -> (versionEnd + AssetIdLength)
       val (quantity, quantityEnd)                = BinarySerializer.parseLong(bytes, assetIdEnd)
-      val (isReissuable, end)                    = (bytes(quantityEnd) == 1) -> (quantityEnd + 1)
+      val (isReissuable, end)                    = (bytes(quantityEnd) == 1)                                    -> (quantityEnd + 1)
 
       (ContractReissueV1(operationType, version, assetId, quantity, isReissuable), end)
     }
@@ -260,7 +260,8 @@ object ContractAssetOperation {
           }
 
         case _ => JsError(s"Expected contract asset operation json object")
-      }, {
+      },
+      {
         case obj: ContractTransferOutV1 => ContractTransferOutV1.format.writes(obj)
         case obj: ContractIssueV1       => ContractIssueV1.format.writes(obj)
         case obj: ContractReissueV1     => ContractReissueV1.format.writes(obj)

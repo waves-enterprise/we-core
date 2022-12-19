@@ -42,11 +42,10 @@ object Serde {
             name     <- Coeval.now(bb.getString)
             letValue <- aux()
             body     <- aux()
-          } yield
-            BLOCK(
-              let = LET(name, letValue),
-              body = body
-            )
+          } yield BLOCK(
+            let = LET(name, letValue),
+            body = body
+          )
         case E_REF    => Coeval.now(REF(bb.getString))
         case E_TRUE   => Coeval.now(TRUE)
         case E_FALSE  => Coeval.now(FALSE)
