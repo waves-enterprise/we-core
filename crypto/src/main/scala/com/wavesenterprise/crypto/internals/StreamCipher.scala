@@ -169,9 +169,11 @@ object StreamCipher {
 
         val actualChunkCount = chunkIndex + 1
 
-        if ((bytes.nonEmpty && ByteBuffer.wrap(bytes.slice(1, 5)).getInt() != chunkIndex) ||
-            !isLastDecryptedFinal ||
-            actualChunkCount != expectedChunkCount()) {
+        if (
+          (bytes.nonEmpty && ByteBuffer.wrap(bytes.slice(1, 5)).getInt() != chunkIndex) ||
+          !isLastDecryptedFinal ||
+          actualChunkCount != expectedChunkCount()
+        ) {
           throw new RuntimeException("Decryption failed! Probably some data chunks was reordered or lost")
         }
       }

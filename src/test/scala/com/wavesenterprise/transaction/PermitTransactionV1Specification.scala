@@ -58,7 +58,8 @@ class PermitTransactionV1Specification extends PropSpec with ScalaCheckPropertyC
       TransactionParsers
         .parseBytes(encodedTx)
         .fold(
-          ex => fail(ex), {
+          ex => fail(ex),
+          {
             case tx: PermitTransaction =>
               val parsedSignature = tx.proofs.proofs.head.arr
               assert(signature.length === parsedSignature.length, "Signature lengths should match")

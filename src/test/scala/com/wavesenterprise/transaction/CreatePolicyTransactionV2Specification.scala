@@ -68,7 +68,8 @@ class CreatePolicyTransactionV2Specification extends FunSpecLike with ScalaCheck
         TransactionParsers
           .parseBytes(encodedTx)
           .fold(
-            ex => fail(ex), {
+            ex => fail(ex),
+            {
               case tx: CreatePolicyTransactionV2 =>
                 val parsedSignature = tx.proofs.proofs.head.arr
                 assert(signature.length === parsedSignature.length, "Signature lengths should match")
@@ -133,7 +134,7 @@ class CreatePolicyTransactionV2Specification extends FunSpecLike with ScalaCheck
 
     val recipientsStr = recipients.map(r => s""""${r.address}"""").mkString(",")
     val ownersStr     = owners.map(r => s""""${r.address}"""").mkString(",")
-    val js            = Json.parse(s"""{
+    val js = Json.parse(s"""{
                            |  "version": 2,
                            |  "type": 112,
                            |  "id": "${tx.id().base58}",

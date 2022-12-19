@@ -77,7 +77,7 @@ class DataTransactionV1Specification
     }
   }
 
-  //TODO: fix this test case
+  // TODO: fix this test case
   ignore("positive validation cases") {
     import com.wavesenterprise.state._
     import com.wavesenterprise.transaction.validation.DataValidation.MaxEntryCount
@@ -96,7 +96,7 @@ class DataTransactionV1Specification
         check(List(BinaryDataEntry("bin", ByteStr.empty)))                              // empty binary
         check(List(BinaryDataEntry("bin", ByteStr(Array.fill(MaxValueSize)(1: Byte))))) // max binary value size
         check(List(StringDataEntry("str", "")))                                         // empty string
-        check(List(StringDataEntry("str", "A" * MaxValueSize))) // max string size
+        check(List(StringDataEntry("str", "A" * MaxValueSize)))                         // max string size
     }
   }
 

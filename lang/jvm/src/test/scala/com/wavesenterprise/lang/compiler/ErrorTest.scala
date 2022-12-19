@@ -31,7 +31,7 @@ class ErrorTest extends PropSpec with ScalaCheckPropertyChecks with Matchers wit
       TRUE(AnyPos)
     ),
     "BINARY_OP with wrong types"                   -> "Compilation failed: Can't find a function '+'" -> BINARY_OP(AnyPos, TRUE(AnyPos), SUM_OP, CONST_LONG(AnyPos, 1)),
-    "IF clause must be boolean"                    -> "Unexpected type, required: Boolean" -> IF(AnyPos, CONST_LONG(AnyPos, 0), TRUE(AnyPos), FALSE(AnyPos)),
+    "IF clause must be boolean"                    -> "Unexpected type, required: Boolean"            -> IF(AnyPos, CONST_LONG(AnyPos, 0), TRUE(AnyPos), FALSE(AnyPos)),
     "FUNCTION_CALL with wrong amount of arguments" -> "requires 2 arguments" -> FUNCTION_CALL(
       AnyPos,
       PART.VALID(AnyPos, multiplierFunction.name),

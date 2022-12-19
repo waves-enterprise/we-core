@@ -80,7 +80,7 @@ object CompilerV1 {
         case Some(UnionType(_, unionTypes)) => unionTypes
         case Some(realType)                 => List(realType.typeRef)
         case None                           => List.empty
-    })
+      })
 
   private def compileMatch(p: Pos, expr: Expressions.EXPR, cases: List[Expressions.MATCH_CASE]): CompileM[(Terms.EXPR, FINAL)] = {
     for {

@@ -52,9 +52,10 @@ object Bindings {
 
   def ordType(o: OrdType): CaseObj =
     CaseObj((o match {
-      case OrdType.Buy  => buyType
-      case OrdType.Sell => sellType
-    }).typeRef, Map.empty)
+              case OrdType.Buy  => buyType
+              case OrdType.Sell => sellType
+            }).typeRef,
+            Map.empty)
 
   def orderObject(ord: Ord, proofsEnabled: Boolean): CaseObj =
     CaseObj(

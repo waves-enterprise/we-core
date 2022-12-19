@@ -44,7 +44,7 @@ class SetAssetScriptTransactionV1Specification extends GenericTransactionSpecifi
       .explicitGet()
     Seq(
       (Json.parse(s"""{"type":15,"id":"${tx
-         .id()}","sender":"${senderAccount.address}","senderPublicKey":"$senderPkBase58","fee":78311891,"timestamp":1868142423132802425,"proofs":["5sRtXKcdDa","9Zfe5aw9D7rRR3nvU3QuAjCNT7pdwRXwvBFxHmdt2WtWwiEwffn","","3C","24jboCkAEFrsBKNh6z8FFyJP8YhejsrBwt7JdHVhiCk7DCc3Zxsc4g6PYG8tsLXmK",""],"version":1,"chainId":${AddressScheme.getAddressSchema.chainId},"assetId":"DUyJyszsWcmZG7q2Ctk1hisDeGBPB8dEzyU8Gs5V2j3n","script":"$script"}"""),
+           .id()}","sender":"${senderAccount.address}","senderPublicKey":"$senderPkBase58","fee":78311891,"timestamp":1868142423132802425,"proofs":["5sRtXKcdDa","9Zfe5aw9D7rRR3nvU3QuAjCNT7pdwRXwvBFxHmdt2WtWwiEwffn","","3C","24jboCkAEFrsBKNh6z8FFyJP8YhejsrBwt7JdHVhiCk7DCc3Zxsc4g6PYG8tsLXmK",""],"version":1,"chainId":${AddressScheme.getAddressSchema.chainId},"assetId":"DUyJyszsWcmZG7q2Ctk1hisDeGBPB8dEzyU8Gs5V2j3n","script":"$script"}"""),
        tx))
   }
 

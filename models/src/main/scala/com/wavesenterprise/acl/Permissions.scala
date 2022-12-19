@@ -64,7 +64,7 @@ final case class Permissions private (value: SortedSet[PermissionOp]) {
       .flatten
 
   def combine(that: Permissions): Permissions = {
-    Permissions(value | that.value) //todo: optimize set size by not adding duplicates?
+    Permissions(value | that.value) // todo: optimize set size by not adding duplicates?
   }
 }
 
