@@ -10,17 +10,19 @@ sealed trait BlockchainFeature extends EnumEntry {
 
 object BlockchainFeature extends Enum[BlockchainFeature] {
 
-  case object SponsoredFeesSupport                     extends BlockchainFeature
-  case object ContractsGrpcSupport                     extends BlockchainFeature
-  case object ValidateContracts                        extends BlockchainFeature
-  case object SmartAccounts                            extends BlockchainFeature
-  case object SmartAccountTrading                      extends BlockchainFeature
-  case object SmartAssets                              extends BlockchainFeature
-  case object MassTransfer                             extends BlockchainFeature
-  case object DataTransaction                          extends BlockchainFeature
-  case object AtomicTransactionSupport                 extends BlockchainFeature
-  case object ContractValidationsSupport               extends BlockchainFeature
-  case object ContractNativeTokenSupportAndPkiV1Support               extends BlockchainFeature
+  case object SponsoredFeesSupport                      extends BlockchainFeature
+  case object ContractsGrpcSupport                      extends BlockchainFeature
+  case object ValidateContracts                         extends BlockchainFeature
+  case object SmartAccounts                             extends BlockchainFeature
+  case object SmartAccountTrading                       extends BlockchainFeature
+  case object SmartAssets                               extends BlockchainFeature
+  case object MassTransfer                              extends BlockchainFeature
+  case object DataTransaction                           extends BlockchainFeature
+  case object AtomicTransactionSupport                  extends BlockchainFeature
+  case object ContractValidationsSupport                extends BlockchainFeature
+  case object ContractNativeTokenSupportAndPkiV1Support extends BlockchainFeature
+  case object OtherTxTypesAtomicSupport                 extends BlockchainFeature
+
   case class EvalFeature(override val seqCode: String) extends BlockchainFeature
 
   override def values: immutable.IndexedSeq[BlockchainFeature] = findValues
