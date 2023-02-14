@@ -566,6 +566,17 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
       .selfSigned(currentChainId, sender, assetName, description, quantity, decimals, reissuable, fee, timestamp, script)
       .explicitGet()
 
+  def smartIssueTransactionV3Gen(senderGen: Gen[PrivateKeyAccount] = accountGen,
+                                 scriptOptGen: Gen[Option[Script]] = Gen.option(scriptGen)): Gen[IssueTransactionV3] =
+    for {
+      script                                                                      <- scriptOptGen
+      (_, assetName, description, quantity, decimals, reissuable, fee, timestamp) <- issueParamGen
+      sender                                                                      <- senderGen
+      atomictBadgeOpt                                                             <- atomicBadgeOptGen
+    } yield IssueTransactionV3
+      .selfSigned(currentChainId, sender, assetName, description, quantity, decimals, reissuable, fee, timestamp, atomictBadgeOpt, script)
+      .explicitGet()
+
   def permitTransactionV1Gen(accountGen: Gen[PrivateKeyAccount] = accountGen,
                              targetGen: Gen[AddressOrAlias] = accountOrAliasGen,
                              permissionOpGen: Gen[PermissionOp] = PermissionsGen.permissionOpGen,
