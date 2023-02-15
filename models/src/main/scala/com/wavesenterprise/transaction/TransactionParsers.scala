@@ -5,7 +5,7 @@ import com.wavesenterprise.transaction.acl.{PermitTransactionV1, PermitTransacti
 import com.wavesenterprise.transaction.assets._
 import com.wavesenterprise.transaction.assets.exchange.ExchangeTransactionV2
 import com.wavesenterprise.transaction.docker._
-import com.wavesenterprise.transaction.lease.{LeaseCancelTransactionV2, LeaseTransactionV2}
+import com.wavesenterprise.transaction.lease.{LeaseCancelTransactionV2, LeaseCancelTransactionV3, LeaseTransactionV2, LeaseTransactionV3}
 import com.wavesenterprise.transaction.smart.SetScriptTransactionV1
 import com.wavesenterprise.transaction.transfer._
 import com.wavesenterprise.utils.Constants.base58Length
@@ -32,22 +32,31 @@ object TransactionParsers {
   private val modern: Map[(Byte, Byte), TransactionParser] = Seq[TransactionParser](
     DataTransactionV1,
     DataTransactionV2,
+    DataTransactionV3,
     TransferTransactionV2,
     TransferTransactionV3,
     SetScriptTransactionV1,
     IssueTransactionV2,
+    IssueTransactionV3,
     CreateAliasTransactionV2,
     CreateAliasTransactionV3,
+    CreateAliasTransactionV4,
     ReissueTransactionV2,
+    ReissueTransactionV3,
     BurnTransactionV2,
+    BurnTransactionV3,
     ExchangeTransactionV2,
     LeaseTransactionV2,
+    LeaseTransactionV3,
     LeaseCancelTransactionV2,
+    LeaseCancelTransactionV3,
     SponsorFeeTransactionV1,
+    SponsorFeeTransactionV2,
     SetAssetScriptTransactionV1,
     PermitTransactionV1,
     PermitTransactionV2,
     RegisterNodeTransactionV1,
+    RegisterNodeTransactionV2,
     CreateContractTransactionV1,
     CreateContractTransactionV2,
     CreateContractTransactionV3,
@@ -78,6 +87,7 @@ object TransactionParsers {
     PolicyDataHashTransactionV2,
     PolicyDataHashTransactionV3,
     MassTransferTransactionV2,
+    MassTransferTransactionV3,
     AtomicTransactionV1
   ).flatMap { x =>
     x.supportedVersions.map { version =>
