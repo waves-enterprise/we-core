@@ -537,7 +537,7 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
       createContractV3ParamGen(atomicBadge),
       callContractV4ParamGen(atomicBadge),
       updateContractV3ParamGen(atomicBadge),
-      disableContractV3ParamGen(atomicBadge)
+      disableContractV3ParamGen(atomicBadge),
     )
 
   def atomicInnerTxsGen(atomicBadge: Option[AtomicBadge], maxCount: Int): Gen[List[AtomicInnerTransaction]] =
