@@ -178,30 +178,47 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
     recipient <- addressGen
   } yield (sender, amount, fee, timestamp, recipient)
 
-  def createLease(sender: PrivateKeyAccount, amount: Long, fee: Long, timestamp: Long, recipient: AddressOrAlias): Gen[LeaseTransactionV2] = {
+  def createLease(sender: PrivateKeyAccount,
+                  amount: Long,
+                  fee: Long,
+                  timestamp: Long,
+                  recipient: AddressOrAlias,
+                  atomicBadge: Option[AtomicBadge]): Gen[(LeaseTransactionV2, LeaseTransactionV3)] = {
     val v2 = LeaseTransactionV2.selfSigned(None, sender, recipient, amount, fee, timestamp).explicitGet()
-    Gen.const(v2)
+    val v3 = LeaseTransactionV3.selfSigned(None, sender, recipient, amount, fee, timestamp, atomicBadge).explicitGet()
+    Gen.const((v2, v3))
   }
 
-  def createLeaseCancel(sender: PrivateKeyAccount, leaseId: ByteStr, cancelFee: Long, timestamp: Long): Gen[LeaseCancelTransactionV2] = {
+  def createLeaseCancel(sender: PrivateKeyAccount,
+                        leaseId: ByteStr,
+                        cancelFee: Long,
+                        timestamp: Long,
+                        atomicBadge: Option[AtomicBadge]): Gen[(LeaseCancelTransactionV2, LeaseCancelTransactionV3)] = {
     val v2 = LeaseCancelTransactionV2
       .selfSigned(currentChainId, sender, cancelFee, timestamp + 1, leaseId)
       .explicitGet()
-    Gen.const(v2)
-  }
-  val leaseAndCancelGen: Gen[(LeaseTransaction, LeaseCancelTransaction)] = for {
-    (sender, amount, fee, timestamp, recipient) <- leaseParamGen
-    lease                                       <- createLease(sender, amount, fee, timestamp, recipient)
-    cancelFee                                   <- smallFeeGen
-    leaseCancel                                 <- createLeaseCancel(sender, lease.id(), cancelFee, timestamp + 1)
-  } yield (lease, leaseCancel)
+    val v3 = LeaseCancelTransactionV3
+      .selfSigned(currentChainId, sender, cancelFee, timestamp + 1, leaseId, atomicBadge)
+      .explicitGet()
 
-  val leaseGen: Gen[LeaseTransaction]             = leaseAndCancelGen.map(_._1)
-  val leaseCancelGen: Gen[LeaseCancelTransaction] = leaseAndCancelGen.map(_._2)
+    Gen.const((v2, v3))
+  }
+  val leaseAndCancelGen: Gen[(LeaseTransaction, LeaseTransactionV3, LeaseCancelTransaction, LeaseCancelTransactionV3)] = for {
+    (sender, amount, fee, timestamp, recipient) <- leaseParamGen
+    atomicBadgeOpt                              <- atomicBadgeOptGen
+    (lease, leaseAtomic)                        <- createLease(sender, amount, fee, timestamp, recipient, atomicBadgeOpt)
+    cancelFee                                   <- smallFeeGen
+    (leaseCancel, leaseCancelAtomic)            <- createLeaseCancel(sender, lease.id(), cancelFee, timestamp + 1, atomicBadgeOpt)
+  } yield (lease, leaseAtomic, leaseCancel, leaseCancelAtomic)
+
+  val leaseGen: Gen[LeaseTransaction]                 = leaseAndCancelGen.map(_._1)
+  val leaseV3Gen: Gen[LeaseTransactionV3]             = leaseAndCancelGen.map(_._2)
+  val leaseCancelGen: Gen[LeaseCancelTransaction]     = leaseAndCancelGen.map(_._3)
+  val leaseCancelV3Gen: Gen[LeaseCancelTransactionV3] = leaseAndCancelGen.map(_._4)
 
   val leaseV2Gen: Gen[LeaseTransactionV2] = leaseParamGen.flatMap {
     case (sender, amount, fee, timestamp, recipient) =>
-      createLease(sender, amount, fee, timestamp, recipient)
+      createLease(sender, amount, fee, timestamp, recipient, None).map(_._1)
   }
 
   val transferParamGen = for {
@@ -257,6 +274,15 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
         massTransferGen(minTransfersCount, maxTransfersCount, recipientGen)
     } yield MassTransferTransactionV2.selfSigned(sender, assetId, recipients, timestamp, feeAmount, attachment, feeAssetId).explicitGet()
 
+  def massTransferV3Gen(minTransfersCount: Int = 0,
+                        maxTransfersCount: Int = MaxTransferCount,
+                        recipientGen: Gen[AddressOrAlias] = accountOrAliasGen): Gen[MassTransferTransactionV3] =
+    for {
+      (assetId, sender, recipients, timestamp, feeAssetId, feeAmount, attachment) <-
+        massTransferGen(minTransfersCount, maxTransfersCount, recipientGen)
+      atomicBadge <- atomicBadgeOptGen
+    } yield MassTransferTransactionV3.selfSigned(sender, assetId, recipients, timestamp, feeAmount, attachment, feeAssetId, atomicBadge).explicitGet()
+
   protected def massTransferGen(minTransfersCount: Int, maxTransfersCount: Int, recipientGen: Gen[AddressOrAlias]) =
     for {
       (assetId, sender, _, _, timestamp, feeAssetId, feeAmount, attachment) <- transferParamGen
@@ -297,13 +323,32 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
     Gen.const(CreateAliasTransactionV3.selfSigned(sender, alias, fee, timestamp, feeAssetId).explicitGet())
   }
 
-  val issueReissueBurnGen: Gen[(IssueTransaction, ReissueTransaction, BurnTransaction)] = for {
+  val createAliasV4Gen: Gen[CreateAliasTransactionV4] = for {
+    timestamp: Long           <- positiveLongGen
+    sender: PrivateKeyAccount <- accountGen
+    alias: Alias              <- aliasGen
+    feeAssetId                <- Gen.option(bytes32gen)
+    atomicBadge               <- atomicBadgeOptGen
+    tx                        <- Gen.const(CreateAliasTransactionV4.selfSigned(sender, alias, MinIssueFee, timestamp, feeAssetId.map(ByteStr(_)), atomicBadge).explicitGet())
+  } yield tx
+
+  def createAliasV4Gen(sender: PrivateKeyAccount,
+                       alias: Alias,
+                       fee: Long,
+                       timestamp: Long,
+                       feeAssetId: Option[AssetId],
+                       atomicBadge: Option[AtomicBadge]): Gen[CreateAliasTransactionV4] = {
+    Gen.const(CreateAliasTransactionV4.selfSigned(sender, alias, fee, timestamp, feeAssetId, atomicBadge).explicitGet())
+  }
+
+  val issueReissueBurnGen: Gen[(IssueTransaction, ReissueTransaction, BurnTransaction, BurnTransactionV3)] = for {
     amount                    <- positiveLongGen
     sender: PrivateKeyAccount <- accountGen
     r                         <- issueReissueBurnGeneratorP(amount, amount, amount, sender)
   } yield r
 
-  def issueReissueBurnGeneratorP(issueQuantity: Long, sender: PrivateKeyAccount): Gen[(IssueTransaction, ReissueTransaction, BurnTransaction)] =
+  def issueReissueBurnGeneratorP(issueQuantity: Long,
+                                 sender: PrivateKeyAccount): Gen[(IssueTransaction, ReissueTransaction, BurnTransaction, BurnTransactionV3)] =
     issueReissueBurnGeneratorP(issueQuantity, issueQuantity, issueQuantity, sender)
 
   def createIssue(issuer: PrivateKeyAccount,
@@ -337,15 +382,25 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
     Gen.const(BurnTransactionV2.selfSigned(currentChainId, burner, assetId, amount, fee, timestamp).explicitGet())
   }
 
+  def createBurnV3(burner: PrivateKeyAccount,
+                   assetId: AssetId,
+                   amount: Long,
+                   fee: Long,
+                   timestamp: Long,
+                   atomicBadgeOpt: Option[AtomicBadge]): Gen[BurnTransactionV3] = {
+    Gen.const(BurnTransactionV3.selfSigned(currentChainId, burner, assetId, amount, fee, timestamp, atomicBadgeOpt).explicitGet())
+  }
+
   protected val reissuanceGen: Gen[Boolean] = Arbitrary.arbitrary[Boolean]
 
-  def issueReissueBurnGeneratorP(issueQuantity: Long,
-                                 reissueQuantity: Long,
-                                 burnQuantity: Long,
-                                 sender: PrivateKeyAccount,
-                                 script: Option[Script] = None,
-                                 reissuableGen: Gen[Boolean] = reissuanceGen,
-                                 timestampGen: Gen[Long] = timestampGen): Gen[(IssueTransaction, ReissueTransaction, BurnTransaction)] =
+  def issueReissueBurnGeneratorP(
+      issueQuantity: Long,
+      reissueQuantity: Long,
+      burnQuantity: Long,
+      sender: PrivateKeyAccount,
+      script: Option[Script] = None,
+      reissuableGen: Gen[Boolean] = reissuanceGen,
+      timestampGen: Gen[Long] = timestampGen): Gen[(IssueTransaction, ReissueTransaction, BurnTransaction, BurnTransactionV3)] =
     for {
       (_, assetName, description, _, decimals, _, iFee, _) <- issueParamGen
       reissuable                                           <- reissuableGen
@@ -355,11 +410,14 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
       issue                                                <- createIssue(sender, assetName, description, issueQuantity, decimals, reissuable, iFee, timestamp, script)
       reissue                                              <- createReissue(sender, issue.assetId(), reissueQuantity, reissuable2, fee, timestamp)
       burn                                                 <- createBurn(sender, issue.assetId(), burnQuantity, fee, timestamp)
-    } yield (issue, reissue, burn)
+      atomicBadgeOpt                                       <- atomicBadgeOptGen
+      burnV3                                               <- createBurnV3(sender, issue.assetId(), burnQuantity, fee, timestamp, atomicBadgeOpt)
+    } yield (issue, reissue, burn, burnV3)
 
   val issueGen: Gen[IssueTransaction]     = issueReissueBurnGen.map(_._1)
   val reissueGen: Gen[ReissueTransaction] = issueReissueBurnGen.map(_._2)
   val burnGen: Gen[BurnTransaction]       = issueReissueBurnGen.map(_._3)
+  val burnV3Gen: Gen[BurnTransactionV3]   = issueReissueBurnGen.map(_._4)
 
   def issueGen(sender: PrivateKeyAccount, fixedQuantity: Option[Long] = None): Gen[IssueTransaction] =
     for {
@@ -381,7 +439,9 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
 
   def sponsorFeeCancelSponsorFeeGen(
       sender: PrivateKeyAccount,
-      ts: Option[Long] = None): Gen[(IssueTransaction, SponsorFeeTransactionV1, SponsorFeeTransactionV1, SponsorFeeTransactionV1)] =
+      ts: Option[Long] = None,
+      atomicBadge: Option[AtomicBadge] = None)
+      : Gen[(IssueTransaction, SponsorFeeTransactionV1, SponsorFeeTransactionV1, SponsorFeeTransactionV1, SponsorFeeTransactionV2)] =
     for {
       (_, assetName, description, quantity, decimals, reissuable, iFee, timestamp) <- issueParamGen
       txTimestamp = ts.getOrElse(timestamp)
@@ -393,11 +453,20 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
     } yield (issue,
              SponsorFeeTransactionV1.selfSigned(sender, assetId, true, 1.west, txTimestamp).explicitGet(),
              SponsorFeeTransactionV1.selfSigned(sender, assetId, true, 1.west, txTimestamp + 1).explicitGet(),
-             SponsorFeeTransactionV1.selfSigned(sender, assetId, false, 1.west, txTimestamp + 2).explicitGet())
+             SponsorFeeTransactionV1.selfSigned(sender, assetId, false, 1.west, txTimestamp + 2).explicitGet(),
+             SponsorFeeTransactionV2.selfSigned(sender, assetId, true, 1.west, txTimestamp + 2, atomicBadge).explicitGet())
 
   val sponsorFeeGen = for {
-    sender        <- accountGen
-    (_, tx, _, _) <- sponsorFeeCancelSponsorFeeGen(sender)
+    sender           <- accountGen
+    (_, tx, _, _, _) <- sponsorFeeCancelSponsorFeeGen(sender)
+  } yield {
+    tx
+  }
+
+  val sponsorFeeV2Gen = for {
+    sender           <- accountGen
+    atomicBadge      <- atomicBadgeOptGen
+    (_, _, _, _, tx) <- sponsorFeeCancelSponsorFeeGen(sender, atomicBadge = atomicBadge)
   } yield {
     tx
   }
@@ -530,6 +599,7 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
 
   val dataTransactionV1Gen: Gen[DataTransactionV1] = dataTransactionV1Gen(DataValidation.MaxEntryCount)
   val dataTransactionV2Gen: Gen[DataTransactionV2] = dataTransactionV2Gen(DataValidation.MaxEntryCount)
+  val dataTransactionV3Gen: Gen[DataTransactionV3] = dataTransactionV3Gen(DataValidation.MaxEntryCount)
 
   def dataTransactionV1Gen(maxEntryCount: Int, useForScript: Boolean = false) =
     (for {
@@ -543,6 +613,14 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
       feeAssetId                <- Gen.option(bytes32gen)
     } yield DataTransactionV2.selfSigned(sender, sender, uniq, timestamp, 15000000, feeAssetId.map(ByteStr(_))).explicitGet())
       .label("DataTransactionV2")
+
+  def dataTransactionV3Gen(maxEntryCount: Int, useForScript: Boolean = false) =
+    (for {
+      (sender, uniq, timestamp) <- dataGen(maxEntryCount, useForScript)
+      feeAssetId                <- Gen.option(bytes32gen)
+      atomicBadge               <- atomicBadgeOptGen
+    } yield DataTransactionV3.selfSigned(sender, sender, uniq, timestamp, 15000000, feeAssetId.map(ByteStr(_)), atomicBadge).explicitGet())
+      .label("DataTransactionV3")
 
   protected def dataGen(maxEntryCount: Int, useForScript: Boolean) =
     for {
@@ -564,6 +642,17 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
       sender                                                                      <- senderGen
     } yield IssueTransactionV2
       .selfSigned(currentChainId, sender, assetName, description, quantity, decimals, reissuable, fee, timestamp, script)
+      .explicitGet()
+
+  def smartIssueTransactionV3Gen(senderGen: Gen[PrivateKeyAccount] = accountGen,
+                                 scriptOptGen: Gen[Option[Script]] = Gen.option(scriptGen)): Gen[IssueTransactionV3] =
+    for {
+      script                                                                      <- scriptOptGen
+      (_, assetName, description, quantity, decimals, reissuable, fee, timestamp) <- issueParamGen
+      sender                                                                      <- senderGen
+      atomictBadgeOpt                                                             <- atomicBadgeOptGen
+    } yield IssueTransactionV3
+      .selfSigned(currentChainId, sender, assetName, description, quantity, decimals, reissuable, fee, timestamp, atomictBadgeOpt, script)
       .explicitGet()
 
   def permitTransactionV1Gen(accountGen: Gen[PrivateKeyAccount] = accountGen,
@@ -624,6 +713,27 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
       nodeName    <- genBoundedString(5, 20)
       registerNodeTx <- RegisterNodeTransactionV1
         .selfSigned(sender, target, Some(new String(nodeName, UTF_8)), opType, txTimestamp, fee)
+        .fold(_ => Gen.fail, Gen.const)
+    } yield registerNodeTx
+  }
+
+  def registerNodeTransactionV2Gen(opTypeGen: Gen[OpType] = PermissionsGen.permissionOpTypeGen): Gen[RegisterNodeTransactionV2] = {
+    registerNodeTransactionV2Gen(accountGen, accountGen, opTypeGen)
+  }
+
+  def registerNodeTransactionV2Gen(senderGen: Gen[PrivateKeyAccount],
+                                   targetGen: Gen[PrivateKeyAccount],
+                                   opTypeGen: Gen[OpType]): Gen[RegisterNodeTransactionV2] = {
+    for {
+      sender      <- senderGen
+      target      <- targetGen
+      opType      <- opTypeGen
+      fee         <- smallFeeGen
+      txTimestamp <- ntpTimestampGen
+      nodeName    <- genBoundedString(5, 20)
+      atomicBadge <- atomicBadgeOptGen
+      registerNodeTx <- RegisterNodeTransactionV2
+        .selfSigned(sender, target, Some(new String(nodeName, UTF_8)), opType, txTimestamp, fee, atomicBadge)
         .fold(_ => Gen.fail, Gen.const)
     } yield registerNodeTx
   }
