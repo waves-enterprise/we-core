@@ -276,7 +276,7 @@ lazy val testCore: Project = (project in file("test-core"))
     Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
 
-val grpcProtobufVersion = "1.8"
+val grpcProtobufVersion = "1.9"
 
 lazy val grpcProtobuf = (project in file("grpc-protobuf"))
   .enablePlugins(AkkaGrpcPlugin, GrpcApiVersionGenerator)
