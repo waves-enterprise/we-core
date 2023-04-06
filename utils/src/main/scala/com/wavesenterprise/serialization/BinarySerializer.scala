@@ -148,20 +148,6 @@ object BinarySerializer {
     cert.asInstanceOf[X509Certificate]
   }
 
-  def writeX509Crl(value: X509CRL, output: ByteArrayDataOutput): Unit =
-    writeShortByteArray(value.getEncoded, output)
-
-  def parseX509Crl(bytes: Array[Byte], offset: Offset = 0): (X509CRL, Offset) = {
-    val (crlBytes, end) = parseShortByteArray(bytes, offset)
-    x509CrlFromBytes(crlBytes) -> end
-  }
-
-  def x509CrlFromBytes(crlBytes: Array[Byte]): X509CRL = {
-    val factory = CertificateFactory.getInstance("X.509")
-    val crl     = factory.generateCRL(new ByteArrayInputStream(crlBytes))
-    crl.asInstanceOf[X509CRL]
-  }
-
   @inline
   def parseLong(bytes: Array[Byte], offset: Offset = 0): (Long, Offset) =
     Longs.fromBytes(
@@ -173,6 +159,15 @@ object BinarySerializer {
       bytes(offset + 5),
       bytes(offset + 6),
       bytes(offset + 7)
+    ) -> (offset + Longs.BYTES)
+
+  @inline
+  def parseInt(bytes: Array[Byte], offset: Offset = 0): (Int, Offset) =
+    Ints.fromBytes(
+      bytes(offset),
+      bytes(offset + 1),
+      bytes(offset + 2),
+      bytes(offset + 3)
     ) -> (offset + Longs.BYTES)
 
   private[serialization] def byteCountWriter(count: Int, output: ByteArrayDataOutput): Unit = {
