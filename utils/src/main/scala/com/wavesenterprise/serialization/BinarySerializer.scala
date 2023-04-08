@@ -158,7 +158,7 @@ object BinarySerializer {
 
   def x509CrlFromBytes(crlBytes: Array[Byte]): X509CRL = {
     val factory = CertificateFactory.getInstance("X.509")
-    val crl = factory.generateCRL(new ByteArrayInputStream(crlBytes))
+    val crl     = factory.generateCRL(new ByteArrayInputStream(crlBytes))
     crl.asInstanceOf[X509CRL]
   }
 
