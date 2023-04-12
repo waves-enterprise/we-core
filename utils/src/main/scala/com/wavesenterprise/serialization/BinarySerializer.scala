@@ -182,7 +182,7 @@ object BinarySerializer {
       bytes(offset + 1),
       bytes(offset + 2),
       bytes(offset + 3)
-    ) -> (offset + Longs.BYTES)
+    ) -> (offset + Ints.BYTES)
 
   private[serialization] def byteCountWriter(count: Int, output: ByteArrayDataOutput): Unit = {
     require(count.isValidByte)
