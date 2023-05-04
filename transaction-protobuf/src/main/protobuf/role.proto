@@ -6,6 +6,17 @@ option java_package = "com.wavesenterprise.transaction.protobuf";
 option csharp_namespace = "WavesEnterprise";
 option go_package = "wavesenterprise.com/weproto";
 
+/* Possible values:
+ * Miner = 1
+ * Issuer = 2
+ * Dexer = 3
+ * Permissioner = 4
+ * Blacklister = 5
+ * Banned = 6
+ * ContractDeveloper = 7
+ * ConnectionManager = 8
+ * Sender = 9
+ * ContractValidator = 10 */
 message Role {
     int32 id = 1;
 }
