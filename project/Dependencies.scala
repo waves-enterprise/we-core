@@ -45,7 +45,10 @@ object Dependencies {
 
   lazy val asyncHttpClient = Seq("org.asynchttpclient" % "async-http-client" % "2.10.5")
 
-  lazy val docker = Seq(("com.spotify" % "docker-client" % "8.16.0").exclude("com.google.guava", "guava"))
+  lazy val docker = Seq(
+    "com.github.docker-java" % "docker-java-core" % "3.3.0",
+    "com.github.docker-java" % "docker-java-transport-httpclient5" % "3.3.0"
+  )
 
   lazy val netty = Seq("io.netty" % s"netty-common" % "4.1.45.Final")
 
