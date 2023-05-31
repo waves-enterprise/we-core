@@ -1,13 +1,14 @@
 package com.wavesenterprise
 
-import com.google.common.base.Charsets
-import com.spotify.docker.client.DockerClient.RemoveContainerParam
-import com.spotify.docker.client.messages.{ContainerConfig, HostConfig, PortBinding}
-import com.spotify.docker.client.{DefaultDockerClient, DockerClient}
+import com.github.dockerjava.api.DockerClient
+import com.github.dockerjava.api.async.ResultCallback
+import com.github.dockerjava.api.model.{ExposedPort, Frame, HostConfig, PortBinding}
+import com.wavesenterprise.DockerClientBuilder.createDefaultApacheDockerClient
 import com.wavesenterprise.TypeScriptTransactionsBytesSuite.waitFor
 import com.wavesenterprise.account.PrivateKeyAccount
 import com.wavesenterprise.transaction.Transaction
 import com.wavesenterprise.transaction.docker.ContractTransactionGen
+import com.wavesenterprise.utils.ScorexLogging
 import monix.eval.Task
 import monix.execution.cancelables.SerialCancelable
 import org.asynchttpclient.Dsl.{asyncHttpClient, get, post, config => clientConfig}
@@ -26,10 +27,11 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.postfixOps
 import scala.util.Try
 
-class TypeScriptTransactionsBytesSuite extends FreeSpec with Matchers with ContractTransactionGen with NodeHost with BeforeAndAfterAll {
+class TypeScriptTransactionsBytesSuite extends FreeSpec with Matchers with ContractTransactionGen with NodeHost with BeforeAndAfterAll
+    with ScorexLogging {
 
   val tsServerPort: String               = "3000"
-  val dockerClient: DockerClient         = DefaultDockerClient.fromEnv().build()
+  val dockerClient: DockerClient         = createDefaultApacheDockerClient()
   val containerLogTask: SerialCancelable = SerialCancelable()
   var httpClient: AsyncHttpClient        = _
   var image: String                      = _
@@ -37,39 +39,43 @@ class TypeScriptTransactionsBytesSuite extends FreeSpec with Matchers with Contr
   var apiUrl: String                     = _
 
   private def startTsServerInDocker(): Unit = {
-    image = dockerClient.build(Paths.get(sys.props("user.dir")).resolve("transactions-factory"), "ts-tx-test-server")
-    val portBindings = Map(tsServerPort -> List(PortBinding.randomPort(nodeHost)).asJava).asJava
-    val hostConfig   = HostConfig.builder().portBindings(portBindings).build()
-    val containerConfig = ContainerConfig
-      .builder()
-      .hostConfig(hostConfig)
-      .image(image)
-      .exposedPorts(tsServerPort)
-      .build()
-    val creation = dockerClient.createContainer(containerConfig)
-    containerId = creation.id()
+    val imageName = "ts-tx-test-server"
+    dockerClient.buildImageCmd(Paths.get(sys.props("user.dir")).resolve(
+      "transactions-factory").toFile).withTags(Set(s"$imageName").asJava).start().awaitImageId()
 
+    val hostConfigBuilder = new HostConfig()
+      .withPortBindings(PortBinding.parse(tsServerPort))
+
+    val container = dockerClient.createContainerCmd(s"$imageName:latest")
+      .withName("ts-tx-test-server-container")
+      .withExposedPorts(ExposedPort.parse(tsServerPort))
+      .withHostConfig(hostConfigBuilder)
+      .exec()
+
+    containerId = container.getId
+    dockerClient.startContainerCmd(containerId).exec()
+
+    val callback = new ResultCallback.Adapter[Frame] {
+      override def onNext(frame: Frame): Unit = {
+        if (frame != null) {
+          log.info(s"[ts-container]: ${new String(frame.getPayload)}")
+        }
+      }
+    }
     containerLogTask := Task
       .eval {
-        dockerClient
-          .logs(
-            containerId,
-            DockerClient.LogsParam.stdout,
-            DockerClient.LogsParam.stderr,
-            DockerClient.LogsParam.follow
-          )
-          .asScala
-          .map(message => s"[ts-container]: ${Charsets.UTF_8.decode(message.content).toString}")
-          .foreach(println)
+        dockerClient.logContainerCmd(containerId)
+          .withStdOut(true)
+          .withFollowStream(true)
+          .exec(callback)
       }
       .executeAsync
       .runToFuture(monix.execution.Scheduler.global)
 
-    dockerClient.startContainer(containerId)
+    val boundPort = dockerClient.inspectContainerCmd(containerId).exec.getNetworkSettings.getPorts.getBindings.get(
+      new ExposedPort(tsServerPort.toInt)).head.getHostPortSpec
 
-    val boundPort = dockerClient.inspectContainer(containerId).networkSettings().ports().get(s"$tsServerPort/tcp").asScala.head.hostPort()
     apiUrl = s"http://$nodeHost:$boundPort/"
-
     waitForTsServerStartup()
   }
 
@@ -108,15 +114,15 @@ class TypeScriptTransactionsBytesSuite extends FreeSpec with Matchers with Contr
     }
     if (containerId != null) {
       Try {
-        dockerClient.stopContainer(containerId, 10)
-        dockerClient.removeContainer(containerId, RemoveContainerParam.forceKill())
+        dockerClient.stopContainerCmd(containerId).withTimeout(10).exec
+        dockerClient.removeContainerCmd(containerId).withForce(true).exec
       }
     }
     if (!containerLogTask.isCanceled) {
       containerLogTask.cancel()
     }
     if (image != null) {
-      Try(dockerClient.removeImage(image))
+      Try(dockerClient.removeImageCmd(image).exec)
     }
     dockerClient.close()
     super.afterAll()
