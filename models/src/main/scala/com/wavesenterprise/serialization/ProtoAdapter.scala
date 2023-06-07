@@ -15,7 +15,9 @@ import com.wavesenterprise.transaction._
 import com.wavesenterprise.transaction.docker._
 import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation.{
   ContractBurnV1,
+  ContractCancelLeaseV1,
   ContractIssueV1,
+  ContractLeaseV1,
   ContractReissueV1,
   ContractTransferOutV1
 }
@@ -23,7 +25,9 @@ import com.wavesenterprise.transaction.docker.assets.{ContractAssetOperation, Co
 import com.wavesenterprise.transaction.protobuf.ValidationPolicy.Type
 import com.wavesenterprise.transaction.protobuf.docker.{
   ContractBurn,
+  ContractCancelLease,
   ContractIssue,
+  ContractLease,
   ContractReissue,
   ContractTransferOut,
   ContractTransferIn => PbContractTransferIn
@@ -122,6 +126,21 @@ object ProtoAdapter {
           o.amount
         )
         PbContractAssetOperation(PbContractAssetOperation.Operation.ContractTransferOut(innerOperation))
+
+      case o: ContractAssetOperation.ContractLeaseV1 =>
+        val innerOperation = ContractLease(
+          o.leaseId.base58,
+          o.nonce,
+          o.recipient.stringRepr,
+          o.amount
+        )
+        PbContractAssetOperation(PbContractAssetOperation.Operation.ContractLease(innerOperation))
+
+      case o: ContractAssetOperation.ContractCancelLeaseV1 =>
+        val innerOperation = ContractCancelLease(
+          o.leaseId.base58,
+        )
+        PbContractAssetOperation(PbContractAssetOperation.Operation.ContractCancelLease(innerOperation))
     }
 
   }
@@ -177,6 +196,30 @@ object ProtoAdapter {
             .fromString(value.recipient)
             .leftMap(ValidationError.fromCryptoError)
         } yield ContractTransferOutV1(assetIdOpt, recipient, value.amount)
+
+      case inner: PbContractAssetOperation.Operation.ContractLease =>
+        val value = inner.value
+
+        for {
+          leaseId <- ByteStr
+            .decodeBase58(value.leaseId)
+            .toEither
+            .leftMap(err => GenericError(s"Error decoding 'leaseId' of ContractLease asset operation: $err"))
+
+          recipient <- AddressOrAlias
+            .fromString(value.recipient)
+            .leftMap(ValidationError.fromCryptoError)
+        } yield ContractLeaseV1(leaseId, value.nonce.toByte, recipient, value.amount)
+
+      case inner: PbContractAssetOperation.Operation.ContractCancelLease =>
+        val value = inner.value
+
+        for {
+          leaseId <- ByteStr
+            .decodeBase58(value.leaseId)
+            .toEither
+            .leftMap(err => GenericError(s"Error decoding 'leaseId' of ContractCancelLease asset operation: $err"))
+        } yield ContractCancelLeaseV1(leaseId)
     }
   }
 

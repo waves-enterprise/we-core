@@ -1,0 +1,14 @@
+syntax = "proto3";
+package wavesenterprise;
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.transaction.protobuf.docker";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+message ContractLease {
+  string leaseId = 1;
+  int32 nonce = 2;
+  string recipient = 3;
+  int64 amount = 4;
+}

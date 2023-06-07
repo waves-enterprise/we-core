@@ -3,6 +3,7 @@ package com.wavesenterprise.transaction.docker.assets
 import com.google.common.io.ByteArrayDataOutput
 import com.google.common.io.ByteStreams.newDataOutput
 import com.wavesenterprise.account.AddressOrAlias
+import com.wavesenterprise.crypto
 import com.wavesenterprise.serialization.BinarySerializer
 import com.wavesenterprise.state.ByteStr
 import com.wavesenterprise.transaction.ValidationError.GenericError
@@ -56,6 +57,8 @@ object ContractAssetOperation {
     case object ContractIssueType       extends ContractAssetOperationType(1, "issue")
     case object ContractReissueType     extends ContractAssetOperationType(2, "reissue")
     case object ContractBurnType        extends ContractAssetOperationType(3, "burn")
+    case object ContractLeaseType       extends ContractAssetOperationType(4, "lease")
+    case object ContractCancelLeaseType extends ContractAssetOperationType(5, "cancel-lease")
 
     override def values: immutable.IndexedSeq[ContractAssetOperationType] = findValues
 
@@ -240,6 +243,71 @@ object ContractAssetOperation {
     }
   }
 
+  final case class ContractLeaseV1 private (
+      operationType: OperationType,
+      version: Byte,
+      leaseId: ByteStr,
+      nonce: Byte,
+      recipient: AddressOrAlias,
+      amount: Long,
+  ) extends ContractAssetOperation {
+    override def writeContractAssetOperationBytes(output: ByteArrayDataOutput): Unit = {
+      output.write(leaseId.arr)
+      output.writeByte(nonce)
+      output.write(recipient.bytes.arr)
+      output.writeLong(amount)
+    }
+  }
+
+  object ContractLeaseV1 {
+    import com.wavesenterprise.serialization.json.AddressOrAliasJsonUtils._
+
+    val operationType: OperationType = ContractAssetOperationTypes.ContractLeaseType
+    val version: Byte                = 1
+
+    val format: Format[ContractLeaseV1] = Json.format
+
+    def apply(leaseId: ByteStr, nonce: Byte, recipient: AddressOrAlias, amount: Long): ContractLeaseV1 =
+      ContractLeaseV1(operationType = ContractLeaseV1.operationType, version = 1, leaseId, nonce, recipient, amount)
+
+    def fromBytes(bytes: Array[Byte], offset: Int): (ContractLeaseV1, Int) = {
+      val ((operationType, version), versionEnd) = readContractAssetOperationPrefixFromBytes(bytes, offset)
+      val (leaseId, leaseIdEnd)                  = bytes.slice(versionEnd, versionEnd + crypto.DigestSize) -> (versionEnd + crypto.DigestSize)
+      val (nonce, nonceEnd)                      = bytes(leaseIdEnd)                                       -> (leaseIdEnd + 1)
+      val (recipient, recipientEnd)              = AddressOrAlias.fromBytesUnsafe(bytes, nonceEnd)
+      val (amount, end)                          = BinarySerializer.parseLong(bytes, recipientEnd)
+
+      (ContractLeaseV1(operationType, version, ByteStr(leaseId), nonce, recipient, amount), end)
+    }
+  }
+
+  final case class ContractCancelLeaseV1 private (
+      operationType: OperationType,
+      version: Byte,
+      leaseId: ByteStr,
+  ) extends ContractAssetOperation {
+    override def writeContractAssetOperationBytes(output: ByteArrayDataOutput): Unit = {
+      output.write(leaseId.arr)
+    }
+  }
+
+  object ContractCancelLeaseV1 {
+    val operationType: OperationType = ContractAssetOperationTypes.ContractCancelLeaseType
+    val version: Byte                = 1
+
+    val format: Format[ContractCancelLeaseV1] = Json.format
+
+    def apply(leaseId: ByteStr): ContractCancelLeaseV1 =
+      ContractCancelLeaseV1(operationType, version = 1, leaseId)
+
+    def fromBytes(bytes: Array[Byte], offset: Int): (ContractCancelLeaseV1, Int) = {
+      val ((operationType, version), versionEnd) = readContractAssetOperationPrefixFromBytes(bytes, offset)
+      val (leaseId, end)                         = bytes.slice(versionEnd, versionEnd + crypto.DigestSize) -> (versionEnd + crypto.DigestSize)
+
+      (ContractCancelLeaseV1(operationType, version, ByteStr(leaseId)), end)
+    }
+  }
+
   implicit val format: Format[ContractAssetOperation] = {
     Format(
       {
@@ -256,6 +324,8 @@ object ContractAssetOperation {
                   case ContractAssetOperationTypes.ContractIssueType       => ContractIssueV1.format.reads(obj)
                   case ContractAssetOperationTypes.ContractReissueType     => ContractReissueV1.format.reads(obj)
                   case ContractAssetOperationTypes.ContractBurnType        => ContractBurnV1.format.reads(obj)
+                  case ContractAssetOperationTypes.ContractLeaseType       => ContractLeaseV1.format.reads(obj)
+                  case ContractAssetOperationTypes.ContractCancelLeaseType => ContractCancelLeaseV1.format.reads(obj)
                 }
           }
 
@@ -266,6 +336,8 @@ object ContractAssetOperation {
         case obj: ContractIssueV1       => ContractIssueV1.format.writes(obj)
         case obj: ContractReissueV1     => ContractReissueV1.format.writes(obj)
         case obj: ContractBurnV1        => ContractBurnV1.format.writes(obj)
+        case obj: ContractLeaseV1       => ContractLeaseV1.format.writes(obj)
+        case obj: ContractCancelLeaseV1 => ContractCancelLeaseV1.format.writes(obj)
       }
     )
   }
@@ -277,5 +349,7 @@ object ContractAssetOperation {
     case ((ContractAssetOperationTypes.ContractIssueType, 1), _)       => ContractIssueV1.fromBytes(bytes, offset)
     case ((ContractAssetOperationTypes.ContractReissueType, 1), _)     => ContractReissueV1.fromBytes(bytes, offset)
     case ((ContractAssetOperationTypes.ContractBurnType, 1), _)        => ContractBurnV1.fromBytes(bytes, offset)
+    case ((ContractAssetOperationTypes.ContractLeaseType, 1), _)       => ContractLeaseV1.fromBytes(bytes, offset)
+    case ((ContractAssetOperationTypes.ContractCancelLeaseType, 1), _) => ContractCancelLeaseV1.fromBytes(bytes, offset)
   }
 }
