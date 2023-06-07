@@ -12,11 +12,11 @@ The library could also be used to integrate with the node.
 * Gradle
 
         dependencies {
-              implementation 'com.wavesenterprise:we-core:1.12.2'
+              implementation 'com.wavesenterprise:we-core:1.12.3'
         }
 * SBT
 
-      libraryDependencies += "com.wavesenterprise" % "we-core" % "1.12.2"
+      libraryDependencies += "com.wavesenterprise" % "we-core" % "1.12.3"
 ---
 ## 3. Code walkthrough
 
