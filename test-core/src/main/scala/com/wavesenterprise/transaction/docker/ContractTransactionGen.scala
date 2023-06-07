@@ -630,6 +630,29 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
       amount <- positiveLongGen
     } yield ContractAssetOperation.ContractBurnV1(burnedAssetId, amount)
 
+  def contractLeaseV1Gen(
+      nonceGen: Gen[Byte] = issueNonceGen,
+      recipientsGen: Gen[AddressOrAlias] = accountOrAliasGen,
+      maybeParentTxId: Option[ByteStr] = None
+  ): Gen[ContractAssetOperation.ContractLeaseV1] =
+    for {
+      nonce     <- nonceGen
+      leaseId   <- maybeParentTxId.map(parentTxId => Gen.const(crypto.fastHash(parentTxId.arr :+ nonce))).getOrElse(bytes32gen)
+      recipient <- recipientsGen
+      amount    <- positiveLongGen
+    } yield ContractAssetOperation.ContractLeaseV1(ByteStr(leaseId), nonce, recipient, amount)
+
+  def contractLeaseV1ParamGen(): Gen[ContractAssetOperation.ContractLeaseV1] =
+    for {
+      leaseId   <- bytes32gen
+      nonce     <- issueNonceGen
+      recipient <- accountOrAliasGen
+      amount    <- positiveLongGen
+    } yield ContractAssetOperation.ContractLeaseV1(ByteStr(leaseId), nonce, recipient, amount)
+
+  def contractCancelLeaseV1Gen(leaseIdGen: Gen[ByteStr]): Gen[ContractAssetOperation.ContractCancelLeaseV1] =
+    leaseIdGen.map(leaseId => ContractAssetOperation.ContractCancelLeaseV1(leaseId))
+
   def contractAssetOperationV1Gen(executedTxId: Gen[ByteStr] = bytes32gen.map(ByteStr.apply),
                                   recipientsGen: Gen[AddressOrAlias] = accountOrAliasGen,
                                   assetsGen: Gen[Option[AssetId]] = genOptAssetId,
@@ -639,7 +662,8 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
         contractIssueV1Gen(nonceGen),
         contractTransferOutV1Gen(recipientsGen, assetsGen),
         contractReissueV1Gen(assetsGen.filter(_.isDefined).map(_.get)),
-        contractBurnV1Gen(assetsGen.filter(_.isDefined))
+        contractBurnV1Gen(assetsGen.filter(_.isDefined)),
+        contractLeaseV1Gen(nonceGen, recipientsGen),
       )
       .flatMap {
         case issue: ContractAssetOperation.ContractIssueV1 =>
@@ -697,7 +721,8 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
                   (10, contractIssueV1ParamGen()),
                   (10, contractReissueV1ParamGen(nonWestAssetId, cancelReissuance = false)),
                   (10, contractBurnV1ParamGen(assetIdOpt)),
-                  (70, contractTransferOutV1ParamGen(assetIdOpt))
+                  (70, contractTransferOutV1ParamGen(assetIdOpt)),
+                  (10, contractLeaseV1ParamGen()),
                 )
               } yield newOperation2
           }
@@ -713,6 +738,14 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
           case _: ContractAssetOperation.ContractBurnV1 =>
             contractOperationsGen(leftOperations - 1, issuedAssetIds, result :+ newContractAssetOperation)
           case _: ContractAssetOperation.ContractTransferOutV1 =>
+            contractOperationsGen(leftOperations - 1, issuedAssetIds, result :+ newContractAssetOperation)
+          case o: ContractAssetOperation.ContractLeaseV1 =>
+            contractOperationsGen(
+              leftOperations - 1,
+              issuedAssetIds :+ ByteStr(crypto.fastHash(executedTxIdGen.arr :+ o.nonce)),
+              result :+ newContractAssetOperation
+            )
+          case _: ContractAssetOperation.ContractCancelLeaseV1 =>
             contractOperationsGen(leftOperations - 1, issuedAssetIds, result :+ newContractAssetOperation)
         }
     }
@@ -912,6 +945,18 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
               leftOperations - 1,
               availableNoncesState,
               resultList :+ sendOut
+            )
+          case lease: ContractAssetOperation.ContractLeaseV1 =>
+            genContractOperations(
+              leftOperations - 1,
+              availableNoncesState,
+              resultList :+ lease
+            )
+          case cancelLease: ContractAssetOperation.ContractCancelLeaseV1 =>
+            genContractOperations(
+              leftOperations - 1,
+              availableNoncesState,
+              resultList :+ cancelLease
             )
         }
     }
