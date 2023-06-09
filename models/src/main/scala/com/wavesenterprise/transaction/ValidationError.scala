@@ -101,8 +101,12 @@ object ValidationError {
     }
   }
 
-  case object UnsupportedAssetOperations extends ValidationError {
-    override def toString: String = "Asset operations found, but are not supported"
+  trait UnsupportedAssetOps extends ValidationError
+  case object BaseAssetOpsNotSupported extends UnsupportedAssetOps {
+    override def toString: String = "Base asset operations found(Issue|Reissue|Transfer|Burn), but not supported yet"
+  }
+  case object LeaseAssetOpsNotSupported extends UnsupportedAssetOps {
+    override def toString: String = "Lease asset operations found(Lease|CancelLease), but not supported yet"
   }
 
   trait HasScriptType extends ValidationError {

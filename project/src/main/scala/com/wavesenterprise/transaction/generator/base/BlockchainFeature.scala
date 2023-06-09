@@ -22,6 +22,7 @@ object BlockchainFeature extends Enum[BlockchainFeature] {
   case object ContractValidationsSupport                extends BlockchainFeature
   case object ContractNativeTokenSupportAndPkiV1Support extends BlockchainFeature
   case object OtherTxTypesAtomicSupport                 extends BlockchainFeature
+  case object LeaseOpsForContractsSupport               extends BlockchainFeature
 
   case class EvalFeature(override val seqCode: String) extends BlockchainFeature
 

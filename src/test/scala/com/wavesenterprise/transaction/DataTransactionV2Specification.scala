@@ -1,12 +1,11 @@
 package com.wavesenterprise.transaction
 
-import com.google.common.primitives.Shorts
 import com.wavesenterprise.CoreTransactionGen
 import com.wavesenterprise.account.PublicKeyAccount
 import com.wavesenterprise.state._
 import com.wavesenterprise.utils.Base64
 import com.wavesenterprise.utils.EitherUtils.EitherExt
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Arbitrary
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.Json
