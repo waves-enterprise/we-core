@@ -175,6 +175,15 @@ object BinarySerializer {
       bytes(offset + 7)
     ) -> (offset + Longs.BYTES)
 
+  @inline
+  def parseInt(bytes: Array[Byte], offset: Offset = 0): (Int, Offset) =
+    Ints.fromBytes(
+      bytes(offset),
+      bytes(offset + 1),
+      bytes(offset + 2),
+      bytes(offset + 3)
+    ) -> (offset + Ints.BYTES)
+
   private[serialization] def byteCountWriter(count: Int, output: ByteArrayDataOutput): Unit = {
     require(count.isValidByte)
     output.writeByte(count)
