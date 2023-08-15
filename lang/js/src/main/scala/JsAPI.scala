@@ -22,21 +22,23 @@ object JsAPI {
   private def toJs(ast: EXPR): js.Object = {
     def r(expr: EXPR): js.Object = {
       expr match {
-        case CONST_LONG(t)        => jObj.applyDynamic("apply")("type" -> "LONG", "value"       -> t)
-        case GETTER(ref, field)   => jObj.applyDynamic("apply")("type" -> "GETTER", "ref"       -> r(ref), "field" -> field)
+        case CONST_LONG(t)        => jObj.applyDynamic("apply")("type" -> "LONG", "value" -> t)
+        case GETTER(ref, field)   => jObj.applyDynamic("apply")("type" -> "GETTER", "ref" -> r(ref), "field" -> field)
         case CONST_BYTEVECTOR(bs) => jObj.applyDynamic("apply")("type" -> "BYTEVECTOR", "value" -> bs.toArray.toJSArray)
-        case CONST_STRING(s)      => jObj.applyDynamic("apply")("type" -> "STRING", "value"     -> s)
+        case CONST_STRING(s)      => jObj.applyDynamic("apply")("type" -> "STRING", "value" -> s)
         case BLOCK(let, body) =>
           jObj.applyDynamic("apply")("type" -> "BLOCK", "let" -> jObj("name" -> let.name, "value" -> r(let.value)), "body" -> r(body))
         case IF(cond, ifTrue, ifFalse) =>
           jObj.applyDynamic("apply")("type" -> "IF", "condition" -> r(cond), "true" -> r(ifTrue), "false" -> r(ifFalse))
-        case REF(key)         => jObj.applyDynamic("apply")("type" -> "REF", "key"    -> key)
+        case REF(key)         => jObj.applyDynamic("apply")("type" -> "REF", "key" -> key)
         case CONST_BOOLEAN(b) => jObj.applyDynamic("apply")("type" -> "BOOL", "value" -> b)
         case FUNCTION_CALL(function, args) =>
-          jObj.applyDynamic("apply")("type" -> "CALL", "name" -> (function match {
-            case Native(name) => name.toString()
-            case User(name)   => name
-          }), "args" -> args.map(r).toJSArray)
+          jObj.applyDynamic("apply")("type" -> "CALL",
+                                     "name" -> (function match {
+                                       case Native(name) => name.toString()
+                                       case User(name)   => name
+                                     }),
+                                     "args" -> args.map(r).toJSArray)
       }
     }
 
@@ -82,15 +84,14 @@ object JsAPI {
   @JSExportTopLevel("getFunctionsDoc")
   def getFunctionnsDoc() =
     fullContext.functions
-      .map(
-        f =>
-          js.Dynamic.literal(
-            "name"       -> f.name,
-            "doc"        -> f.docString,
-            "resultType" -> typeRepr(f.signature.result),
-            "args" -> ((f.argsDoc zip f.signature.args) map { arg =>
-              js.Dynamic.literal("name" -> arg._1._1, "type" -> typeRepr(arg._2._2), "doc" -> arg._1._2)
-            }).toJSArray
+      .map(f =>
+        js.Dynamic.literal(
+          "name"       -> f.name,
+          "doc"        -> f.docString,
+          "resultType" -> typeRepr(f.signature.result),
+          "args" -> ((f.argsDoc zip f.signature.args) map { arg =>
+            js.Dynamic.literal("name" -> arg._1._1, "type" -> typeRepr(arg._2._2), "doc" -> arg._1._2)
+          }).toJSArray
         ))
       .toJSArray
 
@@ -115,9 +116,10 @@ object JsAPI {
       .fold(
         err => {
           js.Dynamic.literal("error" -> err)
-        }, {
+        },
+        {
           case (result, ast) =>
-            //js.Dynamic.literal("result" -> result)
+            // js.Dynamic.literal("result" -> result)
             js.Dynamic.literal("result" -> Global.toBuffer(result), "ast" -> toJs(ast._1))
         }
       )

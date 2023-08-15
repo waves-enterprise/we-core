@@ -3,12 +3,19 @@ package com.wavesenterprise.utils
 import com.google.common.io.{ByteArrayDataInput, ByteArrayDataOutput}
 import com.wavesenterprise.account.PublicKeyAccount
 import com.wavesenterprise.crypto
+import com.wavesenterprise.docker.ContractInfo
+import com.wavesenterprise.docker.ContractInfo.{DockerContract, StoredContract, WasmContract}
 import com.wavesenterprise.state.ByteStr
 import com.wavesenterprise.transaction.smart.script.{Script, ScriptReader}
 
 import java.nio.charset.StandardCharsets.UTF_8
+import scala.collection.Seq
 
 object DatabaseUtils {
+
+  val DOCKER_CONTRACT_TYPE: Byte = 0
+
+  val WASM_CONTRACT_TYPE: Byte = 1
 
   implicit class ByteArrayDataOutputExt(val output: ByteArrayDataOutput) extends AnyVal {
     def writeByteStr(s: ByteStr): Unit = {
@@ -40,6 +47,25 @@ object DatabaseUtils {
       }
     }
 
+    def writeStoredContract(contract: StoredContract): Unit = {
+      contract match {
+        case ContractInfo.DockerContract(image, imageHash) =>
+          output.writeByte(DOCKER_CONTRACT_TYPE)
+          for {
+            i <- Seq(image.getBytes(UTF_8).array, imageHash.getBytes(UTF_8).array)
+          } {
+            output.writeBytes(i)
+          }
+
+        case ContractInfo.WasmContract(bytecode, bytecodeHash) =>
+          output.writeByte(WASM_CONTRACT_TYPE)
+          output.writeInt(bytecode.length)
+          output.write(bytecode)
+          output.writeString(bytecodeHash)
+      }
+
+    }
+
     def writePublicKey(pka: PublicKeyAccount): Unit = {
       output.write(pka.publicKey.getEncoded)
     }
@@ -55,9 +81,7 @@ object DatabaseUtils {
 
     def readScriptOption(): Option[Script] = {
       if (input.readBoolean()) {
-        val len = input.readShort()
-        val b   = new Array[Byte](len)
-        input.readFully(b)
+        val b = readBytes()
         Some(ScriptReader.fromBytes(b).explicitGet())
       } else None
     }
@@ -84,6 +108,31 @@ object DatabaseUtils {
 
     def readPublicKey: PublicKeyAccount = {
       PublicKeyAccount(input.readBytes(crypto.KeyLength))
+    }
+
+    def readStoredContract(): StoredContract = {
+      val isDockerContract = input.readByte() == DOCKER_CONTRACT_TYPE
+
+      if (isDockerContract) {
+        readDockerContract()
+      } else {
+        readWasmContract()
+      }
+    }
+
+    def readDockerContract(): DockerContract = {
+      val image = readString()
+      val hash  = readString()
+
+      DockerContract(image, hash)
+    }
+
+    def readWasmContract(): WasmContract = {
+      val len      = input.readInt()
+      val bytecode = input.readBytes(len)
+      val hash     = input.readString()
+
+      WasmContract(bytecode, hash)
     }
   }
 

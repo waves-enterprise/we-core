@@ -3,6 +3,7 @@ package com.wavesenterprise.crypto.internals
 import com.wavesenterprise.account.{Address, AddressScheme, PrivateKeyAccount, PublicKeyAccount}
 import com.wavesenterprise.crypto
 import com.wavesenterprise.crypto.WavesKeyStore
+import com.wavesenterprise.crypto.internals.confidentialcontracts.Commitment
 import com.wavesenterprise.utils.EitherUtils.EitherExt
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.{Matchers, PropSpec}
@@ -155,4 +156,16 @@ class WavesAlgorithmsSpec extends PropSpec with ScalaCheckPropertyChecks with Ma
     }
   }
 
+  property("Test secure salted hash function") {
+    val msg1 = Array(3, 2, 1).map(_.toByte)
+
+    val (hash, salt)           = WavesAlgorithms.saltedSecureHash(msg1)
+    val hashByAnotherWay       = WavesAlgorithms.saltedSecureHash(msg1, salt)
+    val msg1Commitment         = Commitment.createFromCustomAlgorithms(msg1, salt, WavesAlgorithms)
+    val msg1CommitmentFromHash = Commitment.fromHash(hash)
+
+    hash shouldBe hashByAnotherWay
+    msg1Commitment.validateWithCustomAlgorithms(msg1, salt, WavesAlgorithms) shouldBe true
+    msg1CommitmentFromHash.validateWithCustomAlgorithms(msg1, salt, WavesAlgorithms) shouldBe true
+  }
 }

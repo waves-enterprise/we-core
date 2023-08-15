@@ -25,12 +25,16 @@ object ModelsBinarySerializer {
     AtomicBadge(readableField) -> end
   }
 
-  def writeAddresses(addresses: Seq[Address], output: ByteArrayDataOutput): Unit =
+  def writeAddresses(addresses: Iterable[Address], output: ByteArrayDataOutput): Unit =
     BinarySerializer.writeShortIterable(addresses, addressWriter, output)
 
   def parseAddresses(bytes: Array[Byte], offset: Offset = 0): (List[Address], Offset) = {
     val (readableField, end) = BinarySerializer.parseShortList(bytes, addressReader, offset)
     readableField -> end
+  }
+
+  def parseAddressesSet(bytes: Array[Byte], offset: Offset = 0): (Set[Address], Offset) = {
+    BinarySerializer.parseShortSet(bytes, addressReader, offset)
   }
 
   def writeTransferBatch(batch: Seq[ParsedTransfer], output: ByteArrayDataOutput): Unit = {

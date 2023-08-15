@@ -30,10 +30,14 @@ object BlockchainFeature extends ShortEnum[BlockchainFeature] {
   case object PrivacyLargeObjectSupport            extends BlockchainFeature(180, "Support of privacy large object subsystem")
   case object ContractNativeTokenSupportAndPkiV1Support
       extends BlockchainFeature(1120, "Support of token operations for smart-contracts, PKI support v1 and REST-based smart-contract deprecation")
+
   // Will be supported Issue|Reissue|Burn|Lease|LeaseCancel|Data|MassTransfer|RegisterNode|CreateAlias|SponsorFee txs in atomic
   case object OtherTxTypesAtomicSupport extends BlockchainFeature(1122, "Atomic support for other transactions")
   // ContractLease/ContractCancelLease
   case object LeaseOpsForContractsSupport extends BlockchainFeature(1123, "Support of Lease/CancelLease operations for smart-contracts")
+
+  case object ConfidentialDataInContractsSupport extends BlockchainFeature(1130, "Support of operating over confidential data in smart contracts")
+  case object WasmContractsSupport               extends BlockchainFeature(1140, "Support of WASM smart-contracts")
 
   override def values: immutable.IndexedSeq[BlockchainFeature] = findValues
 
