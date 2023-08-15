@@ -483,6 +483,25 @@ const CreateContract = {
   timestamp: new Long(true)
 }
 
+const CreateContractV6 = {
+  tx_type: new TxType(true, TRANSACTION_TYPES.CreateContract),
+  version: new TxVersion(true, TRANSACTION_VERSIONS.V6),
+  senderPublicKey: new Base58(true),
+  image: new StringWithLength(true),
+  imageHash: new StringWithLength(true),
+  contractName: new StringWithLength(true),
+  params: new List(DockerParamEntry),
+  fee: new Long(true),
+  timestamp: new Long(true),
+  feeAssetId: new AssetId(false),
+  atomicBadge: new AtomicBadge(false),
+  validationPolicy: new ValidationPolicy(true),
+  apiVersion: new ContractApiVersion(true),
+  isConfidential: new Bool(true),
+  groupParticipants: new ArrayOfStringsWithLength(true),
+  groupOwners: new ArrayOfStringsWithLength(true)
+}
+
 const CreateContractV2 = {
   tx_type: new TxType(true, TRANSACTION_TYPES.CreateContract),
   version: new TxVersion(true, TRANSACTION_VERSIONS.V2),
@@ -494,6 +513,24 @@ const CreateContractV2 = {
   fee: new Long(true),
   timestamp: new Long(true),
   feeAssetId: new AssetId(false)
+}
+
+const CreateContractV7 = {
+  tx_type: new TxType(true, TRANSACTION_TYPES.CreateContract),
+  version: new TxVersion(true, TRANSACTION_VERSIONS.V7),
+  senderPublicKey: new Base58(true),
+  contractName: new StringWithLength(true),
+  params: new List(DockerParamEntry),
+  fee: new Long(true),
+  timestamp: new Long(true),
+  feeAssetId: new AssetId(false),
+  atomicBadge: new AtomicBadge(false),
+  validationPolicy: new ValidationPolicy(true),
+  isConfidential: new Bool(true),
+  groupParticipants: new ArrayOfStringsWithLength(true),
+  groupOwners: new ArrayOfStringsWithLength(true),
+  bytecode: new Base64(true),
+  bytecodeHash: new StringWithLength(true)
 }
 
 const CreateContractV3 = {
@@ -549,6 +586,19 @@ const CallContract = {
   timestamp: new Long(true)
 }
 
+const CallContractV6 = {
+  tx_type: new TxType(true, TRANSACTION_TYPES.CallContract),
+  version: new TxVersion(true, TRANSACTION_VERSIONS.V6),
+  senderPublicKey: new Base58(true),
+  contractId: new Base58WithLength(true),
+  params: new List(DockerParamEntry),
+  fee: new Long(true),
+  timestamp: new Long(true),
+  contractVersion: new Integer(true),
+  feeAssetId: new AssetId(false),
+  atomicBadge: new AtomicBadge(false)
+}
+
 const CallContractV2 = {
   tx_type: new TxType(true, TRANSACTION_TYPES.CallContract),
   version: new TxVersion(true, TRANSACTION_VERSIONS.V2),
@@ -558,6 +608,20 @@ const CallContractV2 = {
   fee: new Long(true),
   timestamp: new Long(true),
   contractVersion: new Integer(true)
+}
+
+const CallContractV7 = {
+  tx_type: new TxType(true, TRANSACTION_TYPES.CallContract),
+  version: new TxVersion(true, TRANSACTION_VERSIONS.V7),
+  senderPublicKey: new Base58(true),
+  contractId: new Base58WithLength(true),
+  params: new List(DockerParamEntry),
+  fee: new Long(true),
+  timestamp: new Long(true),
+  contractVersion: new Integer(true),
+  feeAssetId: new AssetId(false),
+  atomicBadge: new AtomicBadge(false),
+  callFunc: new StringWithLength(true)
 }
 
 const CallContractV3 = {
@@ -615,6 +679,23 @@ const DisableContractV3 = {
   atomicBadge: new AtomicBadge(false)
 }
 
+const UpdateContractV5 = {
+  tx_type: new TxType(true, TRANSACTION_TYPES.UpdateContract),
+  version: new TxVersion(true, TRANSACTION_VERSIONS.V5),
+  senderPublicKey: new Base58(true),
+  contractId: new Base58WithLength(true),
+  image: new StringWithLength(true),
+  imageHash: new StringWithLength(true),
+  fee: new Long(true),
+  timestamp: new Long(true),
+  feeAssetId: new AssetId(false),
+  atomicBadge: new AtomicBadge(false),
+  validationPolicy: new ValidationPolicy(true),
+  apiVersion: new ContractApiVersion(true),
+  groupParticipants: new ArrayOfStringsWithLength(true),
+  groupOwners: new ArrayOfStringsWithLength(true)
+}
+
 const UpdateContract = {
   tx_type: new TxType(true, TRANSACTION_TYPES.UpdateContract),
   version: new TxVersion(true, TRANSACTION_VERSIONS.V1),
@@ -624,6 +705,22 @@ const UpdateContract = {
   imageHash: new StringWithLength(true),
   fee: new Long(true),
   timestamp: new Long(true)
+}
+
+const UpdateContractV6 = {
+  tx_type: new TxType(true, TRANSACTION_TYPES.UpdateContract),
+  version: new TxVersion(true, TRANSACTION_VERSIONS.V6),
+  senderPublicKey: new Base58(true),
+  contractId: new Base58WithLength(true),
+  fee: new Long(true),
+  timestamp: new Long(true),
+  feeAssetId: new AssetId(false),
+  atomicBadge: new AtomicBadge(false),
+  validationPolicy: new ValidationPolicy(true),
+  groupParticipants: new ArrayOfStringsWithLength(true),
+  groupOwners: new ArrayOfStringsWithLength(true),
+  bytecode: new Base64(true),
+  bytecodeHash: new StringWithLength(true)
 }
 
 const UpdateContractV2 = {
@@ -757,14 +854,18 @@ export const TRANSACTIONS = {
   CreateContract: {
     V5: createTransactionsFactory(CreateContractV5),
     V1: createTransactionsFactory(CreateContract),
+    V6: createTransactionsFactory(CreateContractV6),
     V2: createTransactionsFactory(CreateContractV2),
+    V7: createTransactionsFactory(CreateContractV7),
     V3: createTransactionsFactory(CreateContractV3),
     V4: createTransactionsFactory(CreateContractV4)
   },
   CallContract: {
     V5: createTransactionsFactory(CallContractV5),
     V1: createTransactionsFactory(CallContract),
+    V6: createTransactionsFactory(CallContractV6),
     V2: createTransactionsFactory(CallContractV2),
+    V7: createTransactionsFactory(CallContractV7),
     V3: createTransactionsFactory(CallContractV3),
     V4: createTransactionsFactory(CallContractV4)
   },
@@ -774,7 +875,9 @@ export const TRANSACTIONS = {
     V3: createTransactionsFactory(DisableContractV3)
   },
   UpdateContract: {
+    V5: createTransactionsFactory(UpdateContractV5),
     V1: createTransactionsFactory(UpdateContract),
+    V6: createTransactionsFactory(UpdateContractV6),
     V2: createTransactionsFactory(UpdateContractV2),
     V3: createTransactionsFactory(UpdateContractV3),
     V4: createTransactionsFactory(UpdateContractV4)
