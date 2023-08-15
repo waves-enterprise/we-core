@@ -39,6 +39,11 @@ trait CoreTransactionGen extends ScriptGen with CommonGen with NTPTime { _: Suit
 
   protected def west(n: Float): Long = (n * 100000000L).toLong
 
+  def byteArrayGen(length: Int): Gen[Array[Byte]] = Gen.containerOfN[Array, Byte](length, Arbitrary.arbitrary[Byte])
+
+  val bytes32gen: Gen[Array[Byte]] = byteArrayGen(32)
+  val bytes64gen: Gen[Array[Byte]] = byteArrayGen(64)
+
   def genBoundedBytes(minSize: Int, maxSize: Int): Gen[Array[Byte]] =
     for {
       length <- Gen.chooseNum(minSize, maxSize)

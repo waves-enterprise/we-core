@@ -152,7 +152,7 @@ ThisBuild / version := {
     val commitHashLength                          = 7
     val (tagVersionWithoutCommitHash, commitHash) = described.splitAt(described.length - commitHashLength)
     val tagVersionWithCommitsAhead                = tagVersionWithoutCommitHash.dropRight(2)
-    val branchSuffix                              = branchName.value.replaceAll("/", "__")
+    val branchSuffix                              = branchName.value
     s"$tagVersionWithCommitsAhead-$branchSuffix-$commitHash$uncommittedChangesSuffix-$snapshotSuffix"
   }
 

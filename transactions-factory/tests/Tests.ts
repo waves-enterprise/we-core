@@ -811,35 +811,6 @@ describe('', () => {
     )
   })
 
-  it('CreateContractV6', async () => {
-    const transaction = {
-      senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
-      image: "localhost:5000/smart-kv",
-      imageHash: "b48d1de58c39d2160a4b8a5a9cae90818da1212742ec1f11fba1209bed0a212c",
-      contractName: "SomeName",
-      params: [{"type":"integer", "key": "height", "value": 100}],
-      fee: 1000000,
-      timestamp: 1598008066632,
-      feeAssetId: "WAVES",
-      atomicBadge: "",
-      validationPolicy: 0,
-      apiVersion: "1.1",
-      payments: "",
-      isConfidential: "",
-      groupParticipants: "",
-      groupOwners: ""
-    };
-    const signatureGenerator = TRANSACTIONS.CreateContract.V6(transaction);
-    const bytes = await signatureGenerator.getBytes();
-    
-    expect(decoder.decode(bytes))
-      .toEqual(
-        decoder.decode(Int8Array.from(
-          [0]
-      )).toString()
-    )
-  })
-
   it('CreateContractV2', async () => {
     const transaction = {
       senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
@@ -852,34 +823,6 @@ describe('', () => {
       feeAssetId: "WAVES"
     };
     const signatureGenerator = TRANSACTIONS.CreateContract.V2(transaction);
-    const bytes = await signatureGenerator.getBytes();
-    
-    expect(decoder.decode(bytes))
-      .toEqual(
-        decoder.decode(Int8Array.from(
-          [0]
-      )).toString()
-    )
-  })
-
-  it('CreateContractV7', async () => {
-    const transaction = {
-      senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
-      contractName: "SomeName",
-      params: [{"type":"integer", "key": "height", "value": 100}],
-      fee: 1000000,
-      timestamp: 1598008066632,
-      feeAssetId: "WAVES",
-      atomicBadge: "",
-      validationPolicy: 0,
-      payments: "",
-      isConfidential: "",
-      groupParticipants: "",
-      groupOwners: "",
-      bytecode: "",
-      bytecodeHash: ""
-    };
-    const signatureGenerator = TRANSACTIONS.CreateContract.V7(transaction);
     const bytes = await signatureGenerator.getBytes();
     
     expect(decoder.decode(bytes))
@@ -980,29 +923,6 @@ describe('', () => {
     )
   })
 
-  it('CallContractV6', async () => {
-    const transaction = {
-      senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
-      contractId: "DP5MggKC8GJuLZshCVNSYwBtE6WTRtMM1YPPdcmwbuNg",
-      params: [{"type":"integer", "key": "height", "value": 100}],
-      fee: 1000000,
-      timestamp: 1598008066632,
-      contractVersion: 2,
-      feeAssetId: "WAVES",
-      atomicBadge: "",
-      payments: ""
-    };
-    const signatureGenerator = TRANSACTIONS.CallContract.V6(transaction);
-    const bytes = await signatureGenerator.getBytes();
-    
-    expect(decoder.decode(bytes))
-      .toEqual(
-        decoder.decode(Int8Array.from(
-          [0]
-      )).toString()
-    )
-  })
-
   it('CallContractV2', async () => {
     const transaction = {
       senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
@@ -1013,30 +933,6 @@ describe('', () => {
       contractVersion: 2
     };
     const signatureGenerator = TRANSACTIONS.CallContract.V2(transaction);
-    const bytes = await signatureGenerator.getBytes();
-    
-    expect(decoder.decode(bytes))
-      .toEqual(
-        decoder.decode(Int8Array.from(
-          [0]
-      )).toString()
-    )
-  })
-
-  it('CallContractV7', async () => {
-    const transaction = {
-      senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
-      contractId: "DP5MggKC8GJuLZshCVNSYwBtE6WTRtMM1YPPdcmwbuNg",
-      params: [{"type":"integer", "key": "height", "value": 100}],
-      fee: 1000000,
-      timestamp: 1598008066632,
-      contractVersion: 2,
-      feeAssetId: "WAVES",
-      atomicBadge: "",
-      payments: "",
-      callFunc: ""
-    };
-    const signatureGenerator = TRANSACTIONS.CallContract.V7(transaction);
     const bytes = await signatureGenerator.getBytes();
     
     expect(decoder.decode(bytes))
@@ -1147,32 +1043,6 @@ describe('', () => {
     )
   })
 
-  it('UpdateContractV5', async () => {
-    const transaction = {
-      senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
-      contractId: "DP5MggKC8GJuLZshCVNSYwBtE6WTRtMM1YPPdcmwbuNg",
-      image: "localhost:5000/smart-kv",
-      imageHash: "b48d1de58c39d2160a4b8a5a9cae90818da1212742ec1f11fba1209bed0a212c",
-      fee: 1000000,
-      timestamp: 1598008066632,
-      feeAssetId: "WAVES",
-      atomicBadge: "",
-      validationPolicy: 0,
-      apiVersion: "1.1",
-      groupParticipants: "",
-      groupOwners: ""
-    };
-    const signatureGenerator = TRANSACTIONS.UpdateContract.V5(transaction);
-    const bytes = await signatureGenerator.getBytes();
-    
-    expect(decoder.decode(bytes))
-      .toEqual(
-        decoder.decode(Int8Array.from(
-          [0]
-      )).toString()
-    )
-  })
-
   it('UpdateContract', async () => {
     const transaction = {
       senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
@@ -1183,31 +1053,6 @@ describe('', () => {
       timestamp: 1598008066632
     };
     const signatureGenerator = TRANSACTIONS.UpdateContract.V1(transaction);
-    const bytes = await signatureGenerator.getBytes();
-    
-    expect(decoder.decode(bytes))
-      .toEqual(
-        decoder.decode(Int8Array.from(
-          [0]
-      )).toString()
-    )
-  })
-
-  it('UpdateContractV6', async () => {
-    const transaction = {
-      senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
-      contractId: "DP5MggKC8GJuLZshCVNSYwBtE6WTRtMM1YPPdcmwbuNg",
-      fee: 1000000,
-      timestamp: 1598008066632,
-      feeAssetId: "WAVES",
-      atomicBadge: "",
-      validationPolicy: 0,
-      groupParticipants: "",
-      groupOwners: "",
-      bytecode: "",
-      bytecodeHash: ""
-    };
-    const signatureGenerator = TRANSACTIONS.UpdateContract.V6(transaction);
     const bytes = await signatureGenerator.getBytes();
     
     expect(decoder.decode(bytes))

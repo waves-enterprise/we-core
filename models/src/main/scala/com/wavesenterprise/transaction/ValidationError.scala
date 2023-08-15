@@ -11,7 +11,6 @@ import com.wavesenterprise.crypto.internals.{
   DecryptionError => CryptoDecryptionError,
   GenericError => CryptoGenericError,
   InvalidAddress => CryptoInvalidAddress,
-  InvalidHash => CryptoInvalidHash,
   InvalidPublicKey => CryptoInvalidPublicKey
 }
 import com.wavesenterprise.docker.ContractInfo
@@ -29,7 +28,6 @@ object ValidationError {
 
   case class InvalidPolicyDataHash(reason: String)             extends ValidationError
   case class InvalidAddress(reason: String)                    extends ValidationError
-  case class InvalidHash(reason: String)                       extends ValidationError
   case class InvalidPublicKey(reason: String)                  extends ValidationError
   case class NegativeAmount(amount: Long, of: String)          extends ValidationError
   case class NegativeMinFee(minFee: Long, of: String)          extends ValidationError
@@ -226,7 +224,6 @@ object ValidationError {
   def fromCryptoError(e: CryptoError): ValidationError = {
     e match {
       case CryptoInvalidAddress(message)     => InvalidAddress(message)
-      case CryptoInvalidHash(message)        => InvalidHash(message)
       case CryptoInvalidPublicKey(message)   => InvalidPublicKey(message)
       case CryptoDecryptionError(message, _) => GenericError(message)
       case CryptoGenericError(message)       => GenericError(message)

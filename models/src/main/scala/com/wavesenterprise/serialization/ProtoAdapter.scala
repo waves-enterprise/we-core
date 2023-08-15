@@ -1,13 +1,10 @@
 package com.wavesenterprise.serialization
 
 import cats.implicits._
-import com.google.common.io.ByteStreams.newDataOutput
 import com.google.protobuf.ByteString
 import com.google.protobuf.duration.{Duration => PbDuration}
 import com.wavesenterprise.account.{Address, AddressOrAlias, Alias, PublicKeyAccount}
 import com.wavesenterprise.acl.{OpType, PermissionOp, Role}
-import com.wavesenterprise.crypto.internals.HashBytes
-import com.wavesenterprise.crypto.internals.confidentialcontracts.Commitment
 import com.wavesenterprise.docker.ContractApiVersion
 import com.wavesenterprise.docker.validator.ValidationPolicy
 import com.wavesenterprise.privacy.PolicyItemInfo
@@ -404,31 +401,4 @@ object ProtoAdapter {
       dataHash = info.hash
     )
   }
-
-  def commitmentToProto(commitment: Commitment): ByteString = {
-    ByteString.copyFrom(commitment.hash.arr)
-  }
-
-  def commitmentFromProto(byteString: ByteString): Either[ValidationError, Commitment] = Right {
-    Commitment.fromHash(HashBytes(ByteStr(byteString.toByteArray)))
-  }
-
-  def toProto(readingsHash: ReadingsHash): ByteString = {
-    ByteString.copyFrom(readingsHash.hash.arr)
-  }
-
-  def readingsHashFromProto(byteString: ByteString): Either[ValidationError, ReadingsHash] = Right {
-    ReadingsHash(ByteStr(byteString.toByteArray))
-  }
-
-  def toProto(readDescriptor: ReadDescriptor): ByteString = ByteString.copyFrom {
-    val output = newDataOutput()
-    ReadDescriptor.writeBytes(readDescriptor, output)
-    output.toByteArray
-  }
-
-  def readDescriptorFromProto(byteString: ByteString): Either[ValidationError, ReadDescriptor] = Right {
-    ReadDescriptor.fromBytes(byteString.toByteArray, 0)._1
-  }
-
 }
