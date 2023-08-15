@@ -3,7 +3,6 @@ package com.wavesenterprise.crypto.internals
 import cats.implicits._
 import com.wavesenterprise.certs.CertChain
 import com.wavesenterprise.crypto.internals.pki.Models.ExtendedKeyUsage
-import com.wavesenterprise.state.ByteStr
 import monix.eval.Coeval
 import org.slf4j.{Logger, LoggerFactory}
 import scorex.crypto.hash.{Blake2b256, Keccak256}
@@ -21,8 +20,6 @@ trait CryptoAlgorithms[KP <: KeyPair] {
   type PublicKey0  = KeyPair0#PublicKey0
   type PrivateKey0 = KeyPair0#PrivateKey0
 
-  val ConfidentialContractsCommitmentSaltLength: Int = 32
-
   val DigestSize: Int
   val SignatureLength: Int
   val KeyLength: Int
@@ -32,8 +29,6 @@ trait CryptoAlgorithms[KP <: KeyPair] {
   val strictKeyLength: Boolean
 
   protected val log: Logger = LoggerFactory.getLogger(this.getClass)
-
-  protected def genSecureRandomBytes(len: Int): Array[Byte]
 
   def pkiRequiredOids: Set[ExtendedKeyUsage]                   = Set.empty
   def crlCheckIsEnabled: Boolean                               = false
@@ -90,25 +85,6 @@ trait CryptoAlgorithms[KP <: KeyPair] {
               senderPublicKey: PublicKey0): Either[CryptoError, Array[Byte]]
 
   def sslProvider: Option[Provider]
-
-  def saltedSecureHash(message: Array[Byte]): (HashBytes, SaltBytes) = {
-    val salt = genSecureRandomBytes(ConfidentialContractsCommitmentSaltLength)
-    val hash = secureHash(message ++ salt)
-
-    (HashBytes(ByteStr(hash)), SaltBytes(ByteStr(salt)))
-  }
-
-  def saltedSecureHash(message: Array[Byte], salt: SaltBytes): HashBytes = {
-    HashBytes(ByteStr(secureHash(message ++ salt.arr)))
-  }
-}
-
-case class SaltBytes(bytes: ByteStr) {
-  def arr: Array[Byte] = bytes.arr
-}
-
-case class HashBytes(bytes: ByteStr) {
-  def arr: Array[Byte] = bytes.arr
 }
 
 case class EncryptedForSingle(encryptedData: Array[Byte], wrappedStructure: Array[Byte]) {
@@ -178,12 +154,6 @@ object WavesAlgorithms extends CryptoAlgorithms[WavesKeyPair] {
   private val aesEncryption             = new AesEncryption
 
   private val pkiNotSupportedError = PkiError("Not implemented for Waves crypto algorithms")
-
-  def secureRandomGenerateBytes(len: Int): Array[Byte] = {
-    val result = new Array[Byte](len)
-    secureRandom.nextBytes(result)
-    result
-  }
 
   override def generateKeyPair(): WavesKeyPair = {
     val (_, pair) = generateKeyPairWithSeed()
@@ -393,10 +363,4 @@ object WavesAlgorithms extends CryptoAlgorithms[WavesKeyPair] {
 
   override def validateCertChain(certChain: CertChain, crls: List[X509CRL], timestamp: Long): Either[CryptoError, Unit] =
     Left(pkiNotSupportedError)
-
-  override protected def genSecureRandomBytes(len: Int): Array[Byte] = {
-    val result = new Array[Byte](len)
-    secureRandom.nextBytes(result)
-    result
-  }
 }
