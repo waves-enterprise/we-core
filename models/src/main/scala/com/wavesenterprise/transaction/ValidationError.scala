@@ -11,6 +11,7 @@ import com.wavesenterprise.crypto.internals.{
   DecryptionError => CryptoDecryptionError,
   GenericError => CryptoGenericError,
   InvalidAddress => CryptoInvalidAddress,
+  InvalidHash => CryptoInvalidHash,
   InvalidPublicKey => CryptoInvalidPublicKey
 }
 import com.wavesenterprise.docker.ContractInfo
@@ -28,6 +29,7 @@ object ValidationError {
 
   case class InvalidPolicyDataHash(reason: String)             extends ValidationError
   case class InvalidAddress(reason: String)                    extends ValidationError
+  case class InvalidHash(reason: String)                       extends ValidationError
   case class InvalidPublicKey(reason: String)                  extends ValidationError
   case class NegativeAmount(amount: Long, of: String)          extends ValidationError
   case class NegativeMinFee(minFee: Long, of: String)          extends ValidationError
@@ -184,13 +186,13 @@ object ValidationError {
   case class InvalidValidationProofs(actualCount: Int,
                                      expectedCount: Int,
                                      currentValidators: Set[Address],
-                                     resultsHash: ByteStr,
+                                     resultsHash: Option[ByteStr],
                                      containsRequiredAddresses: Boolean = true,
                                      requiredAddresses: Set[Address] = Set.empty)
       extends ContractError {
 
     override def toString: String =
-      s"Invalid validation proofs for results hash '$resultsHash'. Actual '$actualCount', expected '$expectedCount'." +
+      s"Invalid validation proofs for results hash '${resultsHash.getOrElse("<not provided>")}'. Actual '$actualCount', expected '$expectedCount'." +
         s"Current validators set: '${currentValidators.mkString("', '")}'." +
         (if (containsRequiredAddresses) "" else s" Proofs does not contain one of required addresses: '${requiredAddresses.mkString("', '")}'")
   }
@@ -224,6 +226,7 @@ object ValidationError {
   def fromCryptoError(e: CryptoError): ValidationError = {
     e match {
       case CryptoInvalidAddress(message)     => InvalidAddress(message)
+      case CryptoInvalidHash(message)        => InvalidHash(message)
       case CryptoInvalidPublicKey(message)   => InvalidPublicKey(message)
       case CryptoDecryptionError(message, _) => GenericError(message)
       case CryptoGenericError(message)       => GenericError(message)

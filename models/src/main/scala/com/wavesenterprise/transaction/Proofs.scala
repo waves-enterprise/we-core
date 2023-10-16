@@ -52,25 +52,20 @@ object Proofs {
   def create(proofs: Seq[ByteStr]): Either[ValidationError, Proofs] =
     validate(proofs).map(_ => Proofs(proofs.toList))
 
-  def fromBytes(bytes: Array[Byte], offset: Int): Either[ValidationError, Proofs] =
-    for {
-      _ <- Either.cond(bytes.length - offset > 0, (), GenericError(s"Empty proofs"))
-      proofsVersion = bytes(offset)
-      _           <- Either.cond(proofsVersion == 1, (), GenericError(s"Proofs version must be 1, actual: $proofsVersion"))
-      arrsWithEnd <- Try(Deser.parseArrays(bytes, offset + 1)).toEither.left.map(er => GenericError(er.toString))
-      (arrs, _) = arrsWithEnd
-      r <- createWithBytes(arrs.map(ByteStr(_)), bytes, offset)
-    } yield r
+  def fromBytes(bytes: Array[Byte], offset: Int): Either[ValidationError, Proofs] = fromBytesEither(bytes, offset)
+    .map { case (proofs: Proofs, _) => proofs }
 
-  def fromBytesUnsafe(bytes: Array[Byte], offset: Int): (Proofs, Int) =
-    (for {
-      _ <- Either.cond(bytes.length - offset > 0, (), GenericError(s"Empty proofs"))
-      proofsVersion = bytes(offset)
-      _            <- Either.cond(proofsVersion == 1, (), GenericError(s"Proofs version must be 1, actual: $proofsVersion"))
-      arraysAndEnd <- Try(Deser.parseArrays(bytes, offset + 1)).toEither.left.map(er => GenericError(er.toString))
-      (arrays, end) = arraysAndEnd
-      result <- createWithBytes(arrays.map(ByteStr(_)), bytes, offset)
-    } yield {
-      result -> end
-    }).explicitGet()
+  def fromBytesUnsafe(bytes: Array[Byte], offset: Int): (Proofs, Int) = fromBytesEither(bytes, offset).explicitGet()
+
+  def fromBytesEither(bytes: Array[Byte], offset: Int): Either[ValidationError, (Proofs, Int)] = for {
+    _ <- Either.cond(bytes.length - offset > 0, (), GenericError(s"Empty proofs"))
+    proofsVersion = bytes(offset)
+    _            <- Either.cond(proofsVersion == 1, (), GenericError(s"Proofs version must be 1, actual: $proofsVersion"))
+    arraysAndEnd <- Try(Deser.parseArrays(bytes, offset + 1)).toEither.left.map(er => GenericError(er.toString))
+    (arrays, end) = arraysAndEnd
+    result <- createWithBytes(arrays.map(ByteStr(_)), bytes, offset)
+  } yield {
+    result -> end
+  }
+
 }

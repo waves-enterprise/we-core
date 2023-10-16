@@ -16,6 +16,7 @@ trait ExecutableTransaction extends FastHashId with VersionedTransaction {
   def fee: Long
 
   def payments: List[ContractTransferInV1] = List.empty
+
 }
 
 object ExecutableTransaction {

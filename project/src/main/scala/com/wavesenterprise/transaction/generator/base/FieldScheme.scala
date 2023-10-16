@@ -19,7 +19,9 @@ case class FieldScheme(
     private val inTypeScript: Boolean = true,
     private val specialTypeScriptName: Option[String] = None,
     private val specialTypeScriptType: Option[String] = None,
-    private val specialProtoName: Option[String] = None
+    private val specialProtoName: Option[String] = None,
+    isTransparent: Boolean = false,
+    isProofs: Boolean = false
 ) {
   def typeScriptName: String         = specialTypeScriptName.getOrElse(name)
   def typeScriptType: Option[String] = specialTypeScriptType.orElse(tpe.typeScriptType).filter(_ => inTypeScript)

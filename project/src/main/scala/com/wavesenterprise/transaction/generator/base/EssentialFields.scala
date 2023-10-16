@@ -9,5 +9,5 @@ object EssentialFields {
   val senderField    = "sender"    as PUBLIC_KEY_ACCOUNT -> Set(Essential, ProtobufCustomName("senderPublicKey"), TypeScriptCustomName("senderPublicKey"))
   val feeField       = "fee"       as LONG               -> Essential
   val timestampField = "timestamp" as LONG               -> Essential
-  val proofsField    = "proofs"    as PROOFS             -> Set(Essential, ExcludeFromBinaryBody)
+  val proofsField    = "proofs"    as PROOFS             -> Essential
 }

@@ -25,9 +25,12 @@ trait CaseClassesGenerator extends ScalaGenerator {
 
   private def buildVersionedTxClass(scheme: TxScheme, version: Int): CodeWriter.EndoFunctor = { writer =>
     val className = versionedClassName(scheme, version)
-    val currentVersionDataFields =
-      scheme.fields.filter(f => f.inConstructorVersions.forall(_.contains(version)) && !f.versionToBodyValue.isDefinedAt(version))
-    val currentVersionSpecificDataFields = currentVersionDataFields.filter(!_.isEssential)
+    val currentVersionDataFields = scheme.fields.filter { f =>
+      f.inConstructorVersions.forall(_.contains(version)) &&
+      !f.versionToBodyValue.isDefinedAt(version) &&
+      !f.isTransparent
+    }
+    val currentVersionSpecificDataFields = currentVersionDataFields.filter(f => !f.isEssential && !f.isTransparent)
     val currentVersionBodyFields         = scheme.fields.filter(_.versionToBodyValue.isDefinedAt(version))
     val currentVersionDataFieldsForProto = EssentialFields.id +: currentVersionDataFields
 
@@ -120,13 +123,18 @@ trait CaseClassesGenerator extends ScalaGenerator {
       }
       .addLines("}")
       .newLine
-      .addLines("protected def writeBodyBytes(output: ByteArrayDataOutput, forProof: Boolean = false): Unit = {")
+      .addLines("protected def writeBodyBytes(output: ByteArrayDataOutput, forProof: Boolean = false, forBytes: Boolean = false): Unit = {")
       .indent
       .addLines("output.writeByte(builder.typeId)")
       .addLines("output.writeByte(version)")
       .fold(bodyFields) {
         case (writer, field) =>
           field.tpe match {
+            case tpe: BinarySerializableType if tpe.isProofs =>
+              writer
+                .addLines("if (forBytes) {")
+                .addLines("  proofs.writeBytes(output)")
+                .addLines("}")
             case tpe: BinarySerializableType if tpe.isCustomProofSource =>
               writer
                 .addLines("if (forProof) {")
@@ -154,8 +162,7 @@ trait CaseClassesGenerator extends ScalaGenerator {
           case BinaryHeaderType.Legacy => ""
           case BinaryHeaderType.Modern => "output.writeByte(TransactionParsers.ModernTxFlag)"
         }}
-          | writeBodyBytes(output)
-          | proofs.writeBytes(output)
+          | writeBodyBytes(output, forBytes = true)
           | output.toByteArray"""
       }
       .addLines("}")

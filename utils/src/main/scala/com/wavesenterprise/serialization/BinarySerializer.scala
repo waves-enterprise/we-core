@@ -45,7 +45,7 @@ object BinarySerializer {
       output: ByteArrayDataOutput
   ): Unit = writeIterable(iterable, writer, (count, out) => out.writeInt(count), output)
 
-  def parseIterable[T](
+  def parseList[T](
       bytes: Array[Byte],
       countReader: Reader[Int],
       reader: Reader[T],
@@ -66,14 +66,37 @@ object BinarySerializer {
       bytes: Array[Byte],
       reader: Reader[T],
       offset: Offset = 0
-  ): (List[T], Offset) = parseIterable(bytes, shortCountReader, reader, offset)
+  ): (List[T], Offset) = parseList(bytes, shortCountReader, reader, offset)
 
   @inline
   def parseBigList[T](
       bytes: Array[Byte],
       reader: Reader[T],
       offset: Offset = 0
-  ): (List[T], Offset) = parseIterable(bytes, intCountReader, reader, offset)
+  ): (List[T], Offset) = parseList(bytes, intCountReader, reader, offset)
+
+  def parseSet[T](
+      bytes: Array[Byte],
+      countReader: Reader[Int],
+      reader: Reader[T],
+      offset: Offset = 0
+  ): (Set[T], Offset) = {
+    val (count, countEnd) = countReader(bytes, offset)
+    val (items, end) = (0 until count).foldLeft(Set.empty[T] -> countEnd) {
+      case ((acc, pos), _) =>
+        val (item, nextPos) = reader(bytes, pos)
+        (acc + item, nextPos)
+    }
+
+    items -> end
+  }
+
+  @inline
+  def parseShortSet[T](
+      bytes: Array[Byte],
+      reader: Reader[T],
+      offset: Offset = 0
+  ): (Set[T], Offset) = parseSet(bytes, shortCountReader, reader, offset)
 
   def parseOption[T](
       bytes: Array[Byte],
@@ -105,6 +128,11 @@ object BinarySerializer {
   @inline
   def writeShortString(s: String, output: ByteArrayDataOutput): Unit = {
     BinarySerializer.writeShortByteArray(s.getBytes(UTF_8), output)
+  }
+
+  @inline
+  def writeInt(value: Int, output: ByteArrayDataOutput): Unit = {
+    output.writeInt(value)
   }
 
   def parseShortString(bytes: Array[Byte], offset: Offset = 0): (String, Offset) = {
@@ -163,6 +191,15 @@ object BinarySerializer {
   }
 
   @inline
+  def parseInt(bytes: Array[Byte], offset: Offset = 0): (Int, Offset) =
+    Ints.fromBytes(
+      bytes(offset),
+      bytes(offset + 1),
+      bytes(offset + 2),
+      bytes(offset + 3)
+    ) -> (offset + Ints.BYTES)
+
+  @inline
   def parseLong(bytes: Array[Byte], offset: Offset = 0): (Long, Offset) =
     Longs.fromBytes(
       bytes(offset),
@@ -174,15 +211,6 @@ object BinarySerializer {
       bytes(offset + 6),
       bytes(offset + 7)
     ) -> (offset + Longs.BYTES)
-
-  @inline
-  def parseInt(bytes: Array[Byte], offset: Offset = 0): (Int, Offset) =
-    Ints.fromBytes(
-      bytes(offset),
-      bytes(offset + 1),
-      bytes(offset + 2),
-      bytes(offset + 3)
-    ) -> (offset + Ints.BYTES)
 
   private[serialization] def byteCountWriter(count: Int, output: ByteArrayDataOutput): Unit = {
     require(count.isValidByte)

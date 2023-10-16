@@ -15,6 +15,7 @@ trait SealedTraitGenerator extends ScalaGenerator {
 
   override protected def buildWriter(scheme: TxScheme): CodeWriter = {
     val commonFields = scheme.fields.filter { field =>
+      !field.isTransparent &&
       !field.excludeFormSealedTrait &&
       (
         field.isEssential ||

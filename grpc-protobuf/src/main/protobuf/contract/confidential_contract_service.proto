@@ -1,0 +1,52 @@
+syntax = "proto3";
+package wavesenterprise;
+
+import "atomic_badge.proto";
+import "confidential_input.proto";
+import "confidential_output.proto";
+import "data_entry.proto";
+import "google/protobuf/wrappers.proto";
+import "managed/call_contract_transaction.proto";
+import "managed/executed_contract_transaction.proto";
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.protobuf.service.contract";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+service ConfidentialContractService {
+  rpc ConfidentialCall (ConfidentialCallRequest) returns (ConfidentialCallResponse);
+  rpc ConfidentialExecutedTxByExecutableTxId (ExecutedTxRequest) returns (ExecutedTxByIdResponse);
+}
+
+message ConfidentialCallRequest {
+  string sender = 1;
+  google.protobuf.StringValue password = 2;
+  string contract_id = 3;
+  int32 contract_version = 4;
+  repeated DataEntry params = 5;
+  int64 timestamp = 6;
+  AtomicBadge atomic_badge = 7;
+  int64 fee = 8;
+  google.protobuf.StringValue fee_asset_id = 9;
+  google.protobuf.StringValue commitment = 10;
+  google.protobuf.StringValue commitment_key = 11;
+  repeated bytes certificates = 12;
+  bool broadcast_tx = 13;
+  bool commitment_verification = 14;
+}
+
+message ConfidentialCallResponse {
+  CallContractTransaction transaction = 1;
+  ConfidentialInput confidential_input = 2;
+}
+
+message ExecutedTxRequest {
+  string transaction_id = 1;
+}
+
+message ExecutedTxByIdResponse {
+  ExecutedContractTransaction transaction = 1;
+  ConfidentialInput confidential_input = 2;
+  ConfidentialOutput confidential_output = 3;
+}
