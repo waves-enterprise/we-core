@@ -75,4 +75,15 @@ object FieldGenerationOption {
     * Defines a custom field name for Protobuf representation.
     */
   case class ProtobufCustomName(name: String) extends FieldGenerationOption
+
+  /**
+   * Defines a field that is excluded from scala generated classes.
+   */
+  case object Transparent extends FieldGenerationOption
+
+  /**
+   * Defines a data field with proofs serialization.
+   */
+  case object Proofs extends FieldGenerationOption
+
 }

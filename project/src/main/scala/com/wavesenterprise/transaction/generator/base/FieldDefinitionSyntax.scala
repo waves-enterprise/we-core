@@ -29,6 +29,8 @@ object FieldDefinitionSyntax {
       val specialTypeScriptName      = options.collectFirst { case TypeScriptCustomName(tsName)  => tsName }
       val specialTypeScriptType      = options.collectFirst { case TypeScriptCustomType(tsType)  => tsType }
       val specialProtoName           = options.collectFirst { case ProtobufCustomName(protoName) => protoName }
+      val maybeIsTransparent         = options.collectFirst { case Transparent                   => () }
+      val maybeIsProofs              = options.collectFirst { case Proofs                        => () }
 
       FieldScheme(
         name = name,
@@ -47,7 +49,9 @@ object FieldDefinitionSyntax {
         inTypeScript = maybeExcludeFromTypeScript.isEmpty,
         specialTypeScriptName = specialTypeScriptName,
         specialTypeScriptType = specialTypeScriptType,
-        specialProtoName = specialProtoName
+        specialProtoName = specialProtoName,
+        isTransparent = maybeIsTransparent.isDefined,
+        isProofs = maybeIsProofs.isDefined
       )
     }
   }

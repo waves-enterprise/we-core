@@ -21,6 +21,7 @@ object BlockchainFeature extends Enum[BlockchainFeature] {
   case object AtomicTransactionSupport                  extends BlockchainFeature
   case object ContractValidationsSupport                extends BlockchainFeature
   case object ContractNativeTokenSupportAndPkiV1Support extends BlockchainFeature
+  case object ConfidentialDataInContractsSupport        extends BlockchainFeature
   case object OtherTxTypesAtomicSupport                 extends BlockchainFeature
   case object LeaseOpsForContractsSupport               extends BlockchainFeature
 

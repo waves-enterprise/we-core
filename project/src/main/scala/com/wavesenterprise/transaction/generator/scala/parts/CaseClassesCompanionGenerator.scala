@@ -28,7 +28,8 @@ trait CaseClassesCompanionGenerator extends ScalaGenerator {
     val className = versionedClassName(scheme, version)
     val currentVersionDataFields = scheme.fields.filter { field =>
       field.inConstructorVersions.forall(_.contains(version)) && // Include field if it belongs to at least one version
-      !field.versionToBodyValue.isDefinedAt(version) // Exclude hardcoded fields
+      !field.versionToBodyValue.isDefinedAt(version) && // Exclude hardcoded fields
+      !field.isTransparent
     }
 
     val extensions = Seq(
