@@ -57,20 +57,25 @@ class DataTransactionV1Specification
     }
   }
 
-  ignore("unknown type handing") {
+  property("unknown type handing") {
     val badTypeIdGen = Gen.choose[Int](DataEntry.Type.maxId + 1, Byte.MaxValue)
-    forAll(dataTransactionV1Gen, badTypeIdGen) {
+    forAll(dataTransactionV2Gen, badTypeIdGen) {
       case (tx, badTypeId) =>
-        val bytes      = tx.bytes()
+        val bytes = tx.bytes()
+        /*
+        * transaction Data Transaction Binary Format in bytes:
+        *    1    +     1       +      1       +       32      +     32     +     2         +       2       +     <400        +     1      +   ...
+        * Version   Transaction    Transaction      Public key    Public key    Length of         Key 1           Key 1           Value 1
+        *  flag       type ID       version           sender        author    the data array      length                           type
+        * The maximum size of transaction body bytes is 153,600 bytes.
+        * */
         val entryCount = Shorts.fromByteArray(bytes.drop(67))
+        println(entryCount)
         if (entryCount > 0) {
-          /*val key1Length = Shorts.fromByteArray(bytes.drop(69))
-          val p          = 71 + key1Length
-          bytes(p) = badTypeId.toByte*/
-          val key1Length = Shorts.fromByteArray(bytes.drop(37))
-          val p          = 39 + key1Length
+          val key1Length = Shorts.fromByteArray(bytes.drop(69))
+          val p = 71 + key1Length
           bytes(p) = badTypeId.toByte
-          val parsed = DataTransactionV1.parseBytes(bytes)
+          val parsed = DataTransactionV2.parseBytes(bytes)
           parsed.isFailure shouldBe true
           parsed.failed.get.getMessage shouldBe s"Unknown type $badTypeId"
         }

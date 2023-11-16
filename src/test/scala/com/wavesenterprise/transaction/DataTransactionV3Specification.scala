@@ -1,11 +1,12 @@
 package com.wavesenterprise.transaction
 
+import com.google.common.primitives.Shorts
 import com.wavesenterprise.CoreTransactionGen
 import com.wavesenterprise.account.PublicKeyAccount
 import com.wavesenterprise.state._
 import com.wavesenterprise.utils.Base64
 import com.wavesenterprise.utils.EitherUtils.EitherExt
-import org.scalacheck.Arbitrary
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.Json
@@ -50,6 +51,32 @@ class DataTransactionV3Specification
     forAll(dataTransactionV3Gen) { tx: DataTransactionV3 =>
       val recovered = DataTransactionV3.parseBytes(tx.bytes()).get
       recovered.bytes() shouldEqual tx.bytes()
+    }
+  }
+
+  property("unknown type handing") {
+    val badTypeIdGen = Gen.choose[Int](DataEntry.Type.maxId + 1, Byte.MaxValue)
+    forAll(dataTransactionV2Gen, badTypeIdGen) {
+      case (tx, badTypeId) =>
+        val bytes = tx.bytes()
+        /*
+        * transaction Data Transaction Binary Format in bytes:
+        *    1    +     1       +      1       +       32      +     32     +     2         +       2       +     <400        +     1      +   ...
+        * Version   Transaction    Transaction      Public key    Public key    Length of         Key 1           Key 1           Value 1
+        *  flag       type ID       version           sender        author    the data array      length                           type
+        *
+        * The maximum size of transaction body bytes is 153,600 bytes.
+        * */
+        val entryCount = Shorts.fromByteArray(bytes.drop(67))
+        println(entryCount)
+        if (entryCount > 0) {
+          val key1Length = Shorts.fromByteArray(bytes.drop(69))
+          val p = 71 + key1Length
+          bytes(p) = badTypeId.toByte
+          val parsed = DataTransactionV2.parseBytes(bytes)
+          parsed.isFailure shouldBe true
+          parsed.failed.get.getMessage shouldBe s"Unknown type $badTypeId"
+        }
     }
   }
 
