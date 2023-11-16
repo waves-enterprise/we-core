@@ -68,7 +68,6 @@ class DataTransactionV3Specification
          * The maximum size of transaction body bytes is 153,600 bytes.
          * */
         val entryCount = Shorts.fromByteArray(bytes.drop(67))
-        println(entryCount)
         if (entryCount > 0) {
           val key1Length = Shorts.fromByteArray(bytes.drop(69))
           val p          = 71 + key1Length
