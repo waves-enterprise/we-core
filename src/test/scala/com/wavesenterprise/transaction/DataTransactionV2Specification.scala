@@ -1,5 +1,7 @@
 package com.wavesenterprise.transaction
 
+import org.scalacheck.Gen
+import com.google.common.primitives.Shorts
 import com.wavesenterprise.CoreTransactionGen
 import com.wavesenterprise.account.PublicKeyAccount
 import com.wavesenterprise.state._
@@ -50,6 +52,52 @@ class DataTransactionV2Specification
     forAll(dataTransactionV2Gen) { tx: DataTransactionV2 =>
       val recovered = DataTransactionV2.parseBytes(tx.bytes()).get
       recovered.bytes() shouldEqual tx.bytes()
+    }
+  }
+
+  property("unknown type handing") {
+    val badTypeIdGen = Gen.choose[Int](DataEntry.Type.maxId + 1, Byte.MaxValue)
+    forAll(dataTransactionV2Gen, badTypeIdGen) {
+      case (tx, badTypeId) =>
+        val bytes = tx.bytes()
+        /*
+         * transaction Data Transaction Binary Format in bytes:
+         *    1    +     1       +      1       +       32      +     32     +     2         +       2       +     <400        +     1      +   ...
+         * Version   Transaction    Transaction      Public key    Public key    Length of         Key 1           Key 1           Value 1
+         *  flag       type ID       version           sender        author    the data array      length                           type
+         * The maximum size of transaction body bytes is 153,600 bytes.
+         * */
+        val entryCount = Shorts.fromByteArray(bytes.drop(67))
+        if (entryCount > 0) {
+          val key1Length = Shorts.fromByteArray(bytes.drop(69))
+          val p          = 71 + key1Length
+          bytes(p) = badTypeId.toByte
+          val parsed = DataTransactionV2.parseBytes(bytes)
+          parsed.isFailure shouldBe true
+          parsed.failed.get.getMessage shouldBe s"Unknown type $badTypeId"
+        }
+    }
+  }
+
+  property("positive validation cases") {
+    import com.wavesenterprise.state._
+    import com.wavesenterprise.transaction.validation.DataValidation.MaxEntryCount
+    forAll(dataTransactionV2Gen) {
+      case (tx) =>
+        def check(data: List[DataEntry[_]]): Assertion = {
+          val txEi = DataTransactionV2.create(tx.sender, tx.author, data, tx.timestamp, tx.fee, tx.feeAssetId, tx.proofs)
+          txEi shouldBe Right(DataTransactionV2(tx.sender, tx.author, data, tx.timestamp, tx.fee, tx.feeAssetId, tx.proofs))
+          checkSerialization(txEi.explicitGet())
+        }
+
+        check(List.empty)                                                               // no data
+        check(List.tabulate(MaxEntryCount)(n => IntegerDataEntry(n.toString, n)))       // maximal data
+        check(List.tabulate(30)(n => StringDataEntry(n.toString, "a" * 5107)))          // The maximum size of transaction body bytes is ~153,600 bytes.
+        check(List(IntegerDataEntry("a" * (MaxKeySize - 1), 0xa)))                      // max key size
+        check(List(BinaryDataEntry("bin", ByteStr.empty)))                              // empty binary
+        check(List(BinaryDataEntry("bin", ByteStr(Array.fill(MaxValueSize)(1: Byte))))) // max binary value size
+        check(List(StringDataEntry("str", "")))                                         // empty string
+        check(List(StringDataEntry("str", "A" * MaxValueSize)))                         // max string size
     }
   }
 
