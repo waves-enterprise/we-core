@@ -56,7 +56,7 @@ class DataTransactionV3Specification
 
   property("unknown type handing") {
     val badTypeIdGen = Gen.choose[Int](DataEntry.Type.maxId + 1, Byte.MaxValue)
-    forAll(dataTransactionV2Gen, badTypeIdGen) {
+    forAll(dataTransactionV3Gen, badTypeIdGen) {
       case (tx, badTypeId) =>
         val bytes = tx.bytes()
         /*
@@ -72,10 +72,32 @@ class DataTransactionV3Specification
           val key1Length = Shorts.fromByteArray(bytes.drop(69))
           val p          = 71 + key1Length
           bytes(p) = badTypeId.toByte
-          val parsed = DataTransactionV2.parseBytes(bytes)
+          val parsed = DataTransactionV3.parseBytes(bytes)
           parsed.isFailure shouldBe true
           parsed.failed.get.getMessage shouldBe s"Unknown type $badTypeId"
         }
+    }
+  }
+
+  property("positive validation cases") {
+    import com.wavesenterprise.state._
+    import com.wavesenterprise.transaction.validation.DataValidation.MaxEntryCount
+    forAll(dataTransactionV3Gen) {
+      case (tx) =>
+        def check(data: List[DataEntry[_]]): Assertion = {
+          val txEi = DataTransactionV3.create(tx.sender, tx.author, data, tx.timestamp, tx.fee, tx.feeAssetId, tx.atomicBadge, tx.proofs)
+          txEi shouldBe Right(DataTransactionV3(tx.sender, tx.author, data, tx.timestamp, tx.fee, tx.feeAssetId, tx.atomicBadge, tx.proofs))
+          checkSerialization(txEi.explicitGet())
+        }
+
+        check(List.empty)                                                               // no data
+        check(List.tabulate(MaxEntryCount)(n => IntegerDataEntry(n.toString, n)))       // maximal data
+        check(List.tabulate(30)(n => StringDataEntry(n.toString, "a" * 5106)))          // The maximum size of transaction body bytes is ~153,600 bytes.
+        check(List(IntegerDataEntry("a" * (MaxKeySize - 1), 0xa)))                      // max key size
+        check(List(BinaryDataEntry("bin", ByteStr.empty)))                              // empty binary
+        check(List(BinaryDataEntry("bin", ByteStr(Array.fill(MaxValueSize)(1: Byte))))) // max binary value size
+        check(List(StringDataEntry("str", "")))                                         // empty string
+        check(List(StringDataEntry("str", "A" * MaxValueSize)))                         // max string size
     }
   }
 

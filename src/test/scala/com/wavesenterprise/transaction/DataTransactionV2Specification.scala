@@ -79,22 +79,21 @@ class DataTransactionV2Specification
     }
   }
 
-  // TODO: fix this test case
-  ignore("positive validation cases") {
+  property("positive validation cases") {
     import com.wavesenterprise.state._
     import com.wavesenterprise.transaction.validation.DataValidation.MaxEntryCount
-    forAll(dataTransactionV2Gen, dataEntryGen(500)) {
-      case (DataTransactionV2(sender, author, data, fee, timestamp, feeAssetId, proofs), entry) =>
+    forAll(dataTransactionV2Gen) {
+      case (tx) =>
         def check(data: List[DataEntry[_]]): Assertion = {
-          val txEi = DataTransactionV2.create(sender, author, data, timestamp, fee, feeAssetId, proofs)
-          txEi shouldBe Right(DataTransactionV2(sender, author, data, fee, timestamp, feeAssetId, proofs))
+          val txEi = DataTransactionV2.create(tx.sender, tx.author, data, tx.timestamp, tx.fee, tx.feeAssetId, tx.proofs)
+          txEi shouldBe Right(DataTransactionV2(tx.sender, tx.author, data, tx.timestamp, tx.fee, tx.feeAssetId, tx.proofs))
           checkSerialization(txEi.explicitGet())
         }
 
         check(List.empty)                                                               // no data
         check(List.tabulate(MaxEntryCount)(n => IntegerDataEntry(n.toString, n)))       // maximal data
-        check(List.tabulate(30)(n => StringDataEntry(n.toString, "a" * 5109)))          // maximal data
-        check(List(IntegerDataEntry("a" * MaxKeySize, 0xa)))                            // max key size
+        check(List.tabulate(30)(n => StringDataEntry(n.toString, "a" * 5107)))          // The maximum size of transaction body bytes is ~153,600 bytes.
+        check(List(IntegerDataEntry("a" * (MaxKeySize - 1), 0xa)))                      // max key size
         check(List(BinaryDataEntry("bin", ByteStr.empty)))                              // empty binary
         check(List(BinaryDataEntry("bin", ByteStr(Array.fill(MaxValueSize)(1: Byte))))) // max binary value size
         check(List(StringDataEntry("str", "")))                                         // empty string
