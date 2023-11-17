@@ -6,6 +6,7 @@ import "confidential_input.proto";
 import "confidential_output.proto";
 import "data_entry.proto";
 import "google/protobuf/wrappers.proto";
+import "keys_filter.proto";
 import "managed/call_contract_transaction.proto";
 import "managed/executed_contract_transaction.proto";
 
@@ -17,6 +18,7 @@ option go_package = "wavesenterprise.com/weproto";
 service ConfidentialContractService {
   rpc ConfidentialCall (ConfidentialCallRequest) returns (ConfidentialCallResponse);
   rpc ConfidentialExecutedTxByExecutableTxId (ExecutedTxRequest) returns (ExecutedTxByIdResponse);
+  rpc GetContractKeys (ConfidentialContractKeysRequest) returns (ConfidentialContractKeysResponse);
 }
 
 message ConfidentialCallRequest {
@@ -49,4 +51,16 @@ message ExecutedTxByIdResponse {
   ExecutedContractTransaction transaction = 1;
   ConfidentialInput confidential_input = 2;
   ConfidentialOutput confidential_output = 3;
+}
+
+message ConfidentialContractKeysRequest {
+  string contract_id = 1;
+  google.protobuf.Int32Value limit = 2;
+  google.protobuf.Int32Value offset = 3;
+  google.protobuf.StringValue matches = 4;
+  KeysFilter keys_filter = 5;
+}
+
+message ConfidentialContractKeysResponse {
+  repeated DataEntry entries = 1;
 }
