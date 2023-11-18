@@ -2,6 +2,8 @@ syntax = "proto3";
 package wavesenterprise;
 
 import "contract_asset_operation.proto";
+import "contract_keys_request.proto";
+import "contract_keys_response.proto";
 import "contract_transfer_in.proto";
 import "data_entry.proto";
 import "google/protobuf/wrappers.proto";
@@ -107,22 +109,6 @@ message ExecutionErrorRequest {
 }
 
 message CommitExecutionResponse {
-}
-
-message ContractKeysRequest {
-  string contract_id = 1;
-  google.protobuf.Int32Value limit = 2;
-  google.protobuf.Int32Value offset = 3;
-  google.protobuf.StringValue matches = 4;
-  KeysFilter keys_filter = 5;
-}
-
-message KeysFilter {
-  repeated string keys = 1;
-}
-
-message ContractKeysResponse {
-  repeated DataEntry entries = 1;
 }
 
 message ContractKeyRequest {

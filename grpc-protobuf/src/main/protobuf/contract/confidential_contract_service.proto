@@ -4,6 +4,8 @@ package wavesenterprise;
 import "atomic_badge.proto";
 import "confidential_input.proto";
 import "confidential_output.proto";
+import "contract_keys_request.proto";
+import "contract_keys_response.proto";
 import "data_entry.proto";
 import "google/protobuf/wrappers.proto";
 import "managed/call_contract_transaction.proto";
@@ -17,6 +19,7 @@ option go_package = "wavesenterprise.com/weproto";
 service ConfidentialContractService {
   rpc ConfidentialCall (ConfidentialCallRequest) returns (ConfidentialCallResponse);
   rpc ConfidentialExecutedTxByExecutableTxId (ExecutedTxRequest) returns (ExecutedTxByIdResponse);
+  rpc GetContractKeys (ContractKeysRequest) returns (ContractKeysResponse);
 }
 
 message ConfidentialCallRequest {
