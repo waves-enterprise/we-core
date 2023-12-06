@@ -1,0 +1,13 @@
+syntax = "proto3";
+package wavesenterprise;
+
+import "data_entry.proto";
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.transaction.protobuf";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+message ContractKeysResponse {
+    repeated DataEntry entries = 1;
+}

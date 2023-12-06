@@ -1,0 +1,18 @@
+syntax = "proto3";
+package wavesenterprise;
+
+import "google/protobuf/wrappers.proto";
+import "keys_filter.proto";
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.transaction.protobuf";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+message ContractKeysRequest {
+    string contract_id = 1;
+    google.protobuf.Int32Value limit = 2;
+    google.protobuf.Int32Value offset = 3;
+    google.protobuf.StringValue matches = 4;
+    KeysFilter keys_filter = 5;
+}
