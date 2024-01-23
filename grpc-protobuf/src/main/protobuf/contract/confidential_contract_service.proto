@@ -1,6 +1,7 @@
 syntax = "proto3";
 package wavesenterprise;
 
+
 import "atomic_badge.proto";
 import "confidential_input.proto";
 import "confidential_output.proto";

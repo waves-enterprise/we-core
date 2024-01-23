@@ -1,11 +1,13 @@
 package com.wavesenterprise.transaction.docker.assets
 
+import cats.implicits._
 import com.google.common.io.ByteArrayDataOutput
 import com.google.common.io.ByteStreams.newDataOutput
 import com.wavesenterprise.account.AddressOrAlias
 import com.wavesenterprise.crypto
 import com.wavesenterprise.serialization.BinarySerializer
 import com.wavesenterprise.state.ByteStr
+import com.wavesenterprise.state.ByteStr.ByteStrFormat
 import com.wavesenterprise.transaction.ValidationError.GenericError
 import com.wavesenterprise.transaction.{AssetId, AssetIdLength}
 import enumeratum.values.{ByteEnum, ByteEnumEntry}
@@ -59,6 +61,7 @@ object ContractAssetOperation {
     case object ContractBurnType        extends ContractAssetOperationType(3, "burn")
     case object ContractLeaseType       extends ContractAssetOperationType(4, "lease")
     case object ContractCancelLeaseType extends ContractAssetOperationType(5, "cancel-lease")
+    case object ContractPaymentType     extends ContractAssetOperationType(6, "contract-payment")
 
     override def values: immutable.IndexedSeq[ContractAssetOperationType] = findValues
 
@@ -326,6 +329,7 @@ object ContractAssetOperation {
                   case ContractAssetOperationTypes.ContractBurnType        => ContractBurnV1.format.reads(obj)
                   case ContractAssetOperationTypes.ContractLeaseType       => ContractLeaseV1.format.reads(obj)
                   case ContractAssetOperationTypes.ContractCancelLeaseType => ContractCancelLeaseV1.format.reads(obj)
+                  case ContractAssetOperationTypes.ContractPaymentType     => ContractPaymentV1.format.reads(obj)
                 }
           }
 
@@ -338,6 +342,7 @@ object ContractAssetOperation {
         case obj: ContractBurnV1        => ContractBurnV1.format.writes(obj)
         case obj: ContractLeaseV1       => ContractLeaseV1.format.writes(obj)
         case obj: ContractCancelLeaseV1 => ContractCancelLeaseV1.format.writes(obj)
+        case obj: ContractPaymentV1     => ContractPaymentV1.format.writes(obj)
       }
     )
   }
@@ -351,5 +356,118 @@ object ContractAssetOperation {
     case ((ContractAssetOperationTypes.ContractBurnType, 1), _)        => ContractBurnV1.fromBytes(bytes, offset)
     case ((ContractAssetOperationTypes.ContractLeaseType, 1), _)       => ContractLeaseV1.fromBytes(bytes, offset)
     case ((ContractAssetOperationTypes.ContractCancelLeaseType, 1), _) => ContractCancelLeaseV1.fromBytes(bytes, offset)
+    case ((ContractAssetOperationTypes.ContractPaymentType, 1), _)     => ContractPaymentV1.fromBytes(bytes, offset)
+  }
+
+  final case class ContractPaymentV1 private (
+      operationType: OperationType,
+      version: Byte,
+      assetId: Option[AssetId],
+      recipient: ByteStr,
+      amount: Long
+  ) extends ContractAssetOperation {
+    override def writeContractAssetOperationBytes(output: ByteArrayDataOutput): Unit = {
+      BinarySerializer.writeByteIterable(assetId, assetIdWriter, output)
+      BinarySerializer.writeShortByteStr(recipient, output)
+      output.writeLong(amount)
+    }
+  }
+
+  object ContractPaymentV1 {
+
+    import com.wavesenterprise.serialization.json.AddressOrAliasJsonUtils._
+
+    val operationType: OperationType = ContractAssetOperationTypes.ContractPaymentType
+    val version: Byte                = 1
+
+    val format: Format[ContractPaymentV1] = Json.format
+
+    def apply(assetId: Option[AssetId], recipient: ByteStr, amount: Long): ContractPaymentV1 =
+      ContractPaymentV1(
+        operationType = ContractPaymentV1.operationType,
+        version = 1,
+        assetId = assetId,
+        recipient = recipient,
+        amount = amount
+      )
+
+    def fromBytes(bytes: Array[Byte], offset: Int): (ContractPaymentV1, Int) = {
+      val ((operationType, version), versionEnd) = readContractAssetOperationPrefixFromBytes(bytes, offset)
+      val (assetId, assetIdEnd)                  = BinarySerializer.parseOption(bytes, assetIdReader, versionEnd)
+      val (recipient, recipientEnd)              = BinarySerializer.parseShortByteStr(bytes, assetIdEnd)
+      val (amount, end)                          = BinarySerializer.parseLong(bytes, recipientEnd)
+
+      (ContractPaymentV1(operationType, version, assetId, recipient, amount), end)
+    }
+  }
+
+  type ContractAssetOperationList = List[ContractAssetOperation]
+
+  object ContractAssetOperationList {
+    def fromBytes(bytes: Array[Byte], offset: Int): (ContractAssetOperationList, Int) = {
+      BinarySerializer.parseBigList(bytes, ContractAssetOperation.fromBytes, offset)
+    }
+
+    def writeBytes(operations: ContractAssetOperationList, output: ByteArrayDataOutput): Unit = {
+      BinarySerializer.writeBigIterable(operations, ContractAssetOperation.writeBytes, output)
+    }
+
+    implicit val format: Format[ContractAssetOperationList] = Format(Reads.list, Writes.list)
+  }
+
+  case class ContractAssetOperationMap(
+      mapping: Map[ByteStr, List[ContractAssetOperation]]
+  )
+  object ContractAssetOperationMap {
+    def fromBytes(bytes: Array[Byte], offset: Int): (ContractAssetOperationMap, Int) = {
+      val (contractCount, countOffset) = BinarySerializer.parseInt(bytes, offset)
+      var readOffset                   = countOffset
+      var readCount                    = 0
+      val result                       = scala.collection.mutable.Buffer[(ByteStr, List[ContractAssetOperation])]()
+      while (readCount < contractCount) {
+        val (contractId, listOffset)        = BinarySerializer.parseShortByteStr(bytes, readOffset)
+        val (assetOperationList, newOffset) = ContractAssetOperationList.fromBytes(bytes, listOffset)
+        result += (contractId -> assetOperationList)
+        readCount += 1
+        readOffset = newOffset
+      }
+      ContractAssetOperationMap(result.toMap) -> readOffset
+    }
+
+    def writeBytes(operationMap: ContractAssetOperationMap, output: ByteArrayDataOutput): Unit = {
+      BinarySerializer.writeInt(operationMap.mapping.size, output)
+      operationMap.mapping.foreach {
+        case (contractId, operations) =>
+          BinarySerializer.writeShortByteStr(contractId, output)
+          ContractAssetOperationList.writeBytes(operations, output)
+      }
+    }
+
+    implicit val format: Format[ContractAssetOperationMap] = {
+      Format(
+        {
+          case _ @JsObject(fields) =>
+            fields.toList.map {
+              case (stringKey, jsonValues) =>
+                for {
+                  contractId <- ByteStrFormat.reads(JsString(stringKey))
+                  jsonValues <- ContractAssetOperationList.format.reads(jsonValues)
+                } yield {
+                  contractId -> jsonValues
+                }
+            }.traverse(_.asEither)
+              .left.map(JsError.apply)
+              .right.map(s => JsSuccess(ContractAssetOperationMap(s.toMap)))
+              .fold(identity, identity)
+
+          case _ => JsError("expected base58 -> list[ContractAssetOperation] object")
+        },
+        {
+          map =>
+            JsObject(map.mapping.toList.map(kv => kv._1.base58 -> ContractAssetOperationList.format.writes(kv._2)))
+        }
+      )
+    }
+
   }
 }

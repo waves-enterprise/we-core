@@ -23,3 +23,11 @@ message ContractAssetOperation {
     ContractCancelLease contract_cancel_lease = 6;
   }
 }
+
+message ContractAssetOperationList {
+  repeated ContractAssetOperation operations = 1;
+}
+
+message ContractAssetOperationMap {
+  map<string, ContractAssetOperationList> operationList = 1;
+}

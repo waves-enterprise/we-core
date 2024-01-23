@@ -37,6 +37,7 @@ object BlockchainFeature extends ShortEnum[BlockchainFeature] {
   case object LeaseOpsForContractsSupport extends BlockchainFeature(1123, "Support of Lease/CancelLease operations for smart-contracts")
 
   case object ConfidentialDataInContractsSupport extends BlockchainFeature(1130, "Support of operating over confidential data in smart contracts")
+  case object WasmContractsSupport               extends BlockchainFeature(1140, "Support of WASM smart-contracts")
 
   override def values: immutable.IndexedSeq[BlockchainFeature] = findValues
 

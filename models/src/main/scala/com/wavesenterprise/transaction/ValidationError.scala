@@ -223,6 +223,10 @@ object ValidationError {
     override def toString: String = s"Snapshot height '$snapshotHeight' is reached. Unable to process transactions"
   }
 
+  case object ContractIsMissingError extends ValidationError
+
+  case object UnknownContractEngineError extends ValidationError
+
   def fromCryptoError(e: CryptoError): ValidationError = {
     e match {
       case CryptoInvalidAddress(message)     => InvalidAddress(message)

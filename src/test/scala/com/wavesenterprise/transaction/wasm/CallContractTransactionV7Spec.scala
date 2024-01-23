@@ -1,8 +1,9 @@
-package com.wavesenterprise.transaction.docker
+package com.wavesenterprise.transaction.wasm
 
 import com.wavesenterprise.account.PublicKeyAccount
 import com.wavesenterprise.state._
 import com.wavesenterprise.transaction.docker.assets.ContractTransferInV1
+import com.wavesenterprise.transaction.docker.{CallContractTransactionV7, ContractTransactionGen}
 import com.wavesenterprise.transaction.{AtomicBadge, Proofs, TransactionParsers}
 import com.wavesenterprise.utils.Base64
 import com.wavesenterprise.utils.EitherUtils.EitherExt
@@ -11,24 +12,24 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import play.api.libs.json.Json
 import tools.GenHelper._
 
-class CallContractTransactionV6Spec extends PropSpec with ScalaCheckPropertyChecks with Matchers with ContractTransactionGen {
+class CallContractTransactionV7Spec extends PropSpec with ScalaCheckPropertyChecks with Matchers with ContractTransactionGen {
 
-  property("CallContractTransactionV6Spec serialization roundtrip") {
-    forAll(callContractV6ParamGen()) { tx =>
-      val recovered = CallContractTransactionV6.parseBytes(tx.bytes()).get
+  property("CallContractTransactionV7 serialization roundtrip") {
+    forAll(callContractV7ParamGen()) { tx =>
+      val recovered = CallContractTransactionV7.parseBytes(tx.bytes()).get
       recovered shouldBe tx
     }
   }
 
-  property("CallContractTransactionV6 proto serialization roundtrip") {
-    forAll(callContractV6ParamGen()) { tx =>
-      val recovered = CallContractTransactionV6.fromProto(tx.toInnerProto).explicitGet()
+  property("CallContractTransactionV7 proto serialization roundtrip") {
+    forAll(callContractV7ParamGen()) { tx =>
+      val recovered = CallContractTransactionV7.fromProto(tx.toInnerProto).explicitGet()
       recovered shouldBe tx
     }
   }
 
-  property("CallContractTransactionV6Spec serialization from TypedTransaction") {
-    forAll(callContractV6ParamGen()) { tx =>
+  property("CallContractTransactionV7 serialization from TypedTransaction") {
+    forAll(callContractV7ParamGen()) { tx =>
       val recovered = TransactionParsers.parseBytes(tx.bytes()).get
       recovered shouldBe tx
     }
@@ -51,7 +52,9 @@ class CallContractTransactionV6Spec extends PropSpec with ScalaCheckPropertyChec
 
     val inputCommitment = commitmentGen().generateSample()
 
-    val tx = CallContractTransactionV6
+    val callFunc = "transfer"
+
+    val tx = CallContractTransactionV7
       .create(
         PublicKeyAccount(senderAccount.publicKey),
         ByteStr.decodeBase58(contractId).get,
@@ -63,6 +66,8 @@ class CallContractTransactionV6Spec extends PropSpec with ScalaCheckPropertyChec
         Some(AtomicBadge(Some(senderAccount.toAddress))),
         payments,
         Some(inputCommitment),
+        "wasm",
+        Some(callFunc),
         Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
       )
       .right
@@ -80,7 +85,7 @@ class CallContractTransactionV6Spec extends PropSpec with ScalaCheckPropertyChec
          |   "proofs":[
          |      "32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94"
          |   ],
-         |   "version":6,
+         |   "version":7,
          |   "atomicBadge":{
          |      "trustedSender":"${senderAccount.address}"
          |   },
@@ -113,7 +118,9 @@ class CallContractTransactionV6Spec extends PropSpec with ScalaCheckPropertyChec
          |         "amount":100
          |      }
          |   ],
-         |   "inputCommitment":"${inputCommitment.hash.toString}"
+         |   "inputCommitment":"${inputCommitment.hash.toString}",
+         |   "contractEngine": "wasm",
+         |   "callFunc": "$callFunc"
          |}
          |""".stripMargin
     )
