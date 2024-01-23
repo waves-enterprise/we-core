@@ -4,10 +4,12 @@ import com.google.common.io.ByteStreams.newDataOutput
 import com.google.common.primitives.Ints
 import com.wavesenterprise.account.{Address, PublicKeyAccount}
 import com.wavesenterprise.crypto
+import com.wavesenterprise.docker.StoredContract.{DockerContract, storedContractReader}
 import com.wavesenterprise.docker.validator.ValidationPolicy
 import com.wavesenterprise.serialization.{BinarySerializer, ModelsBinarySerializer}
 import com.wavesenterprise.state.ByteStr
-import com.wavesenterprise.transaction.ValidationPolicyAndApiVersionSupport
+import com.wavesenterprise.transaction.docker._
+import com.wavesenterprise.transaction.{ApiVersionSupport, ValidationPolicySupport}
 import com.wavesenterprise.transaction.docker.{
   ConfidentialDataInCreateContractSupported,
   ConfidentialDataInUpdateContractSupported,
@@ -16,14 +18,12 @@ import com.wavesenterprise.transaction.docker.{
 }
 import com.wavesenterprise.utils.DatabaseUtils.ByteArrayDataOutputExt
 import monix.eval.Coeval
-import play.api.libs.json._
 
 import scala.util.hashing.MurmurHash3
 
 case class ContractInfo(creator: Coeval[PublicKeyAccount],
                         contractId: ByteStr,
-                        image: String,
-                        imageHash: String,
+                        storedContract: StoredContract,
                         version: Int,
                         active: Boolean,
                         validationPolicy: ValidationPolicy = ValidationPolicy.Default,
@@ -33,7 +33,7 @@ case class ContractInfo(creator: Coeval[PublicKeyAccount],
                         groupOwners: Set[Address] = Set()) {
 
   def isTheSameImage(other: ContractInfo): Boolean = {
-    image == other.image && imageHash == other.imageHash
+    storedContract == other.storedContract
   }
 
   override def equals(that: Any): Boolean =
@@ -42,8 +42,7 @@ case class ContractInfo(creator: Coeval[PublicKeyAccount],
         eq(that) ||
           (creator() == that.creator() &&
             contractId == that.contractId &&
-            image == that.image &&
-            imageHash == that.imageHash &&
+            storedContract.equals(that.storedContract) &&
             version == that.version &&
             active == that.active &&
             validationPolicy == that.validationPolicy &&
@@ -56,8 +55,7 @@ case class ContractInfo(creator: Coeval[PublicKeyAccount],
 
   override def hashCode(): Int = MurmurHash3.orderedHash(Seq(creator(),
                                                              contractId,
-                                                             image,
-                                                             imageHash,
+                                                             storedContract,
                                                              version,
                                                              active,
                                                              validationPolicy,
@@ -72,25 +70,15 @@ object ContractInfo {
 
   val FirstVersion: Int = 1
 
-  implicit val PublicKeyReads: Reads[PublicKeyAccount] = {
-    case JsString(s) => PublicKeyAccount.fromBase58String(s).fold(e => JsError(e.message), JsSuccess(_))
-    case _           => JsError("Expected string value for public key value")
-  }
-
-  implicit val PublicKeyFormat: Format[PublicKeyAccount] = Format(PublicKeyReads, PublicKeyAccount.Writes)
-  implicit val LazyPublicKeyFormat: Format[Coeval[PublicKeyAccount]] =
-    Format.invariantFunctorFormat.inmap(PublicKeyFormat, Coeval.pure[PublicKeyAccount], _.apply())
-  implicit val ContractInfoFormat: OFormat[ContractInfo] = Json.format
-
   def apply(tx: CreateContractTransaction): ContractInfo = {
     val validationPolicy = tx match {
-      case tx: ValidationPolicyAndApiVersionSupport => tx.validationPolicy
-      case _                                        => ValidationPolicy.Default
+      case tx: ValidationPolicySupport => tx.validationPolicy
+      case _                           => ValidationPolicy.Default
     }
 
     val apiVersion = tx match {
-      case tx: ValidationPolicyAndApiVersionSupport => tx.apiVersion
-      case _                                        => ContractApiVersion.Initial
+      case tx: ApiVersionSupport => tx.apiVersion
+      case _                     => ContractApiVersion.Initial
     }
 
     val (isConfidential, groupParticipants, groupOwners): (Boolean, Set[Address], Set[Address]) = {
@@ -102,30 +90,44 @@ object ContractInfo {
       }
     }
 
-    ContractInfo(
-      Coeval.pure(tx.sender),
-      tx.contractId,
-      tx.image,
-      tx.imageHash,
-      FirstVersion,
-      active = true,
-      validationPolicy = validationPolicy,
-      apiVersion = apiVersion,
-      isConfidential,
-      groupParticipants,
-      groupOwners
-    )
+    tx match {
+      case createTxWithImage: DockerContractTransaction => ContractInfo(
+          Coeval.pure(tx.sender),
+          createTxWithImage.contractId,
+          DockerContract(createTxWithImage.image, createTxWithImage.imageHash),
+          FirstVersion,
+          active = true,
+          validationPolicy = validationPolicy,
+          apiVersion = apiVersion,
+          isConfidential = isConfidential,
+          groupParticipants = groupParticipants,
+          groupOwners = groupOwners
+        )
+      case createContractTransactionV7: CreateContractTransactionV7 =>
+        ContractInfo(
+          Coeval.pure(tx.sender),
+          createContractTransactionV7.contractId,
+          createContractTransactionV7.storedContract,
+          FirstVersion,
+          active = true,
+          validationPolicy = validationPolicy,
+          apiVersion = apiVersion,
+          isConfidential = isConfidential,
+          groupParticipants = groupParticipants,
+          groupOwners = groupOwners
+        )
+    }
   }
 
   def apply(tx: UpdateContractTransaction, contractInfo: ContractInfo): ContractInfo = {
     val validationPolicy = tx match {
-      case tx: ValidationPolicyAndApiVersionSupport => tx.validationPolicy
-      case _                                        => contractInfo.validationPolicy
+      case tx: ValidationPolicySupport => tx.validationPolicy
+      case _                           => contractInfo.validationPolicy
     }
 
     val apiVersion = tx match {
-      case tx: ValidationPolicyAndApiVersionSupport => tx.apiVersion
-      case _                                        => ContractApiVersion.Initial
+      case tx: ApiVersionSupport => tx.apiVersion
+      case _                     => ContractApiVersion.Initial
     }
     val (groupParticipants, groupOwners): (Set[Address], Set[Address]) = {
       tx match {
@@ -136,15 +138,27 @@ object ContractInfo {
       }
     }
 
-    contractInfo.copy(
-      image = tx.image,
-      imageHash = tx.imageHash,
-      version = contractInfo.version + 1,
-      validationPolicy = validationPolicy,
-      apiVersion = apiVersion,
-      groupParticipants = groupParticipants,
-      groupOwners = groupOwners
-    )
+    tx match {
+      case updateTxWithImage: DockerContractTransaction => contractInfo.copy(
+          Coeval.pure(tx.sender),
+          contractId = tx.contractId,
+          DockerContract(updateTxWithImage.image, updateTxWithImage.imageHash),
+          version = contractInfo.version + 1,
+          groupParticipants = groupParticipants,
+          groupOwners = groupOwners,
+          validationPolicy = validationPolicy,
+          apiVersion = apiVersion
+        )
+      case updateTx: UpdateContractTransactionV6 => contractInfo.copy(
+          Coeval.pure(tx.sender),
+          contractId = tx.contractId,
+          storedContract = updateTx.storedContract,
+          version = contractInfo.version + 1,
+          groupParticipants = groupParticipants,
+          groupOwners = groupOwners,
+          validationPolicy = validationPolicy
+        )
+    }
   }
 
   def toBytes(contractInfo: ContractInfo): Array[Byte] = {
@@ -153,8 +167,7 @@ object ContractInfo {
     val ndo = newDataOutput()
     ndo.writePublicKey(creator())
     ndo.writeBytes(contractId.arr)
-    ndo.writeString(image)
-    ndo.writeString(imageHash)
+    ndo.writeStoredContract(storedContract)
     ndo.writeInt(version)
     ndo.writeBoolean(active)
     ndo.write(contractInfo.validationPolicy.bytes)
@@ -168,19 +181,19 @@ object ContractInfo {
 
   def fromBytes(bytes: Array[Byte]): ContractInfo = {
 
-    val (creatorBytes, creatorEnd)                = bytes.take(crypto.KeyLength)                                             -> crypto.KeyLength
+    val (creatorBytes, creatorEnd)                = bytes.take(crypto.KeyLength)                                           -> crypto.KeyLength
     val creator                                   = Coeval.evalOnce(PublicKeyAccount(creatorBytes))
     val (contractId, contractIdEnd)               = BinarySerializer.parseShortByteStr(bytes, creatorEnd)
-    val (image, imageEnd)                         = BinarySerializer.parseShortString(bytes, contractIdEnd)
-    val (imageHash, imageHashEnd)                 = BinarySerializer.parseShortString(bytes, imageEnd)
-    val (version, versionEnd)                     = Ints.fromByteArray(bytes.slice(imageHashEnd, imageHashEnd + Ints.BYTES)) -> (imageHashEnd + Ints.BYTES)
-    val (active, activeEnd)                       = (bytes(versionEnd) == 1)                                                 -> (versionEnd + 1)
+    val (contract, contractEnd)                   = storedContractReader(bytes, contractIdEnd)
+    val (version, versionEnd)                     = Ints.fromByteArray(bytes.slice(contractEnd, contractEnd + Ints.BYTES)) -> (contractEnd + Ints.BYTES)
+    val (active, activeEnd)                       = (bytes(versionEnd) == 1)                                               -> (versionEnd + 1)
     val (validationPolicy, validationPolicyEnd)   = ValidationPolicy.fromBytesUnsafe(bytes, activeEnd)
     val (apiVersion, apiVersionEnd)               = ContractApiVersion.fromBytesUnsafe(bytes, validationPolicyEnd)
-    val (isConfidential, isConfidentialEnd)       = (bytes(apiVersionEnd) == 1)                                              -> (apiVersionEnd + 1)
+    val (isConfidential, isConfidentialEnd)       = (bytes(apiVersionEnd) == 1)                                            -> (apiVersionEnd + 1)
     val (groupParticipants, groupParticipantsEnd) = ModelsBinarySerializer.parseAddressesSet(bytes, isConfidentialEnd)
     val (groupOwners, _)                          = ModelsBinarySerializer.parseAddressesSet(bytes, groupParticipantsEnd)
 
-    ContractInfo(creator, contractId, image, imageHash, version, active, validationPolicy, apiVersion, isConfidential, groupParticipants, groupOwners)
+    ContractInfo(creator, contractId, contract, version, active, validationPolicy, apiVersion, isConfidential, groupParticipants, groupOwners)
   }
+
 }

@@ -773,6 +773,37 @@ object FieldType extends Enum[FieldType] {
     }
   }
 
+  case object STORED_CONTRACT
+      extends FieldType(
+        scalaType = "StoredContract",
+        protoType = "StoredContract",
+        isMessageProtoType = true,
+        scalaImports = Set(
+          "com.wavesenterprise.docker.ContractInfo._",
+          "scala.language.existentials",
+          ProtoAdapterImport
+        ),
+        protoImports = Set("stored_contract.proto") ,
+      )
+      with BinarySerializableType
+      with ProtoCompatibleType {
+    override val binaryWriter: BinaryWriter = { c =>
+      s"StoredContractOps.writeBytes(${c.field}, ${c.output})"
+    }
+
+    override val binaryReader: BinaryReader = { c =>
+      s"val (${c.field}, ${c.field}End) = StoredContractOps.parse(${c.bytes}, ${c.offset})"
+    }
+
+    override val protoToVanillaAdapter: Option[ProtoAdapter] = Some { c =>
+      s"ProtoAdapter.fromProto(${c.field})"
+    }
+
+    override val vanillaToProtoAdapter: Option[ProtoAdapter] = Some { c =>
+      s"ProtoAdapter.toProto(${c.field})"
+    }
+  }
+
   case object CONTRACT_DATA_ENTRY
       extends FieldType(
         scalaType = "DataEntry[_]",
@@ -1211,6 +1242,71 @@ object FieldType extends Enum[FieldType] {
 
     override val binaryReader: BinaryReader = { c =>
       s"val (${c.field}, ${c.field}End) = ContractAssetOperation.fromBytes(${c.bytes}, ${c.offset})"
+    }
+
+    override val protoToVanillaAdapter: Option[ProtoAdapter] = Some { c =>
+      s"ProtoAdapter.fromProto(${c.field})"
+    }
+
+    override val vanillaToProtoAdapter: Option[ProtoAdapter] = Some { c =>
+      s"ProtoAdapter.toProto(${c.field})"
+    }
+  }
+
+  case object ASSET_OPERATIONS_MAP
+    extends FieldType(
+      scalaType = "ContractAssetOperationMap",
+      protoType = "ContractAssetOperationMap",
+      isMessageProtoType = true,
+      scalaImports = Set(
+        "com.wavesenterprise.transaction.docker.assets.ContractAssetOperation",
+        "com.wavesenterprise.transaction.TransactionParsers",
+        ProtoAdapterImport
+      ),
+      protoImports = Set("contract_asset_operation.proto")
+    )
+      with BinarySerializableType
+      with ProtoCompatibleType {
+
+    override val binaryWriter: BinaryWriter = { c =>
+      s"ContractAssetOperationMap.writeBytes(${c.field}, ${c.output})"
+    }
+
+    override val binaryReader: BinaryReader = { c =>
+      s"val (${c.field}, ${c.field}End) = ContractAssetOperationMap.fromBytes(${c.bytes}, ${c.offset})"
+    }
+
+    override val protoToVanillaAdapter: Option[ProtoAdapter] = Some { c =>
+      s"ProtoAdapter.fromProto(${c.field})"
+    }
+
+    override val vanillaToProtoAdapter: Option[ProtoAdapter] = Some { c =>
+      s"ProtoAdapter.toProto(${c.field})"
+    }
+  }
+
+  case object DATA_ENTRY_MAP
+    extends FieldType(
+      scalaType = "DataEntryMap",
+      protoType = "DataEntryMap",
+      isMessageProtoType = true,
+      scalaImports = Set(
+        "com.wavesenterprise.state.DataEntry",
+        "scala.language.existentials",
+        "com.wavesenterprise.transaction.docker.ContractTransactionEntryOps",
+        ProtoAdapterImport
+      ),
+      protoImports = Set("data_entry.proto")
+    )
+      with BinarySerializableType
+      with ProtoCompatibleType {
+
+    override val binaryWriter: BinaryWriter = { c =>
+      s"DataEntryMap.writeBytes(${c.field}, ${c.output})"
+    }
+
+    override val binaryReader: BinaryReader = { c =>
+      s"val (${c.field}, ${c.field}End) = DataEntryMap.fromBytes(${c.bytes}, ${c.offset})"
     }
 
     override val protoToVanillaAdapter: Option[ProtoAdapter] = Some { c =>

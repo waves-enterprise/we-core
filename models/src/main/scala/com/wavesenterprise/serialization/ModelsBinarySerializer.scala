@@ -4,11 +4,17 @@ import com.google.common.io.ByteArrayDataOutput
 import com.google.common.primitives.Longs
 import com.wavesenterprise.account.{Address, AddressOrAlias}
 import com.wavesenterprise.serialization.BinarySerializer._
+import com.wavesenterprise.state.DataEntry
 import com.wavesenterprise.transaction.AtomicBadge
+import com.wavesenterprise.transaction.DataTransactionEntryOps.writeBytes
 import com.wavesenterprise.transaction.smart.script.{Script, ScriptReader}
 import com.wavesenterprise.transaction.transfer.ParsedTransfer
 
 object ModelsBinarySerializer {
+
+  def writeDataEntryList(dataEntryList: List[DataEntry[_]], output: ByteArrayDataOutput): Unit = {
+    BinarySerializer.writeShortIterable(dataEntryList, writeBytes, output)
+  }
 
   def parseScript(bytes: Array[Byte], offset: Offset = 0): (Script, Offset) = {
     val (scriptBytes, scriptEnd) = BinarySerializer.parseShortByteArray(bytes, offset)

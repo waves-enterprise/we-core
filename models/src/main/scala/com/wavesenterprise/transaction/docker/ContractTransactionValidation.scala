@@ -6,7 +6,9 @@ import com.wavesenterprise.crypto
 import com.wavesenterprise.docker.validator.{ValidationPolicy, ValidationPolicyDescriptor}
 import com.wavesenterprise.state.{ByteStr, DataEntry}
 import com.wavesenterprise.transaction.ValidationError.{GenericError, InvalidContractKeys}
+import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.DataEntryMap
 import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation
+import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation.ContractAssetOperationMap
 import com.wavesenterprise.utils.StringUtilites.ValidateAsciiAndRussian._
 import com.wavesenterprise.transaction.{Transaction, ValidationError}
 
@@ -98,6 +100,15 @@ object ContractTransactionValidation {
     val output = newDataOutput()
     results.sorted.foreach(ContractTransactionEntryOps.writeBytes(_, output))
     assetOps.foreach(_.writeContractAssetOperationBytes(output))
+    ByteStr(crypto.fastHash(output.toByteArray))
+  }
+
+  def resultsMapHash(results: DataEntryMap, assetOps: ContractAssetOperationMap = ContractAssetOperationMap(Map())): ByteStr = {
+    val output      = newDataOutput()
+    val resultsList = results.mapping.toList
+    val assetList   = assetOps.mapping.toList
+    resultsList.sortBy(_._1.toString).foreach(_._2.sorted.foreach(ContractTransactionEntryOps.writeBytes(_, output)))
+    assetList.sortBy(_._1.toString).foreach(_._2.foreach(_.writeContractAssetOperationBytes(output)))
     ByteStr(crypto.fastHash(output.toByteArray))
   }
 }
