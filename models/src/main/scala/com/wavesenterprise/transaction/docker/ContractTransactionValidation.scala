@@ -3,6 +3,8 @@ package com.wavesenterprise.transaction.docker
 import cats.implicits._
 import com.google.common.io.ByteStreams.newDataOutput
 import com.wavesenterprise.crypto
+import com.wavesenterprise.docker.StoredContract
+import com.wavesenterprise.docker.StoredContract.{DockerContract, WasmContract}
 import com.wavesenterprise.docker.validator.{ValidationPolicy, ValidationPolicyDescriptor}
 import com.wavesenterprise.state.{ByteStr, DataEntry}
 import com.wavesenterprise.transaction.ValidationError.{GenericError, InvalidContractKeys}
@@ -33,12 +35,28 @@ trait ContractTransactionValidation {
     )
   }
 
-  def validateImageHash(imageHash: String): Either[ValidationError, Unit] = {
+  def validateHash(imageHash: String): Either[ValidationError, Unit] = {
     Either.cond(
       imageHash.length == Sha256HexLength && imageHash.forall(Sha256HexDigits.contains),
       (),
       GenericError(s"Image hash string $imageHash is not valid SHA-256 hex string")
     )
+  }
+
+  def validateHash(storedContract: StoredContract): Either[ValidationError, Unit] = {
+    storedContract match {
+      case wasm: WasmContract => Either.cond(
+          wasm.bytecodeHash.length == Sha256HexLength && wasm.bytecodeHash.forall(Sha256HexDigits.contains),
+          (),
+          GenericError(s"Bytecode hash string ${wasm.bytecodeHash} is not valid SHA-256 hex string")
+        )
+
+      case docker: DockerContract => Either.cond(
+          docker.imageHash.length == Sha256HexLength && docker.imageHash.forall(Sha256HexDigits.contains),
+          (),
+          GenericError(s"Image hash string ${docker.imageHash} is not valid SHA-256 hex string")
+        )
+    }
   }
 
   def validateContractName(contractName: String): Either[GenericError, Unit] = {

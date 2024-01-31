@@ -630,7 +630,7 @@ object TxScheme extends Enum[TxScheme] {
         fields = Seq(
           senderField,
           "image" as SHORT_STRING                     -> Set(InConstructor(1, 2, 3, 4, 5, 6), Validation(f => s"validateImage($f)")),
-          "imageHash" as SHORT_STRING                 -> Set(InConstructor(1, 2, 3, 4, 5, 6), Validation(f => s"validateImageHash($f)")),
+          "imageHash" as SHORT_STRING                 -> Set(InConstructor(1, 2, 3, 4, 5, 6), Validation(f => s"validateHash($f)")),
           "contractName" as SHORT_STRING              -> Validation(f => s"validateContractName($f)"),
           "contractId" as SHORT_BYTE_STR              -> Set(Override, InBody({ case _ => "id()" })),
           "params" as SHORT_LIST(CONTRACT_DATA_ENTRY) -> Set(Override, Validation(f => s"validateParams($f)")),
@@ -644,7 +644,7 @@ object TxScheme extends Enum[TxScheme] {
           "isConfidential" as BOOLEAN                    -> Set(Override, InConstructor(6, 7)),
           "groupParticipants" as SHORT_SET(ADDRESS)      -> Set(Override, InConstructor(6, 7)),
           "groupOwners" as SHORT_SET(ADDRESS)            -> Set(Override, InConstructor(6, 7)),
-          "storedContract" as STORED_CONTRACT            -> Set(Override, InConstructor(7)),
+          "storedContract" as STORED_CONTRACT            -> Set(Override, InConstructor(7), Validation(f => s"validateHash($f)")),
           "sender_address" as SENDER_ADDRESS             -> Transparent,
           proofsField
         ),
@@ -899,7 +899,7 @@ object TxScheme extends Enum[TxScheme] {
           senderField,
           "contractId" as SHORT_BYTE_STR,
           "image" as SHORT_STRING     -> Set(InConstructor(1, 2, 3, 4, 5), Validation(f => s"validateImage($f)")),
-          "imageHash" as SHORT_STRING -> Set(InConstructor(1, 2, 3, 4, 5), Validation(f => s"validateImageHash($f)")),
+          "imageHash" as SHORT_STRING -> Set(InConstructor(1, 2, 3, 4, 5), Validation(f => s"validateHash($f)")),
           feeField,
           timestampField,
           "feeAssetId" as ASSET_ID.?                -> Set(Override, InConstructor(2, 3, 4, 5, 6)),
@@ -908,7 +908,7 @@ object TxScheme extends Enum[TxScheme] {
           "apiVersion" as CONTRACT_API_VERSION      -> InConstructor(4, 5),
           "groupParticipants" as SHORT_SET(ADDRESS) -> Set(Override, InConstructor(5, 6)),
           "groupOwners" as SHORT_SET(ADDRESS)       -> Set(Override, InConstructor(5, 6)),
-          "storedContract" as STORED_CONTRACT       -> Set(Override, InConstructor(6)),
+          "storedContract" as STORED_CONTRACT       -> Set(Override, InConstructor(6),Validation(f => s"validateHash($f)")),
           "sender_address" as SENDER_ADDRESS        -> Transparent,
           proofsField
         ),
