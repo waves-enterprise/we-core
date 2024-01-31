@@ -900,7 +900,7 @@ object TxScheme extends Enum[TxScheme] {
           "contractId" as SHORT_BYTE_STR,
           "image" as SHORT_STRING     -> Set(InConstructor(1, 2, 3, 4, 5), Validation(f => s"validateImage($f)")),
           "imageHash" as SHORT_STRING -> Set(InConstructor(1, 2, 3, 4, 5), Validation(f => s"validateHash($f)")),
-            feeField,
+          feeField,
           timestampField,
           "feeAssetId" as ASSET_ID.?                -> Set(Override, InConstructor(2, 3, 4, 5, 6)),
           "atomicBadge" as OPTION(ATOMIC_BADGE)     -> Set(Override, InConstructor(3, 4, 5, 6)),
