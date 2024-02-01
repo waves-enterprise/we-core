@@ -1,6 +1,7 @@
 package com.wavesenterprise.docker
 
 import com.wavesenterprise.account.PublicKeyAccount
+import com.wavesenterprise.docker.StoredContract.WasmContract.{BYTECODE, BYTECODE_HASH}
 import com.wavesenterprise.serialization.BinarySerializer.{Offset, parseBigByteArray, parseShortByteArray, parseShortString}
 import play.api.libs.json._
 
@@ -92,16 +93,28 @@ object StoredContract {
     Format.invariantFunctorFormat.inmap(PublicKeyAccount.PublicKeyAccountFormat, Coeval.pure[PublicKeyAccount], _.apply())
 
   implicit val StoredContractReads: Reads[StoredContract] = { jsValue =>
-    val wasm   = WasmContract.WasmContractReads.reads(jsValue)
-    val docker = DockerContract.DockerContractFormat.reads(jsValue)
-    wasm.fold(
-      wasmErr =>
-        docker.fold(
-          dockerErr => JsError(JsError.merge(wasmErr, dockerErr)),
-          _ => docker
-        ),
-      _ => wasm
-    )
+    val err = JsError(s"unexpected contract json ${jsValue.toString()}")
+
+    jsValue.asOpt[JsObject] match {
+      case Some(obj) =>
+        val fields  = obj.value.keySet
+        val isValid = fields.size == 2
+        if (!isValid) {
+          err
+        } else {
+          val isWasm   = fields.contains(BYTECODE) && fields.contains(BYTECODE_HASH)
+          val isDocker = fields.contains("image") && fields.contains("imageHash")
+          if (isWasm) {
+            WasmContract.WasmContractReads.reads(jsValue)
+          } else if (isDocker) {
+            DockerContract.DockerContractFormat.reads(jsValue)
+          } else {
+            err
+          }
+        }
+      case None =>
+        err
+    }
   }
 
   implicit val StoredContractWrites: Writes[StoredContract] = {
