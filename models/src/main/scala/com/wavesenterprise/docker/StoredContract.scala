@@ -1,6 +1,5 @@
 package com.wavesenterprise.docker
 
-import com.wavesenterprise.account.PublicKeyAccount
 import com.wavesenterprise.docker.StoredContract.WasmContract.{BYTECODE, BYTECODE_HASH}
 import com.wavesenterprise.serialization.BinarySerializer.{Offset, parseBigByteArray, parseShortByteArray, parseShortString}
 import play.api.libs.json._
@@ -8,7 +7,6 @@ import play.api.libs.json._
 import scala.util.hashing.MurmurHash3
 import com.wavesenterprise.utils.Base64
 import com.wavesenterprise.utils.DatabaseUtils.DOCKER_CONTRACT_TYPE
-import monix.eval.Coeval
 
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -89,9 +87,6 @@ object StoredContract {
     implicit val WasmContractFormat: Format[WasmContract] = Format(WasmContractReads, WasmContractWrites)
   }
 
-  implicit val LazyPublicKeyFormat: Format[Coeval[PublicKeyAccount]] =
-    Format.invariantFunctorFormat.inmap(PublicKeyAccount.PublicKeyAccountFormat, Coeval.pure[PublicKeyAccount], _.apply())
-
   implicit val StoredContractReads: Reads[StoredContract] = { jsValue =>
     val err = JsError(s"unexpected contract json ${jsValue.toString()}")
 
@@ -123,7 +118,6 @@ object StoredContract {
   }
 
   implicit val StoredContractFormat: Format[StoredContract] = Format(StoredContractReads, StoredContractWrites)
-  implicit val ContractInfoFormat: OFormat[ContractInfo]    = Json.format
 
   def dockerContractReader(bytes: Array[Byte], offset: Offset): (DockerContract, Offset) = {
     val (imageBytes, imageOffset) = parseShortByteArray(bytes, offset)

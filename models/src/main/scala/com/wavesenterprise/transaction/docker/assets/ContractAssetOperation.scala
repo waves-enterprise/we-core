@@ -375,8 +375,6 @@ object ContractAssetOperation {
 
   object ContractPaymentV1 {
 
-    import com.wavesenterprise.serialization.json.AddressOrAliasJsonUtils._
-
     val operationType: OperationType = ContractAssetOperationTypes.ContractPaymentType
     val version: Byte                = 1
 
