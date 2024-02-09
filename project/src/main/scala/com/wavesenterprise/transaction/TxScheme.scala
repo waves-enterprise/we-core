@@ -706,7 +706,6 @@ object TxScheme extends Enum[TxScheme] {
           "com.wavesenterprise.transaction.docker.ConfidentialDataInContractSupported",
           "com.wavesenterprise.transaction.StoredContractSupported",
           "com.wavesenterprise.transaction.docker.DockerContractTransaction",
-          "com.wavesenterprise.utils.Base64",
           "com.wavesenterprise.docker.StoredContract",
           "com.wavesenterprise.docker.StoredContractOps"
         ),
@@ -749,7 +748,7 @@ object TxScheme extends Enum[TxScheme] {
           "payments" as SHORT_LIST(CONTRACT_TRANSFER_IN) -> Set(Override, InConstructor(5, 6, 7)),
           "inputCommitment" as OPTION(COMMITMENT) -> Set(Override,
                                                          InConstructor(6, 7),
-                                                         Validation(f => s"$f.fold(Either.right[ValidationError, Unit]())(validateCommitment)")),
+                                                         Validation(f => s"$f.fold(Either.right[ValidationError, Unit](()))(validateCommitment)")),
           "contractEngine" as SHORT_STRING   -> Set(Override, InConstructor(7), Validation(f => s"validateContractEngine($f)")),
           "callFunc" as OPTION(SHORT_STRING) -> Set(Override, InConstructor(7)),
           proofsField,
@@ -810,7 +809,7 @@ object TxScheme extends Enum[TxScheme] {
           "results" as SHORT_LIST(CONTRACT_DATA_ENTRY) -> Set(Override,
                                                               InBody({ case 5 => "resultsMap.mapping.values.flatten.toList" }),
                                                               Validation(f => s"validateResults($f)")),
-          "resultsMap" as DATA_ENTRY_MAP                     -> InConstructor(5),
+          "resultsMap" as DATA_ENTRY_MAP                     -> Set(InConstructor(5), Validation(f => s"validateResultsMap($f)")),
           "resultsHash" as SHORT_BYTE_STR                    -> InConstructor(2, 3, 4, 5),
           "validationProofs" as SHORT_LIST(VALIDATION_PROOF) -> InConstructor(2, 3, 4, 5),
           timestampField,
@@ -826,7 +825,7 @@ object TxScheme extends Enum[TxScheme] {
           "readings" as SHORT_LIST(READ_DESCRIPTOR) -> InConstructor(4, 5),
           "readingsHash" as OPTION(READINGS_HASH)   -> Set(InConstructor(4, 5), Validation(f => s"validateReadingsHash($f)")),
           "outputCommitment" as OPTION(COMMITMENT) -> Set(InConstructor(4, 5),
-                                                          Validation(f => s"$f.fold(Either.right[ValidationError, Unit]())(validateCommitment)"))
+                                                          Validation(f => s"$f.fold(Either.right[ValidationError, Unit](()))(validateCommitment)"))
         ),
         ensures = Seq("validateSize"),
         versionToBlockchainFeatures = {
@@ -908,7 +907,7 @@ object TxScheme extends Enum[TxScheme] {
           "apiVersion" as CONTRACT_API_VERSION      -> InConstructor(4, 5),
           "groupParticipants" as SHORT_SET(ADDRESS) -> Set(Override, InConstructor(5, 6)),
           "groupOwners" as SHORT_SET(ADDRESS)       -> Set(Override, InConstructor(5, 6)),
-          "storedContract" as STORED_CONTRACT       -> Set(Override, InConstructor(6),Validation(f => s"validateHash($f)")),
+          "storedContract" as STORED_CONTRACT       -> Set(Override, InConstructor(6), Validation(f => s"validateHash($f)")),
           "sender_address" as SENDER_ADDRESS        -> Transparent,
           proofsField
         ),
@@ -948,7 +947,6 @@ object TxScheme extends Enum[TxScheme] {
           "com.wavesenterprise.docker.StoredContract",
           "com.wavesenterprise.docker.StoredContractOps",
           "com.wavesenterprise.transaction.StoredContractSupported",
-          "com.wavesenterprise.utils.Base64",
         ),
         versionExtensions = {
           case 1 => Seq("DockerContractTransaction")

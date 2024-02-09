@@ -18,6 +18,7 @@ import com.wavesenterprise.transaction.docker.{
 }
 import com.wavesenterprise.utils.DatabaseUtils.ByteArrayDataOutputExt
 import monix.eval.Coeval
+import play.api.libs.json.{Json, OFormat}
 
 import scala.util.hashing.MurmurHash3
 
@@ -67,6 +68,8 @@ case class ContractInfo(creator: Coeval[PublicKeyAccount],
 
 //noinspection UnstableApiUsage
 object ContractInfo {
+
+  implicit val ContractInfoFormat: OFormat[ContractInfo] = Json.format
 
   val FirstVersion: Int = 1
 

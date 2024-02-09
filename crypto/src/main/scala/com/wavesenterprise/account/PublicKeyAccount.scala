@@ -5,6 +5,7 @@ import com.wavesenterprise.crypto
 import com.wavesenterprise.crypto.PublicKey
 import com.wavesenterprise.crypto.internals.{CryptoError, InvalidPublicKey}
 import com.wavesenterprise.utils.Base58
+import monix.eval.Coeval
 import play.api.libs.json.{Format, JsError, JsString, JsSuccess, Reads, Writes}
 
 trait PublicKeyAccount {
@@ -80,4 +81,7 @@ object PublicKeyAccount {
     PublicKeyAccountReads,
     PublicKeyAccountWrites
   )
+
+  implicit val LazyPublicKeyFormat: Format[Coeval[PublicKeyAccount]] =
+    Format.invariantFunctorFormat.inmap(PublicKeyAccount.PublicKeyAccountFormat, Coeval.pure[PublicKeyAccount], _.apply())
 }

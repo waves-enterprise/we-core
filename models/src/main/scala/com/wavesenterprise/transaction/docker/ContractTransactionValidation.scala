@@ -86,6 +86,10 @@ trait ContractTransactionValidation {
     } yield ()
   }
 
+  def validateResultsMap(resultsMap: DataEntryMap): Either[ValidationError, Unit] = {
+    resultsMap.mapping.values.toList.traverse(validateResults).right.map(_ => ())
+  }
+
   def validateValidationPolicy(policy: ValidationPolicy): Either[GenericError, Unit] = {
     import ValidationPolicyDescriptor.{Majority, MajorityWithOneOf}
 
