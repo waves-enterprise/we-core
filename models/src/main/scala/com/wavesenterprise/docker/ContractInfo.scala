@@ -28,7 +28,6 @@ case class ContractInfo(creator: Coeval[PublicKeyAccount],
                         version: Int,
                         active: Boolean,
                         validationPolicy: ValidationPolicy = ValidationPolicy.Default,
-                        apiVersion: ContractApiVersion = ContractApiVersion.Initial,
                         isConfidential: Boolean = false,
                         groupParticipants: Set[Address] = Set(),
                         groupOwners: Set[Address] = Set()) {
@@ -47,7 +46,6 @@ case class ContractInfo(creator: Coeval[PublicKeyAccount],
             version == that.version &&
             active == that.active &&
             validationPolicy == that.validationPolicy &&
-            apiVersion == that.apiVersion &&
             isConfidential == that.isConfidential &&
             groupParticipants == that.groupParticipants &&
             groupOwners == groupOwners)
@@ -60,7 +58,6 @@ case class ContractInfo(creator: Coeval[PublicKeyAccount],
                                                              version,
                                                              active,
                                                              validationPolicy,
-                                                             apiVersion,
                                                              isConfidential,
                                                              groupParticipants,
                                                              groupOwners))
@@ -97,11 +94,10 @@ object ContractInfo {
       case createTxWithImage: DockerContractTransaction => ContractInfo(
           Coeval.pure(tx.sender),
           createTxWithImage.contractId,
-          DockerContract(createTxWithImage.image, createTxWithImage.imageHash),
+          DockerContract(createTxWithImage.image, createTxWithImage.imageHash, apiVersion),
           FirstVersion,
           active = true,
           validationPolicy = validationPolicy,
-          apiVersion = apiVersion,
           isConfidential = isConfidential,
           groupParticipants = groupParticipants,
           groupOwners = groupOwners
@@ -114,7 +110,6 @@ object ContractInfo {
           FirstVersion,
           active = true,
           validationPolicy = validationPolicy,
-          apiVersion = apiVersion,
           isConfidential = isConfidential,
           groupParticipants = groupParticipants,
           groupOwners = groupOwners
@@ -145,12 +140,11 @@ object ContractInfo {
       case updateTxWithImage: DockerContractTransaction => contractInfo.copy(
           Coeval.pure(tx.sender),
           contractId = tx.contractId,
-          DockerContract(updateTxWithImage.image, updateTxWithImage.imageHash),
+          DockerContract(updateTxWithImage.image, updateTxWithImage.imageHash, apiVersion),
           version = contractInfo.version + 1,
           groupParticipants = groupParticipants,
           groupOwners = groupOwners,
           validationPolicy = validationPolicy,
-          apiVersion = apiVersion
         )
       case updateTx: UpdateContractTransactionV6 => contractInfo.copy(
           Coeval.pure(tx.sender),
@@ -174,7 +168,6 @@ object ContractInfo {
     ndo.writeInt(version)
     ndo.writeBoolean(active)
     ndo.write(contractInfo.validationPolicy.bytes)
-    ndo.write(contractInfo.apiVersion.bytes)
     ndo.writeBoolean(contractInfo.isConfidential)
     ModelsBinarySerializer.writeAddresses(contractInfo.groupParticipants, ndo)
     ModelsBinarySerializer.writeAddresses(contractInfo.groupOwners, ndo)
@@ -191,12 +184,11 @@ object ContractInfo {
     val (version, versionEnd)                     = Ints.fromByteArray(bytes.slice(contractEnd, contractEnd + Ints.BYTES)) -> (contractEnd + Ints.BYTES)
     val (active, activeEnd)                       = (bytes(versionEnd) == 1)                                               -> (versionEnd + 1)
     val (validationPolicy, validationPolicyEnd)   = ValidationPolicy.fromBytesUnsafe(bytes, activeEnd)
-    val (apiVersion, apiVersionEnd)               = ContractApiVersion.fromBytesUnsafe(bytes, validationPolicyEnd)
-    val (isConfidential, isConfidentialEnd)       = (bytes(apiVersionEnd) == 1)                                            -> (apiVersionEnd + 1)
+    val (isConfidential, isConfidentialEnd)       = (bytes(validationPolicyEnd) == 1)                                      -> (validationPolicyEnd + 1)
     val (groupParticipants, groupParticipantsEnd) = ModelsBinarySerializer.parseAddressesSet(bytes, isConfidentialEnd)
     val (groupOwners, _)                          = ModelsBinarySerializer.parseAddressesSet(bytes, groupParticipantsEnd)
 
-    ContractInfo(creator, contractId, contract, version, active, validationPolicy, apiVersion, isConfidential, groupParticipants, groupOwners)
+    ContractInfo(creator, contractId, contract, version, active, validationPolicy, isConfidential, groupParticipants, groupOwners)
   }
 
 }

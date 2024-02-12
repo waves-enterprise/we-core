@@ -155,7 +155,6 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
       optAssetId        <- genOptAssetId
       atomicBadge       <- atomicBadgeOptGen
       validationPolicy  <- validationPolicyGen
-      apiVersion        <- contractApiVersionGen
       isConfidential    <- Gen.oneOf(Seq(false, true))
       groupParticipants <- Gen.choose(participantsMinCount, participantsMaxCount).flatMap(Gen.listOfN(_, addressGen))
       groupOwners       <- Gen.choose(participantsMinCount, participantsMaxCount).flatMap(Gen.listOfN(_, addressGen))
@@ -170,7 +169,6 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
         optAssetId,
         atomicBadge,
         validationPolicy,
-        apiVersion,
         List.empty[ContractTransferInV1], // TODO GEN
         isConfidential,
         groupParticipants.toSet,

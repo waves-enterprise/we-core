@@ -872,7 +872,6 @@ describe('', () => {
       feeAssetId: "WAVES",
       atomicBadge: "",
       validationPolicy: 0,
-      apiVersion: "1.1",
       payments: "",
       isConfidential: "",
       groupParticipants: "",

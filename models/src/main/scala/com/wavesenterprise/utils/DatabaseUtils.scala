@@ -1,10 +1,11 @@
 package com.wavesenterprise.utils
 
 import com.google.common.io.{ByteArrayDataInput, ByteArrayDataOutput}
+import com.google.common.primitives.Shorts
 import com.wavesenterprise.account.PublicKeyAccount
 import com.wavesenterprise.crypto
 import com.wavesenterprise.docker.StoredContract.{DockerContract, WasmContract}
-import com.wavesenterprise.docker.StoredContract
+import com.wavesenterprise.docker.{ContractApiVersion, StoredContract}
 import com.wavesenterprise.state.ByteStr
 import com.wavesenterprise.transaction.smart.script.{Script, ScriptReader}
 
@@ -49,13 +50,14 @@ object DatabaseUtils {
 
     def writeStoredContract(contract: StoredContract): Unit = {
       contract match {
-        case DockerContract(image, imageHash) =>
+        case DockerContract(image, imageHash, apiVersion) =>
           output.writeByte(DOCKER_CONTRACT_TYPE)
           for {
-            i <- Seq(image.getBytes(UTF_8).array, imageHash.getBytes(UTF_8).array)
+            bytes <- Seq(image.getBytes(UTF_8).array, imageHash.getBytes(UTF_8).array)
           } {
-            output.writeBytes(i)
+            output.writeBytes(bytes)
           }
+          output.write(apiVersion.bytes)
 
         case WasmContract(bytecode, bytecodeHash) =>
           output.writeByte(WASM_CONTRACT_TYPE)
@@ -120,11 +122,18 @@ object DatabaseUtils {
       }
     }
 
-    def readDockerContract(): DockerContract = {
-      val image = readString()
-      val hash  = readString()
+    def readApiVersion(): ContractApiVersion = {
+      val majorBytes = readBytes(2)
+      val minorBytes = readBytes(2)
+      ContractApiVersion(Shorts.fromByteArray(majorBytes), Shorts.fromByteArray(minorBytes))
+    }
 
-      DockerContract(image, hash)
+    def readDockerContract(): DockerContract = {
+      val image      = readString()
+      val hash       = readString()
+      val apiVersion = readApiVersion()
+
+      DockerContract(image, hash, apiVersion)
     }
 
     def readWasmContract(): WasmContract = {

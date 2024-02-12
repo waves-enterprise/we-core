@@ -639,7 +639,7 @@ object TxScheme extends Enum[TxScheme] {
           "feeAssetId" as ASSET_ID.?                     -> Set(Override, InConstructor(2, 3, 4, 5, 6, 7)),
           "atomicBadge" as OPTION(ATOMIC_BADGE)          -> Set(Override, InConstructor(3, 4, 5, 6, 7)),
           "validationPolicy" as VALIDATION_POLICY        -> Set(InConstructor(4, 5, 6, 7), Validation(f => s"validateValidationPolicy($f)")),
-          "apiVersion" as CONTRACT_API_VERSION           -> InConstructor(4, 5, 6, 7),
+          "apiVersion" as CONTRACT_API_VERSION           -> InConstructor(4, 5, 6),
           "payments" as SHORT_LIST(CONTRACT_TRANSFER_IN) -> Set(Override, InConstructor(5, 6, 7)),
           "isConfidential" as BOOLEAN                    -> Set(Override, InConstructor(6, 7)),
           "groupParticipants" as SHORT_SET(ADDRESS)      -> Set(Override, InConstructor(6, 7)),

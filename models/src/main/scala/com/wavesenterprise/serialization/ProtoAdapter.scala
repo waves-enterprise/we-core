@@ -14,7 +14,7 @@ import com.wavesenterprise.docker.validator.ValidationPolicy
 import com.wavesenterprise.privacy.PolicyItemInfo
 import com.wavesenterprise.protobuf.service.privacy.{PolicyItemInfoResponse, PolicyItemFileInfo => PbPolicyItemFileInfo}
 import com.wavesenterprise.state._
-import com.wavesenterprise.transaction.ValidationError.{ContractIsMissingError, GenericError, InvalidContractId}
+import com.wavesenterprise.transaction.ValidationError.{ContractIsMissingError, GenericError, InvalidContractApiVersion, InvalidContractId}
 import com.wavesenterprise.transaction._
 import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.DataEntryMap
 import com.wavesenterprise.transaction.docker._
@@ -444,9 +444,10 @@ object ProtoAdapter {
 
   def toProto(storedContract: StoredContract): PbStoredContract = {
     val value = storedContract match {
-      case DockerContract(image, imageHash) => PbStoredContract.Value.DockerBytecode(PbDockerContract(
+      case DockerContract(image, imageHash, apiVersion) => PbStoredContract.Value.DockerBytecode(PbDockerContract(
           image = image,
-          imageHash = imageHash
+          imageHash = imageHash,
+          apiVersion = Some(PbContractApiVersion(apiVersion.majorVersion, apiVersion.majorVersion))
         ))
       case WasmContract(bytecode, bytecodeHash) => PbStoredContract.Value.WasmBytecode(
           PbWasmContract(
@@ -464,10 +465,16 @@ object ProtoAdapter {
           value.bytecode.toByteArray,
           value.bytecodeHash
         ))
-      case Value.DockerBytecode(value) => Right(DockerContract(
-          value.image,
-          value.imageHash
-        ))
+      case Value.DockerBytecode(value) => Either.fromOption(
+          value.apiVersion,
+          InvalidContractApiVersion("contract api version is missing")
+        ).map { apiVersion =>
+          DockerContract(
+            value.image,
+            value.imageHash,
+            ContractApiVersion(apiVersion.majorVersion.toShort, apiVersion.minorVersion.toShort)
+          )
+        }
     }
   }
 
