@@ -526,7 +526,6 @@ const CreateContractV7 = {
   feeAssetId: new AssetId(false),
   atomicBadge: new AtomicBadge(false),
   validationPolicy: new ValidationPolicy(true),
-  apiVersion: new ContractApiVersion(true),
   isConfidential: new Bool(true),
   groupParticipants: new ArrayOfStringsWithLength(true),
   groupOwners: new ArrayOfStringsWithLength(true)

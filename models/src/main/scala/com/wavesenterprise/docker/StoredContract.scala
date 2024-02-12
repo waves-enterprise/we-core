@@ -1,6 +1,7 @@
 package com.wavesenterprise.docker
 
-import com.wavesenterprise.docker.StoredContract.WasmContract.{BYTECODE, BYTECODE_HASH}
+import com.wavesenterprise.docker.StoredContract.DockerContract.{ApiVersion, Image, ImageHash}
+import com.wavesenterprise.docker.StoredContract.WasmContract.{Bytecode, BytecodeHash}
 import com.wavesenterprise.serialization.BinarySerializer.{Offset, parseBigByteArray, parseShortByteArray, parseShortString}
 import play.api.libs.json._
 
@@ -18,7 +19,8 @@ object StoredContract {
 
   case class DockerContract(
       image: String,
-      imageHash: String
+      imageHash: String,
+      apiVersion: ContractApiVersion
   ) extends StoredContract {
 
     override def engine(): String = "docker"
@@ -26,16 +28,20 @@ object StoredContract {
     override def equals(other: Any): Boolean = {
       other match {
         case that: DockerContract =>
-          eq(that) || (image == that.image && imageHash == that.imageHash)
+          eq(that) || (image == that.image && imageHash == that.imageHash && apiVersion == that.apiVersion)
         case _ =>
           false
       }
     }
 
-    override def hashCode(): Int = MurmurHash3.orderedHash(Seq(image, imageHash))
+    override def hashCode(): Int = MurmurHash3.orderedHash(Seq(image, imageHash, apiVersion))
   }
 
   object DockerContract {
+    val Image      = "image"
+    val ImageHash  = "imageHash"
+    val ApiVersion = "apiVersion"
+
     implicit val DockerContractFormat: Format[DockerContract] = Json.format
   }
 
@@ -59,14 +65,14 @@ object StoredContract {
   }
 
   object WasmContract {
-    val BYTECODE      = "bytecode"
-    val BYTECODE_HASH = "bytecodeHash"
+    val Bytecode     = "bytecode"
+    val BytecodeHash = "bytecodeHash"
 
     implicit val WasmContractReads: Reads[WasmContract] = {
       case jsVal: JsValue if jsVal.asOpt[JsObject].isDefined =>
         val obj      = jsVal.as[JsObject]
-        val bytecode = obj.value.get(BYTECODE)
-        val hashcode = obj.value.get(BYTECODE_HASH)
+        val bytecode = obj.value.get(Bytecode)
+        val hashcode = obj.value.get(BytecodeHash)
         if (bytecode.isEmpty || hashcode.isEmpty) {
           JsError("Expected jsobject value for wasm bytecode")
         } else {
@@ -79,8 +85,8 @@ object StoredContract {
 
     implicit val WasmContractWrites: Writes[WasmContract] = { contract =>
       JsObject(Seq(
-        BYTECODE      -> JsString(Base64.encode(contract.bytecode)),
-        BYTECODE_HASH -> JsString(contract.bytecodeHash)
+        Bytecode     -> JsString(Base64.encode(contract.bytecode)),
+        BytecodeHash -> JsString(contract.bytecodeHash)
       ))
     }
 
@@ -92,13 +98,18 @@ object StoredContract {
 
     jsValue.asOpt[JsObject] match {
       case Some(obj) =>
-        val fields  = obj.value.keySet
-        val isValid = fields.size == 2
+        val fields = obj.value.keySet
+        val isValid =
+          (
+            fields.contains("apiVersion") && fields.size == 3
+          ) || (
+            !fields.contains("apiVersion") && fields.size == 2
+          )
         if (!isValid) {
           err
         } else {
-          val isWasm   = fields.contains(BYTECODE) && fields.contains(BYTECODE_HASH)
-          val isDocker = fields.contains("image") && fields.contains("imageHash")
+          val isWasm   = fields.contains(Bytecode) && fields.contains(BytecodeHash)
+          val isDocker = fields.contains(Image) && fields.contains(ImageHash) && fields.contains(ApiVersion)
           if (isWasm) {
             WasmContract.WasmContractReads.reads(jsValue)
           } else if (isDocker) {
@@ -120,11 +131,13 @@ object StoredContract {
   implicit val StoredContractFormat: Format[StoredContract] = Format(StoredContractReads, StoredContractWrites)
 
   def dockerContractReader(bytes: Array[Byte], offset: Offset): (DockerContract, Offset) = {
-    val (imageBytes, imageOffset) = parseShortByteArray(bytes, offset)
-    val (hashBytes, resultOffset) = parseShortByteArray(bytes, imageOffset)
+    val (imageBytes, imageOffset)  = parseShortByteArray(bytes, offset)
+    val (hashBytes, hashOffset)    = parseShortByteArray(bytes, imageOffset)
+    val (apiVersion, resultOffset) = ContractApiVersion.fromBytesUnsafe(bytes, hashOffset)
     DockerContract(
       image = new String(imageBytes, UTF_8),
-      imageHash = new String(hashBytes, UTF_8)
+      imageHash = new String(hashBytes, UTF_8),
+      apiVersion = apiVersion
     ) -> resultOffset
   }
 

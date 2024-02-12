@@ -54,8 +54,7 @@ class CreateContractTransactionV7Spec extends PropSpec with ScalaCheckPropertyCh
             isConfidential,
             groupParticipants,
             groupOwners,
-            bytecode,
-            bytecodeHash,
+            storedContract,
             proofs
           ) =>
         val emptyKeyParams = List(IntegerDataEntry("", 2))
@@ -73,8 +72,7 @@ class CreateContractTransactionV7Spec extends PropSpec with ScalaCheckPropertyCh
             isConfidential,
             groupParticipants,
             groupOwners,
-            bytecode,
-            bytecodeHash,
+            storedContract,
             proofs
           )
         emptyKeyEither shouldBe Left(ValidationError.GenericError("Param with empty key was found"))
@@ -94,8 +92,7 @@ class CreateContractTransactionV7Spec extends PropSpec with ScalaCheckPropertyCh
             isConfidential,
             groupParticipants,
             groupOwners,
-            bytecode,
-            bytecodeHash,
+            storedContract,
             proofs
           )
         duplicateKeysEither shouldBe Left(ValidationError.GenericError("Params with duplicate keys were found"))
@@ -115,8 +112,7 @@ class CreateContractTransactionV7Spec extends PropSpec with ScalaCheckPropertyCh
             isConfidential,
             groupParticipants,
             groupOwners,
-            bytecode,
-            bytecodeHash,
+            storedContract,
             proofs
           )
         tooBigTxEither.left.get shouldBe a[ValidationError.ContractTransactionTooBig]
@@ -136,8 +132,7 @@ class CreateContractTransactionV7Spec extends PropSpec with ScalaCheckPropertyCh
             isConfidential,
             groupParticipants,
             groupOwners,
-            bytecode,
-            bytecodeHash,
+            storedContract,
             proofs
           )
         withNonAsciiKeysEither shouldBe Left(ValidationError.InvalidContractKeys("key∂√1 -> ∂√; kååey1 -> å"))
@@ -165,7 +160,6 @@ class CreateContractTransactionV7Spec extends PropSpec with ScalaCheckPropertyCh
         feeAssetId = None,
         atomicBadge = None,
         validationPolicy = ValidationPolicy.ANY,
-        apiVersion = ContractApiVersion.`1.0`,
         payments = List.empty,
         isConfidential = false,
         groupParticipants = Set.empty,
@@ -188,7 +182,6 @@ class CreateContractTransactionV7Spec extends PropSpec with ScalaCheckPropertyCh
                        "proofs": [
                        "32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94"
                        ],
-                       "apiVersion": "${tx.apiVersion.toString}",
                        "version": 7,
                        "storedContract": {
                           "bytecodeHash": "$bytecodeHash",

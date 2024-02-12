@@ -69,6 +69,7 @@ class ExecutedContractTransactionV5Spec
     val timestamp    = System.currentTimeMillis()
     val image        = "localhost:5000/smart-kv"
     val imageHash    = DigestUtils.sha256Hex("some_data")
+    val apiVersion   = ContractApiVersion.Current
     val contractName = "contract"
     val txTimestamp  = timestamp - 1000
     val tx = CreateContractTransactionV7
@@ -81,14 +82,14 @@ class ExecutedContractTransactionV5Spec
         feeAssetId = None,
         atomicBadge = None,
         validationPolicy = ValidationPolicy.Any,
-        apiVersion = ContractApiVersion.Current,
         payments = List.empty,
         isConfidential = false,
         groupParticipants = Set.empty,
         groupOwners = Set.empty,
         storedContract = DockerContract(
           image = image,
-          imageHash = imageHash
+          imageHash = imageHash,
+          apiVersion = apiVersion
         ),
         proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
       )
@@ -143,7 +144,6 @@ class ExecutedContractTransactionV5Spec
          |   "statusCode" : 0,
          |   "errorMessage": null,
          |   "tx":{
-         |      "apiVersion": "1.10",
          |      "senderPublicKey":"$senderPkBase58",
          |      "isConfidential": false,
          |      "fee":0,
@@ -163,7 +163,8 @@ class ExecutedContractTransactionV5Spec
          |      "version":7,
          |      "storedContract":  {
          |        "image":"$image",
-         |        "imageHash":"$imageHash"
+         |        "imageHash":"$imageHash",
+         |        "apiVersion": "1.10"
          |      },
          |      "contractName":"$contractName",
          |      "params":[

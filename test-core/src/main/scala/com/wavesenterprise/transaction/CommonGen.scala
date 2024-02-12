@@ -48,7 +48,8 @@ trait CommonGen {
     for {
       bytes <- byteArrayGen(256)
       hash = WavesGlobal.sha256(bytes)
-    } yield DockerContract(new String(bytes, UTF_8), new String(hash, UTF_8))
+      apiVersion <- contractApiVersionGen
+    } yield DockerContract(new String(bytes, UTF_8), new String(hash, UTF_8), apiVersion)
   }
 
   val wasmContractGen: Gen[WasmContract] = {
@@ -84,7 +85,6 @@ trait CommonGen {
         version = version,
         active = active,
         validationPolicy = validationPolicy,
-        apiVersion = apiVersion
       )
     }
   }

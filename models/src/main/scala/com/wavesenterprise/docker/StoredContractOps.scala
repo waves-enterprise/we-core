@@ -9,7 +9,7 @@ object StoredContractOps {
 
   def writeBytes(contract: StoredContract, output: ByteArrayDataOutput): Unit = {
     contract match {
-      case StoredContract.DockerContract(image, imageHash) =>
+      case StoredContract.DockerContract(image, imageHash, apiVersion) =>
         output.writeBoolean(false)
         val bytes = image.getBytes(UTF_8)
         val hashB = imageHash.getBytes(UTF_8)
@@ -17,6 +17,7 @@ object StoredContractOps {
         output.write(bytes)
         output.writeShort(hashB.size)
         output.write(hashB)
+        output.write(apiVersion.bytes)
       case StoredContract.WasmContract(bytecode, bytecodeHash) =>
         output.writeBoolean(true)
         val size  = bytecode.length
