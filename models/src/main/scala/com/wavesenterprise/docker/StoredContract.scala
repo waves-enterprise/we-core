@@ -94,7 +94,12 @@ object StoredContract {
   }
 
   implicit val StoredContractReads: Reads[StoredContract] = { jsValue =>
-    val err = JsError(s"unexpected contract json ${jsValue.toString()}")
+    val err = JsError(
+      s"""unexpected storedContract json ${jsValue.toString()}.
+      |  Expecting one of:
+      |    "storedContract": {"bytecode": "...", "bytecodeHash": "..."}
+      |    "storedContract": {"image": "...", "imageHash": "...", "apiVersion": "..."}""".stripMargin
+    )
 
     jsValue.asOpt[JsObject] match {
       case Some(obj) =>
