@@ -8,6 +8,7 @@ import com.wavesenterprise.serialization.BinarySerializer
 import com.wavesenterprise.state.ByteStr
 import com.wavesenterprise.transaction.ValidationError
 import com.wavesenterprise.transaction.ValidationError.GenericError
+
 import com.wavesenterprise.transaction.docker.ReadDescriptorType.{
   FilteredKeysReadDescriptorType,
   SpecificBalancesReadDescriptorType,
@@ -21,8 +22,10 @@ import scala.collection.immutable
 
 trait ConfidentialCallOutputSupport {
   def readings: List[ReadDescriptor]
+
   def readingsHash: Option[ReadingsHash]
-  def outputCommitment: Commitment
+
+  def outputCommitment: Option[Commitment]
 }
 
 object ConfidentialCallOutputSupport {
@@ -40,7 +43,7 @@ case class ReadingsHash(hash: ByteStr) extends AnyVal {
 }
 
 object ReadingsHash {
-  val readingsHashLength = crypto.DigestSize
+  val readingsHashLength: Int = crypto.DigestSize
 
   def fromReadings(readings: Seq[ReadDescriptor]): ReadingsHash = {
     val readingsByteArray = {
@@ -88,7 +91,7 @@ object ReadDescriptorType extends ByteEnum[ReadDescriptorType] {
             parsed => JsSuccess(parsed)
           )
       case otherType =>
-        JsError(s"Error parsing 'readDescriptorType' field: expected a string, but got '${otherType}'")
+        JsError(s"Error parsing 'readDescriptorType' field: expected a string, but got '$otherType'")
     },
     { case readDescriptorType: ReadDescriptorType => JsString(readDescriptorType.name) }
   )
@@ -102,9 +105,8 @@ object ReadDescriptor {
   def writeBytes(readDescriptor: ReadDescriptor, output: ByteArrayDataOutput): Unit = {
     output.writeByte(readDescriptor.readDescriptorType.value)
     readDescriptor match {
-      case specificKeys: SpecificKeys => SpecificKeys.writeBytes(specificKeys, output)
-      case filteredKeys: FilteredKeys => FilteredKeys.writeBytes(filteredKeys, output)
-
+      case specificKeys: SpecificKeys         => SpecificKeys.writeBytes(specificKeys, output)
+      case filteredKeys: FilteredKeys         => FilteredKeys.writeBytes(filteredKeys, output)
       case specificBalances: SpecificBalances => SpecificBalances.writeBytes(specificBalances, output)
     }
   }
@@ -112,9 +114,8 @@ object ReadDescriptor {
   def fromBytes(bytes: Array[Byte], offset: Int): (ReadDescriptor, Int) = {
     val (t, typeEnd) = ReadDescriptorType.valuesToEntriesMap(bytes(offset)) -> (offset + 1)
     t match {
-      case SpecificKeysReadDescriptorType => SpecificKeys.fromBytes(bytes, typeEnd)
-      case FilteredKeysReadDescriptorType => FilteredKeys.fromBytes(bytes, typeEnd)
-
+      case SpecificKeysReadDescriptorType     => SpecificKeys.fromBytes(bytes, typeEnd)
+      case FilteredKeysReadDescriptorType     => FilteredKeys.fromBytes(bytes, typeEnd)
       case SpecificBalancesReadDescriptorType => SpecificBalances.fromBytes(bytes, typeEnd)
     }
   }
@@ -193,5 +194,4 @@ object SpecificBalances {
 
     SpecificBalances(contractId, assetIds) -> end
   }
-
 }

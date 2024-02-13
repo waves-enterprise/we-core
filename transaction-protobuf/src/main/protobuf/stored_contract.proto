@@ -1,0 +1,27 @@
+syntax = "proto3";
+package wavesenterprise;
+
+option java_multiple_files = true;
+option java_package = "com.wavesenterprise.transaction.protobuf";
+option csharp_namespace = "WavesEnterprise";
+option go_package = "wavesenterprise.com/weproto";
+
+import "contract_api_version.proto";
+
+message WasmContract {
+  bytes bytecode = 1;
+  string bytecode_hash = 2;
+}
+
+message DockerContract {
+  string image = 1;
+  string image_hash = 2;
+  ContractApiVersion api_version = 3;
+}
+
+message StoredContract {
+  oneof value {
+    WasmContract wasmBytecode = 10;
+    DockerContract dockerBytecode = 11;
+  }
+}

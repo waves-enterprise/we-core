@@ -3,10 +3,14 @@ package com.wavesenterprise.transaction.docker
 import cats.implicits._
 import com.google.common.io.ByteStreams.newDataOutput
 import com.wavesenterprise.crypto
+import com.wavesenterprise.docker.StoredContract
+import com.wavesenterprise.docker.StoredContract.{DockerContract, WasmContract}
 import com.wavesenterprise.docker.validator.{ValidationPolicy, ValidationPolicyDescriptor}
 import com.wavesenterprise.state.{ByteStr, DataEntry}
 import com.wavesenterprise.transaction.ValidationError.{GenericError, InvalidContractKeys}
+import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.DataEntryMap
 import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation
+import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation.ContractAssetOperationMap
 import com.wavesenterprise.utils.StringUtilites.ValidateAsciiAndRussian._
 import com.wavesenterprise.transaction.{Transaction, ValidationError}
 
@@ -31,12 +35,28 @@ trait ContractTransactionValidation {
     )
   }
 
-  def validateImageHash(imageHash: String): Either[ValidationError, Unit] = {
+  def validateHash(imageHash: String): Either[ValidationError, Unit] = {
     Either.cond(
       imageHash.length == Sha256HexLength && imageHash.forall(Sha256HexDigits.contains),
       (),
       GenericError(s"Image hash string $imageHash is not valid SHA-256 hex string")
     )
+  }
+
+  def validateHash(storedContract: StoredContract): Either[ValidationError, Unit] = {
+    storedContract match {
+      case wasm: WasmContract => Either.cond(
+          wasm.bytecodeHash.length == Sha256HexLength && wasm.bytecodeHash.forall(Sha256HexDigits.contains),
+          (),
+          GenericError(s"Bytecode hash string ${wasm.bytecodeHash} is not valid SHA-256 hex string")
+        )
+
+      case docker: DockerContract => Either.cond(
+          docker.imageHash.length == Sha256HexLength && docker.imageHash.forall(Sha256HexDigits.contains),
+          (),
+          GenericError(s"Image hash string ${docker.imageHash} is not valid SHA-256 hex string")
+        )
+    }
   }
 
   def validateContractName(contractName: String): Either[GenericError, Unit] = {
@@ -64,6 +84,10 @@ trait ContractTransactionValidation {
       _ <- Either.cond(results.map(_.key).distinct.length == results.size, (), GenericError("Results with duplicate keys were found"))
       _ <- results.traverse(ContractTransactionEntryOps.validate)
     } yield ()
+  }
+
+  def validateResultsMap(resultsMap: DataEntryMap): Either[ValidationError, Unit] = {
+    resultsMap.mapping.values.toList.traverse(validateResults).right.map(_ => ())
   }
 
   def validateValidationPolicy(policy: ValidationPolicy): Either[GenericError, Unit] = {
@@ -98,6 +122,15 @@ object ContractTransactionValidation {
     val output = newDataOutput()
     results.sorted.foreach(ContractTransactionEntryOps.writeBytes(_, output))
     assetOps.foreach(_.writeContractAssetOperationBytes(output))
+    ByteStr(crypto.fastHash(output.toByteArray))
+  }
+
+  def resultsMapHash(results: DataEntryMap, assetOps: ContractAssetOperationMap = ContractAssetOperationMap(Map())): ByteStr = {
+    val output      = newDataOutput()
+    val resultsList = results.mapping.toList
+    val assetList   = assetOps.mapping.toList
+    resultsList.sortBy(_._1.toString).foreach(_._2.sorted.foreach(ContractTransactionEntryOps.writeBytes(_, output)))
+    assetList.sortBy(_._1.toString).foreach(_._2.foreach(_.writeContractAssetOperationBytes(output)))
     ByteStr(crypto.fastHash(output.toByteArray))
   }
 }

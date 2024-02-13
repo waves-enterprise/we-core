@@ -862,6 +862,32 @@ describe('', () => {
     )
   })
 
+  it('CreateContractV7', async () => {
+    const transaction = {
+      senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
+      contractName: "SomeName",
+      params: [{"type":"integer", "key": "height", "value": 100}],
+      fee: 1000000,
+      timestamp: 1598008066632,
+      feeAssetId: "WAVES",
+      atomicBadge: "",
+      validationPolicy: 0,
+      payments: "",
+      isConfidential: "",
+      groupParticipants: "",
+      groupOwners: ""
+    };
+    const signatureGenerator = TRANSACTIONS.CreateContract.V7(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
+  })
+
   it('CreateContractV3', async () => {
     const transaction = {
       senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
@@ -995,6 +1021,31 @@ describe('', () => {
     )
   })
 
+  it('CallContractV7', async () => {
+    const transaction = {
+      senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
+      contractId: "DP5MggKC8GJuLZshCVNSYwBtE6WTRtMM1YPPdcmwbuNg",
+      params: [{"type":"integer", "key": "height", "value": 100}],
+      fee: 1000000,
+      timestamp: 1598008066632,
+      contractVersion: 2,
+      feeAssetId: "WAVES",
+      atomicBadge: "",
+      payments: "",
+      contractEngine: "",
+      callFunc: ""
+    };
+    const signatureGenerator = TRANSACTIONS.CallContract.V7(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
+  })
+
   it('CallContractV3', async () => {
     const transaction = {
       senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
@@ -1028,6 +1079,27 @@ describe('', () => {
       atomicBadge: ""
     };
     const signatureGenerator = TRANSACTIONS.CallContract.V4(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
+  })
+
+  it('ExecutedContractV5', async () => {
+    const transaction = {
+      senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
+      resultsHash: "",
+      validationProofs: "",
+      timestamp: 1598008066632,
+      statusCode: "",
+      errorMessage: "",
+      readings: ""
+    };
+    const signatureGenerator = TRANSACTIONS.ExecutedContract.V5(transaction);
     const bytes = await signatureGenerator.getBytes();
     
     expect(decoder.decode(bytes))
@@ -1131,6 +1203,29 @@ describe('', () => {
       timestamp: 1598008066632
     };
     const signatureGenerator = TRANSACTIONS.UpdateContract.V1(transaction);
+    const bytes = await signatureGenerator.getBytes();
+    
+    expect(decoder.decode(bytes))
+      .toEqual(
+        decoder.decode(Int8Array.from(
+          [0]
+      )).toString()
+    )
+  })
+
+  it('UpdateContractV6', async () => {
+    const transaction = {
+      senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
+      contractId: "DP5MggKC8GJuLZshCVNSYwBtE6WTRtMM1YPPdcmwbuNg",
+      fee: 1000000,
+      timestamp: 1598008066632,
+      feeAssetId: "WAVES",
+      atomicBadge: "",
+      validationPolicy: 0,
+      groupParticipants: "",
+      groupOwners: ""
+    };
+    const signatureGenerator = TRANSACTIONS.UpdateContract.V6(transaction);
     const bytes = await signatureGenerator.getBytes();
     
     expect(decoder.decode(bytes))

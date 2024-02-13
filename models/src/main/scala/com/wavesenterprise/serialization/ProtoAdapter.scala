@@ -8,15 +8,18 @@ import com.wavesenterprise.account.{Address, AddressOrAlias, Alias, PublicKeyAcc
 import com.wavesenterprise.acl.{OpType, PermissionOp, Role}
 import com.wavesenterprise.crypto.internals.HashBytes
 import com.wavesenterprise.crypto.internals.confidentialcontracts.Commitment
-import com.wavesenterprise.docker.ContractApiVersion
+import com.wavesenterprise.docker.StoredContract.{DockerContract, WasmContract}
+import com.wavesenterprise.docker.{ContractApiVersion, StoredContract}
 import com.wavesenterprise.docker.validator.ValidationPolicy
 import com.wavesenterprise.privacy.PolicyItemInfo
 import com.wavesenterprise.protobuf.service.privacy.{PolicyItemInfoResponse, PolicyItemFileInfo => PbPolicyItemFileInfo}
 import com.wavesenterprise.state._
-import com.wavesenterprise.transaction.ValidationError.GenericError
+import com.wavesenterprise.transaction.ValidationError.{ContractIsMissingError, GenericError, InvalidContractApiVersion, InvalidContractId}
 import com.wavesenterprise.transaction._
+import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.DataEntryMap
 import com.wavesenterprise.transaction.docker._
 import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation.{
+  ContractAssetOperationMap,
   ContractBurnV1,
   ContractCancelLeaseV1,
   ContractIssueV1,
@@ -25,6 +28,7 @@ import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation.{
   ContractTransferOutV1
 }
 import com.wavesenterprise.transaction.docker.assets.{ContractAssetOperation, ContractTransferInV1}
+import com.wavesenterprise.transaction.protobuf.StoredContract.Value
 import com.wavesenterprise.transaction.protobuf.ValidationPolicy.Type
 import com.wavesenterprise.transaction.protobuf.docker.{
   ContractBurn,
@@ -39,14 +43,21 @@ import com.wavesenterprise.transaction.protobuf.{
   AtomicBadge => PbAtomicBadge,
   ContractApiVersion => PbContractApiVersion,
   ContractAssetOperation => PbContractAssetOperation,
+  ContractAssetOperationList => PbAssetOperationsList,
+  ContractAssetOperationMap => PbAssetOperationsMap,
   DataEntry => PbDataEntry,
+  DataEntryList => PbDataEntryList,
+  DataEntryMap => PbDataEntryMap,
+  DockerContract => PbDockerContract,
   ExecutableTransaction => PbExecutableTransaction,
   OpType => PbOpType,
   PermissionOp => PbPeprmissionOp,
   Role => PbRole,
+  StoredContract => PbStoredContract,
   Transfer => PbTransfer,
   ValidationPolicy => PbValidationPolicy,
-  ValidationProof => PbValidationProof
+  ValidationProof => PbValidationProof,
+  WasmContract => PbWasmContract
 }
 import com.wavesenterprise.transaction.transfer.ParsedTransfer
 
@@ -431,4 +442,64 @@ object ProtoAdapter {
     ReadDescriptor.fromBytes(byteString.toByteArray, 0)._1
   }
 
+  def toProto(storedContract: StoredContract): PbStoredContract = {
+    val value = storedContract match {
+      case DockerContract(image, imageHash, apiVersion) => PbStoredContract.Value.DockerBytecode(PbDockerContract(
+          image = image,
+          imageHash = imageHash,
+          apiVersion = Some(PbContractApiVersion(apiVersion.majorVersion, apiVersion.majorVersion))
+        ))
+      case WasmContract(bytecode, bytecodeHash) => PbStoredContract.Value.WasmBytecode(
+          PbWasmContract(
+            bytecode = byteArrayToByteString(bytecode.array),
+            bytecodeHash = bytecodeHash
+          ))
+    }
+    PbStoredContract(value)
+  }
+
+  def fromProto(pb: PbStoredContract): Either[ValidationError, StoredContract] = {
+    pb.value match {
+      case Value.Empty => Left(ContractIsMissingError)
+      case Value.WasmBytecode(value) => Right(WasmContract(
+          value.bytecode.toByteArray,
+          value.bytecodeHash
+        ))
+      case Value.DockerBytecode(value) => Either.fromOption(
+          value.apiVersion,
+          InvalidContractApiVersion("contract api version is missing")
+        ).map { apiVersion =>
+          DockerContract(
+            value.image,
+            value.imageHash,
+            ContractApiVersion(apiVersion.majorVersion.toShort, apiVersion.minorVersion.toShort)
+          )
+        }
+    }
+  }
+
+  def toProto(dataEntryMap: DataEntryMap): PbDataEntryMap = {
+    PbDataEntryMap(dataEntryMap.mapping.map(kv => kv._1.base58 -> PbDataEntryList(kv._2.map(toProto))))
+  }
+  def fromProto(pb: PbDataEntryMap): Either[ValidationError, DataEntryMap] = {
+    pb.dataEntryList.toList.traverse { case (key, value) =>
+      for {
+        decodedKey  <- ByteStr.decodeBase58(key).toEither.left.map(ex => InvalidContractId(ex.getMessage))
+        dataEntries <- value.entries.toList.traverse(fromProto)
+      } yield decodedKey -> dataEntries
+    }.map(list => DataEntryMap(list.toMap))
+  }
+
+  def toProto(operationMap: ContractAssetOperationMap): PbAssetOperationsMap = {
+    PbAssetOperationsMap(operationMap.mapping.map(kv => kv._1.base58 -> PbAssetOperationsList(kv._2.map(toProto))))
+  }
+
+  def fromProto(pb: PbAssetOperationsMap): Either[ValidationError, ContractAssetOperationMap] = {
+    pb.operationList.toList.traverse { case (key, value) =>
+      for {
+        decodedKey  <- ByteStr.decodeBase58(key).toEither.left.map(ex => InvalidContractId(ex.getMessage))
+        dataEntries <- value.operations.toList.traverse(fromProto)
+      } yield decodedKey -> dataEntries
+    }.map(list => ContractAssetOperationMap(list.toMap))
+  }
 }

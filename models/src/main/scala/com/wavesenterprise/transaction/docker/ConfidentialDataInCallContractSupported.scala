@@ -5,7 +5,7 @@ import com.wavesenterprise.crypto.internals.confidentialcontracts.Commitment.com
 import com.wavesenterprise.transaction.ValidationError
 
 trait ConfidentialDataInCallContractSupported {
-  def inputCommitment: Commitment
+  def inputCommitment: Option[Commitment]
 }
 
 object CommitmentValidations {

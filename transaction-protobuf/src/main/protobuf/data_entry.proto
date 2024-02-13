@@ -15,3 +15,11 @@ message DataEntry {
         string string_value = 13;
     }
 }
+
+message DataEntryList {
+    repeated DataEntry entries = 1;
+}
+
+message DataEntryMap {
+    map<string, DataEntryList> dataEntryList = 1;
+}

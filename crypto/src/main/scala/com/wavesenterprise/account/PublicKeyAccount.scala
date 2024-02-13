@@ -5,7 +5,8 @@ import com.wavesenterprise.crypto
 import com.wavesenterprise.crypto.PublicKey
 import com.wavesenterprise.crypto.internals.{CryptoError, InvalidPublicKey}
 import com.wavesenterprise.utils.Base58
-import play.api.libs.json.{JsString, Writes}
+import monix.eval.Coeval
+import play.api.libs.json.{Format, JsError, JsString, JsSuccess, Reads, Writes}
 
 trait PublicKeyAccount {
   def publicKey: PublicKey
@@ -69,5 +70,18 @@ object PublicKeyAccount {
     }
   }
 
-  implicit val Writes: Writes[PublicKeyAccount] = acc => JsString(acc.publicKeyBase58)
+  implicit val PublicKeyAccountWrites: Writes[PublicKeyAccount] = acc => JsString(acc.publicKeyBase58)
+
+  implicit val PublicKeyAccountReads: Reads[PublicKeyAccount] = {
+    case JsString(s) => PublicKeyAccount.fromBase58String(s).fold(e => JsError(e.message), JsSuccess(_))
+    case _           => JsError("Expected string value for public key value")
+  }
+
+  implicit val PublicKeyAccountFormat: Format[PublicKeyAccount] = Format(
+    PublicKeyAccountReads,
+    PublicKeyAccountWrites
+  )
+
+  implicit val LazyPublicKeyFormat: Format[Coeval[PublicKeyAccount]] =
+    Format.invariantFunctorFormat.inmap(PublicKeyAccount.PublicKeyAccountFormat, Coeval.pure[PublicKeyAccount], _.apply())
 }

@@ -18,6 +18,7 @@ export const TRANSACTION_TYPES = {
   Permit: 102,
   CreateContract: 103,
   CallContract: 104,
+  ExecutedContract: 105,
   DisableContract: 106,
   UpdateContract: 107,
   RegisterNode: 111,
@@ -33,5 +34,6 @@ export const TRANSACTION_VERSIONS = {
   V3: 3,
   V4: 4,
   V5: 5,
-  V6: 6
+  V6: 6,
+  V7: 7
 }

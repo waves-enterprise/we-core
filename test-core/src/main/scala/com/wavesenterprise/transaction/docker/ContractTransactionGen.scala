@@ -5,11 +5,14 @@ import com.wavesenterprise.account.{AddressOrAlias, PrivateKeyAccount}
 import com.wavesenterprise.crypto
 import com.wavesenterprise.crypto.internals.WavesAlgorithms
 import com.wavesenterprise.crypto.internals.confidentialcontracts.Commitment
+import com.wavesenterprise.docker.StoredContract.WasmContract
 import com.wavesenterprise.docker.ContractApiVersion
 import com.wavesenterprise.docker.validator.ValidationPolicy
 import com.wavesenterprise.settings.TestFees.{defaultFees => fees}
 import com.wavesenterprise.state._
 import com.wavesenterprise.transaction._
+import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.DataEntryMap
+import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation.ContractAssetOperationMap
 import com.wavesenterprise.transaction.docker.assets.{ContractAssetOperation, ContractTransferInV1}
 import com.wavesenterprise.transaction.validation.IssueTransactionValidation
 import com.wavesenterprise.utils.EitherUtils.EitherExt
@@ -26,12 +29,14 @@ import scala.util.Random
   */
 trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: Suite =>
 
-  private val ParamsMinCount      = 0
-  private val ParamsMaxCount      = 100
-  private val DataEntryMaxSize    = 10
-  private val BigDataEntryMaxSize = 64 * 1024 // 64KB
-  private val ResultsMinCount     = 1
-  private val ResultsMaxCount     = 100
+  private val ParamsMinCount       = 0
+  private val ParamsMaxCount       = 100
+  private val DataEntryMaxSize     = 10
+  private val BigDataEntryMaxSize  = 64 * 1024 // 64KB
+  private val ResultsMinCount      = 1
+  private val ResultsMaxCount      = 100
+  private val participantsMinCount = 0
+  private val participantsMaxCount = 8
 
   val createTxFeeGen: Gen[Long]  = Gen.const(fees.forTxType(CreateContractTransaction.typeId))
   val callTxFeeGen: Gen[Long]    = Gen.const(fees.forTxType(CallContractTransaction.typeId))
@@ -42,6 +47,7 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
   val defaultTransfersCountGen: Gen[Int]  = Gen.choose(0, 50)
   val genAssetId: Gen[AssetId]            = bytes32gen.map(ByteStr(_))
   val genOptAssetId: Gen[Option[AssetId]] = assetIdGen
+  val defaultCallFuncGen                  = Gen.const("transfer")
 
   val createContractV1ParamGen: Gen[CreateContractTransactionV1] =
     for {
@@ -138,6 +144,38 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
       )
       .explicitGet()
 
+  val createContractV7ParamGen: Gen[CreateContractTransactionV7] =
+    for {
+      signer            <- accountGen
+      bytecode          <- genBoundedString(CreateContractTransactionV1.ImageMinLength, CreateContractTransactionV1.ImageMaxLength)
+      bytecodeHash      <- bytes32gen.map(DigestUtils.sha256Hex)
+      contractName      <- genBoundedString(1, CreateContractTransactionV1.ContractNameMaxLength)
+      params            <- Gen.choose(ParamsMinCount, ParamsMaxCount).flatMap(Gen.listOfN(_, dataEntryGen(DataEntryMaxSize)))
+      feeAmount         <- createTxFeeGen
+      optAssetId        <- genOptAssetId
+      atomicBadge       <- atomicBadgeOptGen
+      validationPolicy  <- validationPolicyGen
+      isConfidential    <- Gen.oneOf(Seq(false, true))
+      groupParticipants <- Gen.choose(participantsMinCount, participantsMaxCount).flatMap(Gen.listOfN(_, addressGen))
+      groupOwners       <- Gen.choose(participantsMinCount, participantsMaxCount).flatMap(Gen.listOfN(_, addressGen))
+      timestamp         <- ntpTimestampGen
+    } yield CreateContractTransactionV7
+      .selfSigned(
+        signer,
+        new String(contractName, UTF_8),
+        params,
+        feeAmount,
+        timestamp,
+        optAssetId,
+        atomicBadge,
+        validationPolicy,
+        List.empty[ContractTransferInV1], // TODO GEN
+        isConfidential,
+        groupParticipants.toSet,
+        groupOwners.toSet,
+        WasmContract(bytecode, bytecodeHash)
+      ).explicitGet()
+
   val bigCreateContractParamGen: Gen[CreateContractTransactionV2] = for {
     tx     <- createContractV2ParamGen
     signer <- accountGen
@@ -227,15 +265,61 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
     outputCommitment <- commitmentGen()
     readingsHash     <- digestSizeByteStrGen.map(ReadingsHash.apply)
     readings         <- readingsGen
-  } yield ExecutedContractTransactionV4.selfSigned(sender, tx, results, resultsHash, validationProofs, timestamp, assetOperations, readings, readingsHash.some, outputCommitment).explicitGet()
+  } yield ExecutedContractTransactionV4.selfSigned(sender, tx, results, resultsHash, validationProofs, timestamp, assetOperations, readings, readingsHash.some, outputCommitment.some).explicitGet()
+
+  def executedContractV5ParamGen(otherCalls: Int = 2): Gen[ExecutedContractTransactionV5] =
+    for {
+      sender <- accountGen
+      tx <- Gen.oneOf(
+        createContractV7ParamGen,
+        callContractV7ParamGen()
+      )
+      callTransactions <- Gen.listOfN(otherCalls, callContractV7ParamGen())
+      assetOperations  <- listContractAssetOperationV1Gen(tx.id(), Gen.choose(0, 20), accountOrAliasGen, genOptAssetId, issueNonceGen)
+      innerOperations = callTransactions.map(tx =>
+        tx.contractId -> listContractAssetOperationV1Gen(
+          tx.contractId,
+          Gen.choose(0, 20),
+          accountOrAliasGen,
+          genOptAssetId,
+          issueNonceGen
+        ).sample.getOrElse(List.empty))
+      results <- Gen
+        .choose(ResultsMinCount, ResultsMaxCount)
+        .flatMap(Gen.listOfN(_, dataEntryGen(DataEntryMaxSize)))
+      innerResults = innerOperations.map(_._1 -> Gen
+        .choose(ResultsMinCount, ResultsMaxCount)
+        .flatMap(Gen.listOfN(_, dataEntryGen(DataEntryMaxSize))).sample.get)
+      assetsMap   = ContractAssetOperationMap((innerOperations :+ (tx.contractId -> assetOperations)).toMap)
+      resultsMap  = DataEntryMap((innerResults :+ (tx.contractId -> results)).toMap)
+      resultsHash = ContractTransactionValidation.resultsMapHash(resultsMap, assetsMap)
+      validationProofs <- validationProofsGen(resultsHash)
+      timestamp        <- ntpTimestampGen
+      outputCommitment <- commitmentGen()
+      readingsHash     <- digestSizeByteStrGen.map(ReadingsHash.apply)
+      readings         <- readingsGen
+    } yield ExecutedContractTransactionV5.selfSigned(
+      sender,
+      tx,
+      resultsMap,
+      resultsHash,
+      validationProofs,
+      timestamp,
+      assetsMap,
+      0,
+      None,
+      readings,
+      readingsHash.some,
+      outputCommitment.some
+    ).explicitGet()
 
   val specificKeysGen: Gen[SpecificKeys] = for {
     contractId <- bytes32gen.map(ByteStr.apply)
-    keys       <- Gen.nonEmptyListOf(Gen.asciiStr)
+    keys       <- Gen.nonEmptyListOf(Gen.asciiStr.map(_.take(10))).map(_.take(3))
   } yield SpecificKeys(contractId, keys)
   val filteredKeysGen: Gen[FilteredKeys] = for {
     contractId <- bytes32gen.map(ByteStr.apply)
-    matches    <- Gen.option(Gen.asciiStr)
+    matches    <- Gen.option(Gen.asciiStr.map(_.take(10)))
     offset     <- Gen.option(Gen.posNum[Int])
     limit      <- Gen.option(Gen.posNum[Int])
   } yield FilteredKeys(contractId, matches, offset, limit)
@@ -282,7 +366,7 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
     outputCommitment <- commitmentGen()
     readingsHash     <- digestSizeByteStrGen.map(ReadingsHash.apply)
     readings         <- readingsGen
-  } yield ExecutedContractTransactionV4.selfSigned(sender, tx, results, resultsHash, validationProofs, timestamp, assetOperations, readings, readingsHash.some, outputCommitment).explicitGet()
+  } yield ExecutedContractTransactionV4.selfSigned(sender, tx, results, resultsHash, validationProofs, timestamp, assetOperations, readings, readingsHash.some, Some(outputCommitment)).explicitGet()
 
   val disableContractV1ParamGen: Gen[DisableContractTransactionV1] = for {
     sender     <- accountGen
@@ -477,7 +561,7 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
                   callFeeOptAssetId,
                   tx.atomicBadge,
                   transfers,
-                  commitment)
+                  Some(commitment))
       .explicitGet()
 
   def callContractV6ParamGen(atomicBadgeGen: Gen[Option[AtomicBadge]] = atomicBadgeOptGen,
@@ -499,7 +583,42 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
       payments        <- maxTransfers.flatMap(listContractTransferInV1Gen(_, Gen.const(optFeeAssetId)))
       commitment      <- commitmentGen()
     } yield CallContractTransactionV6
-      .selfSigned(signer, tx.contractId, tx.params, feeAmount, tx.timestamp, contractVersion, optFeeAssetId, atomicBadge, payments, commitment)
+      .selfSigned(signer, tx.contractId, tx.params, feeAmount, tx.timestamp, contractVersion, optFeeAssetId, atomicBadge, payments, Some(commitment))
+      .explicitGet()
+
+  def callContractV7ParamGen(atomicBadgeGen: Gen[Option[AtomicBadge]] = atomicBadgeOptGen,
+                             maxPayments: Gen[Int] = defaultTransfersCountGen): Gen[CallContractTransactionV7] = {
+    callContractV7ParamGen(atomicBadgeGen, genOptAssetId, callTxFeeGen, maxPayments, defaultCallFuncGen)
+  }
+
+  def callContractV7ParamGen(atomicBadgeGen: Gen[Option[AtomicBadge]],
+                             optAssetIdGen: Gen[Option[AssetId]],
+                             amountGen: Gen[Long],
+                             maxTransfers: Gen[Int],
+                             callFuncGen: Gen[String]): Gen[CallContractTransactionV7] =
+    for {
+      signer          <- accountGen
+      tx              <- callContractV1ParamGen
+      contractVersion <- Gen.choose(1, Integer.MAX_VALUE)
+      optFeeAssetId   <- optAssetIdGen
+      feeAmount       <- amountGen
+      atomicBadge     <- atomicBadgeGen
+      payments        <- maxTransfers.flatMap(listContractTransferInV1Gen(_, Gen.const(optFeeAssetId)))
+      commitment      <- commitmentGen()
+      callFunc        <- callFuncGen
+    } yield CallContractTransactionV7
+      .selfSigned(signer,
+                  tx.contractId,
+                  tx.params,
+                  feeAmount,
+                  tx.timestamp,
+                  contractVersion,
+                  optFeeAssetId,
+                  atomicBadge,
+                  payments,
+                  Some(commitment),
+                  "wasm",
+                  Some(callFunc))
       .explicitGet()
 
   def commitmentGen(): Gen[Commitment] = for {
@@ -602,6 +721,36 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
                   atomicBadge,
                   validationPolicy,
                   contractApiVersion)
+      .explicitGet()
+
+  def updateContractV6ParamGen(contractIdGen: Gen[ByteStr] = bytes32gen.map(ByteStr.apply)): Gen[UpdateContractTransactionV6] =
+    updateContractV6ParamGen(createTxFeeGen, accountGen, contractIdGen)
+
+  def updateContractV6ParamGen(amountGen: Gen[Long],
+                               signerGen: Gen[PrivateKeyAccount],
+                               contractIdGen: Gen[ByteStr]): Gen[UpdateContractTransactionV6] =
+    for {
+      signer           <- signerGen
+      contractId       <- contractIdGen
+      bytecode         <- genBoundedString(UpdateContractTransactionV2.ImageMinLength, UpdateContractTransactionV2.ImageMaxLength)
+      bytecodeHash     <- bytes32gen.map(DigestUtils.sha256Hex)
+      feeAmount        <- amountGen
+      atomicBadge      <- atomicBadgeOptGen
+      validationPolicy <- validationPolicyGen
+      timestamp        <- ntpTimestampGen
+    } yield UpdateContractTransactionV6
+      .selfSigned(
+        signer,
+        contractId,
+        feeAmount,
+        timestamp,
+        None,
+        atomicBadge,
+        validationPolicy,
+        Set.empty,
+        Set.empty,
+        WasmContract(bytecode, bytecodeHash)
+      )
       .explicitGet()
 
   def disableContractV2ParamGen(optAssetIdGen: Gen[Option[AssetId]], amountGen: Gen[Long]): Gen[DisableContractTransactionV2] =
@@ -853,6 +1002,8 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
             )
           case _: ContractAssetOperation.ContractCancelLeaseV1 =>
             contractOperationsGen(leftOperations - 1, issuedAssetIds, result :+ newContractAssetOperation)
+          case _: ContractAssetOperation.ContractPaymentV1 =>
+            contractOperationsGen(leftOperations - 1, issuedAssetIds, result :+ newContractAssetOperation)
         }
     }
 
@@ -1063,6 +1214,12 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
               leftOperations - 1,
               availableNoncesState,
               resultList :+ cancelLease
+            )
+          case contractPayment: ContractAssetOperation.ContractPaymentV1 =>
+            genContractOperations(
+              leftOperations - 1,
+              availableNoncesState,
+              resultList :+ contractPayment
             )
         }
     }
