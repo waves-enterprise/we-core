@@ -205,6 +205,10 @@ object Bindings {
             provenTxPart(p, proofsEnabled)
           )
         )
+      case UpdateContract(p, contractId) =>
+        CaseObj(
+          buildUpdateContractTransactionType(proofsEnabled).typeRef,
+          combine(Map("contractId" -> contractId), provenTxPart(p, proofsEnabled))
+        )
     }
-
 }

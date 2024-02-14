@@ -236,6 +236,16 @@ object Types {
     )
   )
 
+  def buildUpdateContractTransactionType(proofsEnabled: Boolean) = CaseType(
+    "UpdateContractTransaction",
+    addProofsIfNeeded(
+      List(
+        "contractId" -> BYTEVECTOR
+      ) ++ header ++ proven,
+      proofsEnabled
+    )
+  )
+
   def buildObsoleteTransactionTypes(proofsEnabled: Boolean): List[CaseType] = {
     List(genesisTransactionType, buildPaymentTransactionType(proofsEnabled))
   }
@@ -258,7 +268,8 @@ object Types {
         buildCreateAliasTransactionType(proofsEnabled),
         buildSetScriptTransactionType(proofsEnabled),
         buildSponsorFeeTransactionType(proofsEnabled),
-        buildDataTransactionType(proofsEnabled)
+        buildDataTransactionType(proofsEnabled),
+        buildUpdateContractTransactionType(proofsEnabled)
       )
   }
 

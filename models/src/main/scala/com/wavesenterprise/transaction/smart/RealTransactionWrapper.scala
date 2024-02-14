@@ -8,6 +8,7 @@ import com.wavesenterprise.transaction._
 import com.wavesenterprise.transaction.assets._
 import com.wavesenterprise.transaction.assets.exchange.OrderType.{BUY, SELL}
 import com.wavesenterprise.transaction.assets.exchange.{AssetPair, ExchangeTransaction, Order}
+import com.wavesenterprise.transaction.docker._
 import com.wavesenterprise.transaction.lease.{LeaseCancelTransaction, LeaseTransaction}
 import com.wavesenterprise.transaction.transfer._
 import scodec.bits.ByteVector
@@ -106,6 +107,7 @@ object RealTransactionWrapper {
             case BinaryDataEntry(key, value)  => DataItem.Bin(key, value)
           }.toIndexedSeq
         )
+      case uc: UpdateContractTransaction => Tx.UpdateContract(proven(uc), uc.contractId)
     }
   }
 }
