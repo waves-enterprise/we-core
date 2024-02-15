@@ -169,7 +169,7 @@ object DocExport {
         "Transfers"      -> Set("TransferTransaction", "MassTransferTransaction", "PaymentTransaction"),
         "Issuing assets" -> Set("IssueTransaction", "ReissueTransaction", "BurnTransaction", "SponsorFeeTransaction", "SetAssetScriptTransaction"),
         "Leasing"        -> Set("LeaseTransaction", "LeaseCancelTransaction"),
-        "Contracts"      -> Set("UpdateContractTransaction")
+        "Contracts"      -> Set("CreateContractTransaction", "CallContractTransaction", "DisableContractTransaction", "UpdateContractTransaction")
       )
       def otherTransactions(name: String) = transactionsTypesNames(name) && !transactionClasses.map(_._2).exists(_(name))
       val out = doc.execute(

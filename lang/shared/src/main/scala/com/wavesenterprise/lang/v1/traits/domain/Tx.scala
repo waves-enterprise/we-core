@@ -45,5 +45,8 @@ object Tx {
   case class Sponsorship(p: Proven, assetId: ByteVector, isEnabled: Boolean)                                                          extends Tx
   case class Exchange(p: Proven, amount: Long, price: Long, buyMatcherFee: Long, sellMatcherFee: Long, buyOrder: Ord, sellOrder: Ord) extends Tx
   case class Data(p: Proven, data: IndexedSeq[DataItem[_]])                                                                           extends Tx
+  case class CreateContract(p: Proven)                                                                                                extends Tx
+  case class CallContract(p: Proven, contractId: ByteVector, contractVersion: Long)                                                   extends Tx
+  case class DisableContract(p: Proven, contractId: ByteVector)                                                                       extends Tx
   case class UpdateContract(p: Proven, contractId: ByteVector)                                                                        extends Tx
 }

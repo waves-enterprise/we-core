@@ -107,7 +107,10 @@ object RealTransactionWrapper {
             case BinaryDataEntry(key, value)  => DataItem.Bin(key, value)
           }.toIndexedSeq
         )
-      case uc: UpdateContractTransaction => Tx.UpdateContract(proven(uc), uc.contractId)
+      case c: CreateContractTransaction  => Tx.CreateContract(proven(c))
+      case c: CallContractTransaction    => Tx.CallContract(proven(c), c.contractId, c.contractVersion)
+      case d: DisableContractTransaction => Tx.DisableContract(proven(d), d.contractId)
+      case u: UpdateContractTransaction  => Tx.UpdateContract(proven(u), u.contractId)
     }
   }
 }
