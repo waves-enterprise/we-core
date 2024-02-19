@@ -236,6 +236,52 @@ object Types {
     )
   )
 
+  def buildCreateContractTransactionType(proofsEnabled: Boolean) = CaseType(
+    "CreateContractTransaction",
+    addProofsIfNeeded(
+      header ++ proven,
+      proofsEnabled
+    )
+  )
+
+  def buildCallContractTransactionType(proofsEnabled: Boolean) = CaseType(
+    "CallContractTransaction",
+    addProofsIfNeeded(
+      List(
+        "contractId"      -> BYTEVECTOR,
+        "contractVersion" -> LONG
+      ) ++ header ++ proven,
+      proofsEnabled
+    )
+  )
+
+  def buildDisableContractTransactionType(proofsEnabled: Boolean) = CaseType(
+    "DisableContractTransaction",
+    addProofsIfNeeded(
+      List(
+        "contractId" -> BYTEVECTOR
+      ) ++ header ++ proven,
+      proofsEnabled
+    )
+  )
+
+  def buildUpdateContractTransactionType(proofsEnabled: Boolean) = CaseType(
+    "UpdateContractTransaction",
+    addProofsIfNeeded(
+      List(
+        "contractId" -> BYTEVECTOR
+      ) ++ header ++ proven,
+      proofsEnabled
+    )
+  )
+
+  def buildNewTransactionTypes(proofsEnabled: Boolean): List[CaseType] = List(
+    buildCreateContractTransactionType(proofsEnabled),
+    buildCallContractTransactionType(proofsEnabled),
+    buildDisableContractTransactionType(proofsEnabled),
+    buildUpdateContractTransactionType(proofsEnabled)
+  )
+
   def buildObsoleteTransactionTypes(proofsEnabled: Boolean): List[CaseType] = {
     List(genesisTransactionType, buildPaymentTransactionType(proofsEnabled))
   }
@@ -251,6 +297,7 @@ object Types {
 
   def buildActiveTransactionTypes(proofsEnabled: Boolean): List[CaseType] = {
     buildAssetSupportedTransactions(proofsEnabled) ++
+      buildNewTransactionTypes(proofsEnabled) ++
       List(
         buildIssueTransactionType(proofsEnabled),
         buildLeaseTransactionType(proofsEnabled),

@@ -205,6 +205,26 @@ object Bindings {
             provenTxPart(p, proofsEnabled)
           )
         )
+      case CreateContract(p) =>
+        CaseObj(
+          buildCreateContractTransactionType(proofsEnabled).typeRef,
+          provenTxPart(p, proofsEnabled)
+        )
+      case CallContract(p, contractId, contractVersion) =>
+        CaseObj(
+          buildCallContractTransactionType(proofsEnabled).typeRef,
+          combine(Map("contractId" -> contractId, "contractVersion" -> contractVersion), provenTxPart(p, proofsEnabled))
+        )
+      case DisableContract(p, contractId) =>
+        CaseObj(
+          buildDisableContractTransactionType(proofsEnabled).typeRef,
+          combine(Map("contractId" -> contractId), provenTxPart(p, proofsEnabled))
+        )
+      case UpdateContract(p, contractId) =>
+        CaseObj(
+          buildUpdateContractTransactionType(proofsEnabled).typeRef,
+          combine(Map("contractId" -> contractId), provenTxPart(p, proofsEnabled))
+        )
     }
 
 }
