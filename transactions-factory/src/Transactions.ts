@@ -16,6 +16,7 @@ import {
   ByteArrayWithSize,
   ContractApiVersion,
   DataEntry,
+  DataEntryMap,
   DockerParamEntry,
   Integer,
   List,
@@ -24,6 +25,7 @@ import {
   PermissionOpType,
   PermissionRole,
   Recipient,
+  StoredContract,
   StringWithLength,
   Transfers,
   TxType,
@@ -528,7 +530,8 @@ const CreateContractV7 = {
   validationPolicy: new ValidationPolicy(true),
   isConfidential: new Bool(true),
   groupParticipants: new ArrayOfStringsWithLength(true),
-  groupOwners: new ArrayOfStringsWithLength(true)
+  groupOwners: new ArrayOfStringsWithLength(true),
+  storedContract: new StoredContract(true)
 }
 
 const CreateContractV3 = {
@@ -652,6 +655,7 @@ const ExecutedContractV5 = {
   tx_type: new TxType(true, TRANSACTION_TYPES.ExecutedContract),
   version: new TxVersion(true, TRANSACTION_VERSIONS.V5),
   senderPublicKey: new Base58(true),
+  resultsMap: new DataEntryMap(true),
   resultsHash: new Base58WithLength(true),
   timestamp: new Long(true),
   statusCode: new Integer(true),
@@ -727,7 +731,8 @@ const UpdateContractV6 = {
   atomicBadge: new AtomicBadge(false),
   validationPolicy: new ValidationPolicy(true),
   groupParticipants: new ArrayOfStringsWithLength(true),
-  groupOwners: new ArrayOfStringsWithLength(true)
+  groupOwners: new ArrayOfStringsWithLength(true),
+  storedContract: new StoredContract(true)
 }
 
 const UpdateContractV2 = {

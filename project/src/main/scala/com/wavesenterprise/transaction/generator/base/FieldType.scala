@@ -783,6 +783,7 @@ object FieldType extends Enum[FieldType] {
           ProtoAdapterImport
         ),
         protoImports = Set("stored_contract.proto"),
+        typeScriptType = Some("StoredContract")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -1295,7 +1296,8 @@ object FieldType extends Enum[FieldType] {
           "com.wavesenterprise.transaction.docker.ContractTransactionEntryOps",
           ProtoAdapterImport
         ),
-        protoImports = Set("data_entry.proto")
+        protoImports = Set("data_entry.proto"),
+        typeScriptType = Some("DataEntryMap")
       )
       with BinarySerializableType
       with ProtoCompatibleType {

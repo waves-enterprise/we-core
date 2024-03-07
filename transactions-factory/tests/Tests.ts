@@ -875,7 +875,8 @@ describe('', () => {
       payments: "",
       isConfidential: "",
       groupParticipants: "",
-      groupOwners: ""
+      groupOwners: "",
+      storedContract: ""
     };
     const signatureGenerator = TRANSACTIONS.CreateContract.V7(transaction);
     const bytes = await signatureGenerator.getBytes();
@@ -1092,6 +1093,7 @@ describe('', () => {
   it('ExecutedContractV5', async () => {
     const transaction = {
       senderPublicKey: "34qsNWsKKQaysTzpsf4aTyRS6Q1BoUuBntgGVj6SHZg3",
+      resultsMap: "",
       resultsHash: "",
       validationProofs: "",
       timestamp: 1598008066632,
@@ -1223,7 +1225,8 @@ describe('', () => {
       atomicBadge: "",
       validationPolicy: 0,
       groupParticipants: "",
-      groupOwners: ""
+      groupOwners: "",
+      storedContract: ""
     };
     const signatureGenerator = TRANSACTIONS.UpdateContract.V6(transaction);
     const bytes = await signatureGenerator.getBytes();
