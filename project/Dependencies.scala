@@ -33,7 +33,7 @@ object Dependencies {
     "org.bouncycastle" % "bcpkix-jdk15on" % "1.60"
   )
 
-  lazy val commonsNet = Seq("commons-net" % "commons-net" % "3.6")
+  lazy val commonsNet = Seq("commons-net" % "commons-net" % "3.10.0")
   lazy val commonsLang = Seq(
     "org.apache.commons" % "commons-lang3" % "3.8",
     "commons-codec"      % "commons-codec" % "1.11"
@@ -68,4 +68,6 @@ object Dependencies {
   lazy val protobuf = Seq("com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf")
 
   lazy val reflections= Seq("org.reflections" % "reflections" % "0.10.2")
+
+  lazy val depCheck = Seq("net.vonbuchholtz" % "sbt-dependency-check" % "5.1.0")
 }

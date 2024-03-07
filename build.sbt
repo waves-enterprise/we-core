@@ -41,12 +41,11 @@ inThisBuild(
     ),
     developers ++= List(
       Developer("wavesenterprise", "Waves Enterprise", "dev@wavesenterprise.com", url("https://wavesenterprise.com")),
-      Developer("vaan", "Vadim Anufriev", "m@vaan.io", url("https://vaan.io/")),
-      Developer("sathembite", "Anton Mazur", "sathembite@gmail.com", url("https://github.com/AntonMazur")),
-      Developer("kantefier", "Kirill Nebogin", "kinebogin@gmail.com", url("https://github.com/kantefier")),
-      Developer("gamzaliev", "Ruslan Gamzaliev", "gamzaliev.ruslan.94@gmail.com", url("https://github.com/gamzaliev")),
       Developer("1estart", "Artemiy Pospelov", "artemiywaves@gmail.com", url("https://github.com/1estart")),
-      Developer("deadblackclover", "Mark Ikonnikov", "mikonnikovwe@gmail.com", url("https://github.com/deadblackclover")),
+      Developer("deadblackclover", "Mark Ikonnikov", "deadblackclover@protonmail.com", url("https://github.com/deadblackclover")),
+      Developer("np96", "Nikolai Poperechnyi", "npoperechnyi@web3tech.ru,n.poperechnyi@gmail.com", url("https://github.com/np96")),
+      Developer("GiperMeon", "Evgeniy Gnatovskiy", "egnatovskiy@web3tech.ru,gnatoffskiy43@gmail.com", url("https://github.com/GiperMeon")),
+      Developer("arlengur", "Alex Galin", "satovritti@gmail.com", url("https://github.com/arlengur")),
     ),
     crossPaths := false,
     scalacOptions ++= Seq(
