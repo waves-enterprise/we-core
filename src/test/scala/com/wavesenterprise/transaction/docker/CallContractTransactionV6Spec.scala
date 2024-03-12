@@ -62,8 +62,8 @@ class CallContractTransactionV6Spec extends PropSpec with ScalaCheckPropertyChec
         Some(ByteStr.decodeBase58(feeAssetId).get),
         Some(AtomicBadge(Some(senderAccount.toAddress))),
         payments,
+        Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get)),
         Some(inputCommitment),
-        Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
       )
       .right
       .get

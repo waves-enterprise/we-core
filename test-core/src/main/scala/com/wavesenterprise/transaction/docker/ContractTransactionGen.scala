@@ -305,12 +305,12 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
       resultsHash,
       validationProofs,
       timestamp,
+      readings,
+      readingsHash.some,
+      outputCommitment.some,
       assetsMap,
       0,
       None,
-      readings,
-      readingsHash.some,
-      outputCommitment.some
     ).explicitGet()
 
   val specificKeysGen: Gen[SpecificKeys] = for {

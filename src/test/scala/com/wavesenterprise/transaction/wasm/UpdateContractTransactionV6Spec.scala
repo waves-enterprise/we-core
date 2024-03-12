@@ -54,8 +54,8 @@ class UpdateContractTransactionV6Spec extends PropSpec with ScalaCheckPropertyCh
         validationPolicy = ValidationPolicy.Any,
         groupParticipants = Set.empty,
         groupOwners = Set.empty,
-        WasmContract(bytecodeStr.getBytes(UTF_8), bytecodeHash),
-        proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
+        proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get)),
+        storedContract = WasmContract(bytecodeStr.getBytes(UTF_8), bytecodeHash)
       )
       .right
       .get
