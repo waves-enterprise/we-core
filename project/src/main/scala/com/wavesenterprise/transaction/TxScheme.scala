@@ -11,6 +11,9 @@ import enumeratum._
 import scala.collection.immutable
 import scala.collection.immutable.Set
 
+/*
+* FIELD ORDER CHANGE BREAKS SERIALIZATION, CAN ONLY APPEND NEW FIELDS FOR NEW VERSIONS
+* */
 sealed abstract class TxScheme(
     val packageName: String = TxScheme.BasePackage,
     val typeId: Byte,
@@ -641,12 +644,12 @@ object TxScheme extends Enum[TxScheme] {
           "validationPolicy" as VALIDATION_POLICY        -> Set(InConstructor(4, 5, 6, 7), Validation(f => s"validateValidationPolicy($f)")),
           "apiVersion" as CONTRACT_API_VERSION           -> InConstructor(4, 5, 6),
           "payments" as SHORT_LIST(CONTRACT_TRANSFER_IN) -> Set(Override, InConstructor(5, 6, 7)),
+          proofsField,
+          "sender_address" as SENDER_ADDRESS             -> Transparent,
           "isConfidential" as BOOLEAN                    -> Set(Override, InConstructor(6, 7)),
           "groupParticipants" as SHORT_SET(ADDRESS)      -> Set(Override, InConstructor(6, 7)),
           "groupOwners" as SHORT_SET(ADDRESS)            -> Set(Override, InConstructor(6, 7)),
           "storedContract" as STORED_CONTRACT            -> Set(Override, InConstructor(7), Validation(f => s"validateHash($f)")),
-          "sender_address" as SENDER_ADDRESS             -> Transparent,
-          proofsField
         ),
         ensures = Seq("validateSize"),
         versionToBlockchainFeatures = {
@@ -746,13 +749,13 @@ object TxScheme extends Enum[TxScheme] {
           "feeAssetId" as ASSET_ID.?                     -> Set(Override, InConstructor(3, 4, 5, 6, 7)),
           "atomicBadge" as OPTION(ATOMIC_BADGE)          -> Set(Override, InConstructor(4, 5, 6, 7)),
           "payments" as SHORT_LIST(CONTRACT_TRANSFER_IN) -> Set(Override, InConstructor(5, 6, 7)),
+          proofsField,
+          "sender_address" as SENDER_ADDRESS -> Transparent,
           "inputCommitment" as OPTION(COMMITMENT) -> Set(Override,
                                                          InConstructor(6, 7),
                                                          Validation(f => s"$f.fold(Either.right[ValidationError, Unit](()))(validateCommitment)")),
           "contractEngine" as SHORT_STRING   -> Set(Override, InConstructor(7), Validation(f => s"validateContractEngine($f)")),
           "callFunc" as OPTION(SHORT_STRING) -> Set(Override, InConstructor(7)),
-          proofsField,
-          "sender_address" as SENDER_ADDRESS -> Transparent
         ),
         ensures = Seq("validateSize"),
         versionToBlockchainFeatures = {
@@ -817,15 +820,15 @@ object TxScheme extends Enum[TxScheme] {
           "atomicBadge" as OPTION(ATOMIC_BADGE) -> Set(Override, InBody({ case _ => "None" })),
           "assetOperations" as SHORT_LIST(CONTRACT_ASSET_OPERATION) -> Set(InConstructor(3, 4),
                                                                            InBody { case 5 => "assetOperationsMap.mapping.values.flatten.toList" }),
-          "assetOperationsMap" as ASSET_OPERATIONS_MAP -> InConstructor(5),
-          "statusCode" as INT                          -> InConstructor(5),
-          "errorMessage" as OPTION(SHORT_STRING)       -> InConstructor(5),
           proofsField,
           "sender_address" as SENDER_ADDRESS        -> Transparent,
           "readings" as SHORT_LIST(READ_DESCRIPTOR) -> InConstructor(4, 5),
           "readingsHash" as OPTION(READINGS_HASH)   -> Set(InConstructor(4, 5), Validation(f => s"validateReadingsHash($f)")),
           "outputCommitment" as OPTION(COMMITMENT) -> Set(InConstructor(4, 5),
-                                                          Validation(f => s"$f.fold(Either.right[ValidationError, Unit](()))(validateCommitment)"))
+                                                          Validation(f => s"$f.fold(Either.right[ValidationError, Unit](()))(validateCommitment)")),
+          "assetOperationsMap" as ASSET_OPERATIONS_MAP -> InConstructor(5),
+          "statusCode" as INT -> InConstructor(5),
+          "errorMessage" as OPTION(SHORT_STRING) -> InConstructor(5),
         ),
         ensures = Seq("validateSize"),
         versionToBlockchainFeatures = {
@@ -905,11 +908,11 @@ object TxScheme extends Enum[TxScheme] {
           "atomicBadge" as OPTION(ATOMIC_BADGE)     -> Set(Override, InConstructor(3, 4, 5, 6)),
           "validationPolicy" as VALIDATION_POLICY   -> Set(InConstructor(4, 5, 6), Validation(f => s"validateValidationPolicy($f)")),
           "apiVersion" as CONTRACT_API_VERSION      -> InConstructor(4, 5),
+          proofsField,
+          "sender_address" as SENDER_ADDRESS        -> Transparent,
           "groupParticipants" as SHORT_SET(ADDRESS) -> Set(Override, InConstructor(5, 6)),
           "groupOwners" as SHORT_SET(ADDRESS)       -> Set(Override, InConstructor(5, 6)),
           "storedContract" as STORED_CONTRACT       -> Set(Override, InConstructor(6), Validation(f => s"validateHash($f)")),
-          "sender_address" as SENDER_ADDRESS        -> Transparent,
-          proofsField
         ),
         versionToBlockchainFeatures = {
           case 2 => Seq(BlockchainFeature.SponsoredFeesSupport)
