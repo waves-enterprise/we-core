@@ -1097,9 +1097,9 @@ describe('', () => {
       resultsHash: "",
       validationProofs: "",
       timestamp: 1598008066632,
+      readings: "",
       statusCode: "",
-      errorMessage: "",
-      readings: ""
+      errorMessage: ""
     };
     const signatureGenerator = TRANSACTIONS.ExecutedContract.V5(transaction);
     const bytes = await signatureGenerator.getBytes();

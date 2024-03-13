@@ -14,7 +14,7 @@ import monix.execution.cancelables.SerialCancelable
 import org.asynchttpclient.Dsl.{asyncHttpClient, get, post, config => clientConfig}
 import org.asynchttpclient.{AsyncHttpClient, Response}
 import org.scalacheck.Gen
-import org.scalatest.{BeforeAndAfterAll, FreeSpec, Matchers}
+import org.scalatest.{BeforeAndAfterAll, FreeSpec, Ignore, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks.forAll
 import play.api.libs.json.{JsPath, Json, Reads}
 
