@@ -12,8 +12,8 @@ import scala.collection.immutable
 import scala.collection.immutable.Set
 
 /*
-* FIELD ORDER CHANGE BREAKS SERIALIZATION, CAN ONLY APPEND NEW FIELDS FOR NEW VERSIONS
-* */
+ * FIELD ORDER CHANGE BREAKS SERIALIZATION, CAN ONLY APPEND NEW FIELDS FOR NEW VERSIONS
+ * */
 sealed abstract class TxScheme(
     val packageName: String = TxScheme.BasePackage,
     val typeId: Byte,
@@ -645,11 +645,11 @@ object TxScheme extends Enum[TxScheme] {
           "apiVersion" as CONTRACT_API_VERSION           -> InConstructor(4, 5, 6),
           "payments" as SHORT_LIST(CONTRACT_TRANSFER_IN) -> Set(Override, InConstructor(5, 6, 7)),
           proofsField,
-          "sender_address" as SENDER_ADDRESS             -> Transparent,
-          "isConfidential" as BOOLEAN                    -> Set(Override, InConstructor(6, 7)),
-          "groupParticipants" as SHORT_SET(ADDRESS)      -> Set(Override, InConstructor(6, 7)),
-          "groupOwners" as SHORT_SET(ADDRESS)            -> Set(Override, InConstructor(6, 7)),
-          "storedContract" as STORED_CONTRACT            -> Set(Override, InConstructor(7), Validation(f => s"validateHash($f)")),
+          "sender_address" as SENDER_ADDRESS        -> Transparent,
+          "isConfidential" as BOOLEAN               -> Set(Override, InConstructor(6, 7)),
+          "groupParticipants" as SHORT_SET(ADDRESS) -> Set(Override, InConstructor(6, 7)),
+          "groupOwners" as SHORT_SET(ADDRESS)       -> Set(Override, InConstructor(6, 7)),
+          "storedContract" as STORED_CONTRACT       -> Set(Override, InConstructor(7), Validation(f => s"validateHash($f)")),
         ),
         ensures = Seq("validateSize"),
         versionToBlockchainFeatures = {
@@ -751,9 +751,10 @@ object TxScheme extends Enum[TxScheme] {
           "payments" as SHORT_LIST(CONTRACT_TRANSFER_IN) -> Set(Override, InConstructor(5, 6, 7)),
           proofsField,
           "sender_address" as SENDER_ADDRESS -> Transparent,
-          "inputCommitment" as OPTION(COMMITMENT) -> Set(Override,
-                                                         InConstructor(6, 7),
-                                                         Validation(f => s"$f.fold(Either.right[ValidationError, Unit](()))(validateCommitment)")),
+          "inputCommitment" as COMMITMENT    -> Set(Override, InConstructor(6), Validation(f => s"validateCommitment($f)")),
+          "inputCommitmentOpt" as OPTION(COMMITMENT) -> Set(Override,
+                                                            InConstructor(7),
+                                                            Validation(f => s"$f.fold(Either.right[ValidationError, Unit](()))(validateCommitment)")),
           "contractEngine" as SHORT_STRING   -> Set(Override, InConstructor(7), Validation(f => s"validateContractEngine($f)")),
           "callFunc" as OPTION(SHORT_STRING) -> Set(Override, InConstructor(7)),
         ),
@@ -797,7 +798,7 @@ object TxScheme extends Enum[TxScheme] {
           case 4 => Seq("AtomicInnerTransaction")
           case 5 => Seq("AtomicInnerTransaction", "PaymentsV1ToContract")
           case 6 => Seq("AtomicInnerTransaction", "PaymentsV1ToContract", "ConfidentialDataInCallContractSupported")
-          case 7 => Seq("AtomicInnerTransaction", "PaymentsV1ToContract", "ConfidentialDataInCallContractSupported", "WasmContractSupported")
+          case 7 => Seq("AtomicInnerTransaction", "PaymentsV1ToContract", "OptionalConfidentialDataInCallContractSupported", "WasmContractSupported")
         }
       )
 
@@ -824,11 +825,13 @@ object TxScheme extends Enum[TxScheme] {
           "sender_address" as SENDER_ADDRESS        -> Transparent,
           "readings" as SHORT_LIST(READ_DESCRIPTOR) -> InConstructor(4, 5),
           "readingsHash" as OPTION(READINGS_HASH)   -> Set(InConstructor(4, 5), Validation(f => s"validateReadingsHash($f)")),
-          "outputCommitment" as OPTION(COMMITMENT) -> Set(InConstructor(4, 5),
-                                                          Validation(f => s"$f.fold(Either.right[ValidationError, Unit](()))(validateCommitment)")),
+          "outputCommitment" as COMMITMENT          -> Set(InConstructor(4), Validation(f => s"validateCommitment($f)")),
+          "outputCommitmentOpt" as OPTION(COMMITMENT) -> Set(
+            InConstructor(5),
+            Validation(f => s"$f.fold(Either.right[ValidationError, Unit](()))(validateCommitment)")),
           "assetOperationsMap" as ASSET_OPERATIONS_MAP -> InConstructor(5),
-          "statusCode" as INT -> InConstructor(5),
-          "errorMessage" as OPTION(SHORT_STRING) -> InConstructor(5),
+          "statusCode" as INT                          -> InConstructor(5),
+          "errorMessage" as OPTION(SHORT_STRING)       -> InConstructor(5),
         ),
         ensures = Seq("validateSize"),
         versionToBlockchainFeatures = {
@@ -864,7 +867,7 @@ object TxScheme extends Enum[TxScheme] {
           case 2 => Seq("ValidatorProvable")
           case 3 => Seq("ValidatorProvable", "AssetOperationsSupport")
           case 4 => Seq("ValidatorProvable", "AssetOperationsSupport", "ConfidentialCallOutputSupport")
-          case 5 => Seq("ValidatorProvable", "AssetOperationsSupport", "ConfidentialCallOutputSupport")
+          case 5 => Seq("ValidatorProvable", "AssetOperationsSupport", "OptionalConfidentialCallOutputSupport")
         },
         unusedImports = Set("com.wavesenterprise.serialization.ModelsBinarySerializer")
       )
@@ -904,10 +907,10 @@ object TxScheme extends Enum[TxScheme] {
           "imageHash" as SHORT_STRING -> Set(InConstructor(1, 2, 3, 4, 5), Validation(f => s"validateHash($f)")),
           feeField,
           timestampField,
-          "feeAssetId" as ASSET_ID.?                -> Set(Override, InConstructor(2, 3, 4, 5, 6)),
-          "atomicBadge" as OPTION(ATOMIC_BADGE)     -> Set(Override, InConstructor(3, 4, 5, 6)),
-          "validationPolicy" as VALIDATION_POLICY   -> Set(InConstructor(4, 5, 6), Validation(f => s"validateValidationPolicy($f)")),
-          "apiVersion" as CONTRACT_API_VERSION      -> InConstructor(4, 5),
+          "feeAssetId" as ASSET_ID.?              -> Set(Override, InConstructor(2, 3, 4, 5, 6)),
+          "atomicBadge" as OPTION(ATOMIC_BADGE)   -> Set(Override, InConstructor(3, 4, 5, 6)),
+          "validationPolicy" as VALIDATION_POLICY -> Set(InConstructor(4, 5, 6), Validation(f => s"validateValidationPolicy($f)")),
+          "apiVersion" as CONTRACT_API_VERSION    -> InConstructor(4, 5),
           proofsField,
           "sender_address" as SENDER_ADDRESS        -> Transparent,
           "groupParticipants" as SHORT_SET(ADDRESS) -> Set(Override, InConstructor(5, 6)),

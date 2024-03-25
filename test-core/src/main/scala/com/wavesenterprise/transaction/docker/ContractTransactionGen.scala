@@ -265,7 +265,7 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
     outputCommitment <- commitmentGen()
     readingsHash     <- digestSizeByteStrGen.map(ReadingsHash.apply)
     readings         <- readingsGen
-  } yield ExecutedContractTransactionV4.selfSigned(sender, tx, results, resultsHash, validationProofs, timestamp, assetOperations, readings, readingsHash.some, outputCommitment.some).explicitGet()
+  } yield ExecutedContractTransactionV4.selfSigned(sender, tx, results, resultsHash, validationProofs, timestamp, assetOperations, readings, readingsHash.some, outputCommitment).explicitGet()
 
   def executedContractV5ParamGen(otherCalls: Int = 2): Gen[ExecutedContractTransactionV5] =
     for {
@@ -366,7 +366,7 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
     outputCommitment <- commitmentGen()
     readingsHash     <- digestSizeByteStrGen.map(ReadingsHash.apply)
     readings         <- readingsGen
-  } yield ExecutedContractTransactionV4.selfSigned(sender, tx, results, resultsHash, validationProofs, timestamp, assetOperations, readings, readingsHash.some, Some(outputCommitment)).explicitGet()
+  } yield ExecutedContractTransactionV4.selfSigned(sender, tx, results, resultsHash, validationProofs, timestamp, assetOperations, readings, readingsHash.some, outputCommitment).explicitGet()
 
   val disableContractV1ParamGen: Gen[DisableContractTransactionV1] = for {
     sender     <- accountGen
@@ -561,7 +561,7 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
                   callFeeOptAssetId,
                   tx.atomicBadge,
                   transfers,
-                  Some(commitment))
+                  commitment)
       .explicitGet()
 
   def callContractV6ParamGen(atomicBadgeGen: Gen[Option[AtomicBadge]] = atomicBadgeOptGen,
@@ -583,7 +583,7 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
       payments        <- maxTransfers.flatMap(listContractTransferInV1Gen(_, Gen.const(optFeeAssetId)))
       commitment      <- commitmentGen()
     } yield CallContractTransactionV6
-      .selfSigned(signer, tx.contractId, tx.params, feeAmount, tx.timestamp, contractVersion, optFeeAssetId, atomicBadge, payments, Some(commitment))
+      .selfSigned(signer, tx.contractId, tx.params, feeAmount, tx.timestamp, contractVersion, optFeeAssetId, atomicBadge, payments, commitment)
       .explicitGet()
 
   def callContractV7ParamGen(atomicBadgeGen: Gen[Option[AtomicBadge]] = atomicBadgeOptGen,

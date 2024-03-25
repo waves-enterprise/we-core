@@ -110,7 +110,7 @@ class ExecutedContractTransactionV4Spec
         assetOperations = assetOperations,
         readings = readings,
         readingsHash = readingsHash.some,
-        outputCommitment = Some(outputCommitment)
+        outputCommitment = outputCommitment
       )
       .right
       .get
@@ -274,7 +274,7 @@ class ExecutedContractTransactionV4Spec
         assetOperations = assetOperations,
         readings = readings,
         readingsHash = readingsHash.some,
-        outputCommitment = Some(outputCommitment),
+        outputCommitment = outputCommitment,
         proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get)),
       )
       .right
@@ -451,7 +451,7 @@ class ExecutedContractTransactionV4Spec
         assetOperations = assetOperations,
         readings = readings,
         readingsHash = readingsHash.some,
-        outputCommitment = Some(outputCommitment),
+        outputCommitment = outputCommitment,
         proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
       )
       .right
@@ -629,7 +629,7 @@ class ExecutedContractTransactionV4Spec
         Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get)),
         readings = readings,
         readingsHash = readingsHash.some,
-        outputCommitment = Some(outputCommitment)
+        outputCommitment = outputCommitment
       )
       .right
       .get
@@ -788,7 +788,7 @@ class ExecutedContractTransactionV4Spec
         assetOperations = assetOperations,
         readings = readings,
         readingsHash = readingsHash.some,
-        outputCommitment = Some(outputCommitment),
+        outputCommitment = outputCommitment,
         proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
       )
       .right
@@ -951,7 +951,7 @@ class ExecutedContractTransactionV4Spec
         assetOperations = assetOperations,
         readings = readings,
         readingsHash = readingsHash.some,
-        outputCommitment = Some(outputCommitment),
+        outputCommitment = outputCommitment,
         proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
       )
       .right
@@ -1122,7 +1122,7 @@ class ExecutedContractTransactionV4Spec
         assetOperations = assetOperations,
         readings = readings,
         readingsHash = readingsHash.some,
-        outputCommitment = Some(outputCommitment),
+        outputCommitment = outputCommitment,
         proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
       )
       .right

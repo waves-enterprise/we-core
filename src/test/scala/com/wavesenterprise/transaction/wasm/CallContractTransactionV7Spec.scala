@@ -118,7 +118,7 @@ class CallContractTransactionV7Spec extends PropSpec with ScalaCheckPropertyChec
          |         "amount":100
          |      }
          |   ],
-         |   "inputCommitment":"${inputCommitment.hash.toString}",
+         |   "inputCommitmentOpt":"${inputCommitment.hash.toString}",
          |   "contractEngine": "wasm",
          |   "callFunc": "$callFunc"
          |}
