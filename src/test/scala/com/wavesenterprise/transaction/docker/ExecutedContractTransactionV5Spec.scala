@@ -130,7 +130,7 @@ class ExecutedContractTransactionV5Spec
         assetOperationsMap = assetOperationsMap,
         readings = readings,
         readingsHash = readingsHash.some,
-        outputCommitment = outputCommitment.some,
+        outputCommitmentOpt = outputCommitment.some,
         statusCode = 0,
         errorMessage = None
       )
@@ -251,7 +251,7 @@ class ExecutedContractTransactionV5Spec
          |   "version":5,
          |   "readings":${readings.map(r => ReadDescriptor.format.writes(r)).mkString("[", ",", "]")},
          |   "readingsHash":"${readingsHash.hash.toString}",
-         |   "outputCommitment":"${outputCommitment.hash.toString}"
+         |   "outputCommitmentOpt":"${outputCommitment.hash.toString}"
          |}
          |""".stripMargin
     )
@@ -279,7 +279,7 @@ class ExecutedContractTransactionV5Spec
         feeAssetId = None,
         atomicBadge = atomicBadgeGen.generateSample().some,
         payments = List.empty,
-        inputCommitment = commitmentGen().generateSample().some,
+        inputCommitmentOpt = commitmentGen().generateSample().some,
         contractEngine = "wasm",
         callFunc = Some("callFunc"),
         proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
@@ -323,7 +323,7 @@ class ExecutedContractTransactionV5Spec
         proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get)),
         readings = readings,
         readingsHash = readingsHash.some,
-        outputCommitment = Some(outputCommitment)
+        outputCommitmentOpt = Some(outputCommitment)
       )
       .right
       .get
@@ -347,7 +347,7 @@ class ExecutedContractTransactionV5Spec
          |   "version":5,
          |   "tx":{
          |      "type":104,
-         |      "inputCommitment": "${tx.inputCommitment.get.hash.base58}",
+         |      "inputCommitmentOpt": "${tx.inputCommitmentOpt.get.hash.base58}",
          |      "atomicBadge": ${tx.atomicBadge.map(AtomicBadge.format.writes).getOrElse("null")},
          |      "feeAssetId": null,
          |      "id":"${tx.id()}",
@@ -437,7 +437,7 @@ class ExecutedContractTransactionV5Spec
          |   },
          |   "readings":${readings.map(r => ReadDescriptor.format.writes(r)).mkString("[", ",", "]")},
          |   "readingsHash":"${readingsHash.hash.toString}",
-         |   "outputCommitment":"${outputCommitment.hash.toString}"
+         |   "outputCommitmentOpt":"${outputCommitment.hash.toString}"
          |}
          |""".stripMargin
     )
