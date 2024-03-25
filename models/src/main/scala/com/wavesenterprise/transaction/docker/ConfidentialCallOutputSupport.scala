@@ -25,7 +25,15 @@ trait ConfidentialCallOutputSupport {
 
   def readingsHash: Option[ReadingsHash]
 
-  def outputCommitment: Option[Commitment]
+  def outputCommitment: Commitment
+}
+
+trait OptionalConfidentialCallOutputSupport {
+  def readings: List[ReadDescriptor]
+
+  def readingsHash: Option[ReadingsHash]
+
+  def outputCommitmentOpt: Option[Commitment]
 }
 
 object ConfidentialCallOutputSupport {
