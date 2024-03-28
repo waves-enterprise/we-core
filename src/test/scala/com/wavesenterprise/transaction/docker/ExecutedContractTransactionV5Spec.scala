@@ -127,10 +127,10 @@ class ExecutedContractTransactionV5Spec
         timestamp = timestamp,
         validationProofs = validationProofs,
         proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get)),
-        assetOperationsMap = assetOperationsMap,
         readings = readings,
         readingsHash = readingsHash.some,
         outputCommitmentOpt = outputCommitment.some,
+        assetOperationsMap = assetOperationsMap,
         statusCode = 0,
         errorMessage = None
       )
@@ -164,7 +164,7 @@ class ExecutedContractTransactionV5Spec
          |      "storedContract":  {
          |        "image":"$image",
          |        "imageHash":"$imageHash",
-         |        "apiVersion": "1.10"
+         |        "apiVersion": "${ContractApiVersion.Current}"
          |      },
          |      "contractName":"$contractName",
          |      "params":[
@@ -279,10 +279,10 @@ class ExecutedContractTransactionV5Spec
         feeAssetId = None,
         atomicBadge = atomicBadgeGen.generateSample().some,
         payments = List.empty,
+        proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get)),
         inputCommitmentOpt = commitmentGen().generateSample().some,
         contractEngine = "wasm",
         callFunc = Some("callFunc"),
-        proofs = Proofs(Seq(ByteStr.decodeBase58("32mNYSefBTrkVngG5REkmmGAVv69ZvNhpbegmnqDReMTmXNyYqbECPgHgXrX2UwyKGLFS45j7xDFyPXjF8jcfw94").get))
       )
       .right
       .get
