@@ -38,7 +38,8 @@ import com.wavesenterprise.transaction.protobuf.docker.{
   ContractLease,
   ContractReissue,
   ContractTransferOut,
-  ContractTransferIn => PbContractTransferIn
+  ContractTransferIn => PbContractTransferIn,
+  ContractPayment
 }
 import com.wavesenterprise.transaction.protobuf.{
   AtomicBadge => PbAtomicBadge,
