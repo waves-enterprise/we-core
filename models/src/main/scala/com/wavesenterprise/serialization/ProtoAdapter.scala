@@ -24,6 +24,7 @@ import com.wavesenterprise.transaction.docker.assets.ContractAssetOperation.{
   ContractCancelLeaseV1,
   ContractIssueV1,
   ContractLeaseV1,
+  ContractPaymentV1,
   ContractReissueV1,
   ContractTransferOutV1
 }
@@ -37,7 +38,8 @@ import com.wavesenterprise.transaction.protobuf.docker.{
   ContractLease,
   ContractReissue,
   ContractTransferOut,
-  ContractTransferIn => PbContractTransferIn
+  ContractTransferIn => PbContractTransferIn,
+  ContractPayment
 }
 import com.wavesenterprise.transaction.protobuf.{
   AtomicBadge => PbAtomicBadge,
@@ -155,6 +157,14 @@ object ProtoAdapter {
           o.leaseId.base58,
         )
         PbContractAssetOperation(PbContractAssetOperation.Operation.ContractCancelLease(innerOperation))
+
+      case o: ContractAssetOperation.ContractPaymentV1 =>
+        val innerOperation = ContractPayment(
+          o.assetId.map(_.base58),
+          o.recipient.base58,
+          o.amount
+        )
+        PbContractAssetOperation(PbContractAssetOperation.Operation.ContractPayment(innerOperation))
     }
 
   }
