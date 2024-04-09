@@ -11,10 +11,10 @@ include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
 
 stages:
+  - scan
   - compile
   - test
   - publish
-  - scan
 
 ### Scaning
 .image_scanning:
@@ -61,6 +61,12 @@ stages:
     - wavesenterprise
   before_script:
     - cat "$SBT_CREDENTIALS" > /root/.sbt/.credentials
+
+### Scan job
+trivy_scan:
+  stage: scan
+  script:
+    - docker run -v "$(pwd):/repo/" bitnami/trivy repo --exit-code 1 /repo/
 
 ### Compile jobs
 compile:
@@ -122,17 +128,3 @@ publish-nexus-artifacts:
     - branches
   dependencies:
     - compile
-
-trivy_scan:
-  stage: scan
-  extends:
-    .image_scanning
-  # only: "is it necessary or not necessary, that's the question"
-  #   - /^.*RC.*$/
-  #   - /^.*release.*$/
-  #   - /^.*raritet.*$/
-  #   - master
-  #   - tags
-  tags:
-    - wavesenterprise
-    - node
