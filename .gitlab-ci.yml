@@ -81,12 +81,6 @@ compile:
       - "*/*/project/project/target"
     expire_in: 3 day
 
-dependency_check:
-  <<: *create-environment
-  stage: compile
-  script:
-    - sbt dependencyCheck
-
 ### Testing jobs
 test-core:
   <<: *create-environment
