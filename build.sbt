@@ -16,6 +16,8 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 run / fork := true
 
+addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "3.3.0")
+
 name := "we-core"
 
 inThisBuild(
