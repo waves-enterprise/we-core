@@ -11,10 +11,10 @@ include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
 
 stages:
-  - scan
   - compile
   - test
   - publish
+  - scan
 
 .create-environment: &create-environment
   image: ${REGISTRY}/it/hseeberger/scala-sbt:11.0.14.1_1.6.2_2.12.15
