@@ -1,16 +1,20 @@
 image: ${REGISTRY}/it/docker:19.03.1
 
 services:
-  - name: ${REGISTRY}/it/docker:19.03.1-dind
+  - name: ${REGISTRY}/it/docker:20.10.21-dind
     alias: docker
 
 variables:
   GIT_STRATEGY: "clone"
 
+include:
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+
 stages:
   - compile
   - test
   - publish
+  - scan
 
 .create-environment: &create-environment
   image: ${REGISTRY}/it/hseeberger/scala-sbt:11.0.14.1_1.6.2_2.12.15
@@ -18,6 +22,12 @@ stages:
     - wavesenterprise
   before_script:
     - cat "$SBT_CREDENTIALS" > /root/.sbt/.credentials
+
+### Scan job
+trivy_scan:
+  stage: scan
+  script:
+    - docker run -v "$(pwd):/repo/" bitnami/trivy repo /repo/
 
 ### Compile jobs
 compile:
@@ -56,6 +66,12 @@ test-core:
         - lang/jvm/target/test-reports/*.xml
   dependencies:
     - compile
+
+dependency_scanning:
+  stage: test
+  artifacts:
+    reports:
+      dependency_scanning: gl-dependency-scanning-report.json
 
 publish-nexus-artifacts:
   <<: *create-environment
