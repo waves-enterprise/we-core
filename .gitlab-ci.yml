@@ -27,7 +27,7 @@ stages:
 trivy_scan:
   stage: scan
   script:
-    - docker run -v "$(pwd):/repo/" bitnami/trivy repo --exit-code 0 /repo/
+    - docker run -v "$(pwd):/repo/" bitnami/trivy repo /repo/
 
 ### Compile jobs
 compile:
