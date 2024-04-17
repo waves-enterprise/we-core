@@ -1,8 +1,0 @@
-{
-  "include": [
-    "tests"
-  ],
-  "compilerOptions": {
-    "module": "commonjs"
-  }
-}

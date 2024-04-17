@@ -1,0 +1,3 @@
+[submodule "transactions-factory"]
+	path = transactions-factory
+	url = git@gitlab.web3tech.ru:development/we/toolchain/transactions-factory.git
