@@ -19,6 +19,9 @@ grpc-protobuf/src/main/protobuf/managed
 we_protobuf_*.zip
 transaction-protobuf.zip
 
+transactions-factory/target
+transactions-factory/.idea
+
 # vim
 *.*~
 

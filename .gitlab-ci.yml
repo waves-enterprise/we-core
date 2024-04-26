@@ -53,6 +53,12 @@ test-core:
   <<: *create-environment
   stage: test
   script:
+    - cd transactions-factory
+    - apt-get update -y
+    - curl -sL https://deb.nodesource.com/setup_17.x | bash
+    - apt-get install nodejs -yq
+    - npm install
+    - cd ..
     - sbt -mem 2048 test
   variables:
     DOCKER_HOST: tcp://docker:2375

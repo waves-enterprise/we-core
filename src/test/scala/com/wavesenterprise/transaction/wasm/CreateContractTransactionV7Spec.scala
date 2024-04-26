@@ -1,7 +1,6 @@
 package com.wavesenterprise.transaction.wasm
 
 import com.wavesenterprise.account.PublicKeyAccount
-import com.wavesenterprise.docker.ContractApiVersion
 import com.wavesenterprise.docker.StoredContract.WasmContract
 import com.wavesenterprise.javadsl.docker.validator.ValidationPolicy
 import com.wavesenterprise.state._

@@ -2,12 +2,12 @@ package com.wavesenterprise.utils
 
 import java.lang
 import java.net.{InetAddress, SocketTimeoutException}
-
 import monix.eval.Task
 import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.Observable
 import org.apache.commons.net.ntp.NTPUDPClient
 
+import java.time.Duration
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.util.Random
 import scala.util.control.NonFatal
@@ -39,7 +39,7 @@ case class NTP(servers: Seq[String],
   @volatile private var offset     = 0L
 
   private val client = new NTPUDPClient()
-  client.setDefaultTimeout(requestTimeout.toMillis.toInt)
+  client.setDefaultTimeout(Duration.ofMillis(requestTimeout.toMillis.toInt))
 
   private def isFatalExpired: Boolean = mode match {
     case NtpMode.Normal             => false
