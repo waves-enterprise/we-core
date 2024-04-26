@@ -1,0 +1,8 @@
+.idea
+node_modules
+**/*.js
+**/*.js.map
+dist
+*.iml
+target
+*.zip

@@ -244,6 +244,25 @@ object ProtoAdapter {
             .toEither
             .leftMap(err => GenericError(s"Error decoding 'leaseId' of ContractCancelLease asset operation: $err"))
         } yield ContractCancelLeaseV1(leaseId)
+
+      case inner: PbContractAssetOperation.Operation.ContractPayment =>
+        val value = inner.value
+
+        for {
+          assetId <- value.assetId
+            .fold(Either.right[GenericError, Option[AssetId]](Option.empty[AssetId])) { assetId =>
+              ByteStr
+                .decodeBase58(assetId)
+                .toEither
+                .map(assetId => Option(assetId))
+                .leftMap(err => GenericError(s"Error decoding 'assetId' of ContractPayment asset operation: $err"))
+            }
+          recipient <- ByteStr
+            .decodeBase58(value.recipient)
+            .toEither
+            .leftMap(err => GenericError(s"error decoding 'recipient' of ContractPayment asset operation: $err"))
+
+        } yield ContractPaymentV1(assetId = assetId, recipient = recipient, amount = value.amount)
     }
   }
 

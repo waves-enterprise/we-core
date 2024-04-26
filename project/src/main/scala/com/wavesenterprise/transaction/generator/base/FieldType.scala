@@ -779,7 +779,6 @@ object FieldType extends Enum[FieldType] {
         protoType = "StoredContract",
         isMessageProtoType = true,
         scalaImports = Set(
-          "scala.language.existentials",
           ProtoAdapterImport
         ),
         protoImports = Set("stored_contract.proto"),

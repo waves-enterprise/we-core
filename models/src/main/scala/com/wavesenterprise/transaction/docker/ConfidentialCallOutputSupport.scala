@@ -138,8 +138,9 @@ object ReadDescriptor {
       case _ => JsError(s"Expected ReadDescriptor json object")
     },
     {
-      case obj: SpecificKeys => SpecificKeys.format.writes(obj)
-      case obj: FilteredKeys => FilteredKeys.format.writes(obj)
+      case obj: SpecificKeys     => SpecificKeys.format.writes(obj)
+      case obj: FilteredKeys     => FilteredKeys.format.writes(obj)
+      case obj: SpecificBalances => SpecificBalances.format.writes(obj)
     }
   )
 }
@@ -202,4 +203,6 @@ object SpecificBalances {
 
     SpecificBalances(contractId, assetIds) -> end
   }
+
+  implicit val format: Format[SpecificBalances] = Json.format
 }
