@@ -53,13 +53,27 @@ test-core:
   <<: *create-environment
   stage: test
   script:
+    - sbt -mem 2048 "testOnly  -- -l \"com.wavesenterprise.utils.TypescriptTestWithDocker\""
+  cache: [ ]
+  artifacts:
+    reports:
+      junit:
+        - target/test-reports/*.xml
+        - lang/jvm/target/test-reports/*.xml
+  dependencies:
+    - compile
+
+test-typescript-generated-transactions:
+  <<: *create-environment
+  stage: test
+  script:
     - cd transactions-factory
     - apt-get update -y
-    - curl -sL https://deb.nodesource.com/setup_17.x | bash
+    - curl -sL https://deb.nodesource.com/setup_18.x | bash
     - apt-get install nodejs -yq
     - npm install
     - cd ..
-    - sbt -mem 2048 test
+    - sbt -mem 2048 "testOnly *TypeScriptTransactionsBytesSuite"
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
@@ -85,6 +99,7 @@ publish-nexus-artifacts:
   needs:
     - compile
     - test-core
+    - test-typescript-generated-transactions
   script:
     - cat "$SBT_CREDENTIALS_SONATYPE" > /root/.sbt/.sonatype-credentials
     - echo $PGP_KEY | base64 --decode > pgp.key && gpg --batch --import pgp.key
@@ -95,3 +110,26 @@ publish-nexus-artifacts:
     - branches
   dependencies:
     - compile
+
+publish-typescript-transactions-factory:
+  stage: publish
+  needs:
+    - compile
+    - test-core
+    - test-typescript-generated-transactions
+  before_script:
+    - apt-get update && apt-get install git -y
+  script:
+    - cd transactions-factory
+    - curl -sL https://deb.nodesource.com/setup_18.x | bash
+    - apt-get install nodejs -yq
+    - npm install
+    - cd ..
+    - git config --global user.email support@wavesenterprise.com;
+    - git config --global user.name wavesenterprise;
+    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+    - npm publish
+  only:
+    - /^v[0-9].*$/
+  tags:
+    - wavesenterprise

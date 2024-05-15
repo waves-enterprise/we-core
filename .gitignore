@@ -21,6 +21,8 @@ transaction-protobuf.zip
 
 transactions-factory/target
 transactions-factory/.idea
+transactions-factory/src/Transactions.ts
+transactions-factory/tests/Tests.ts
 
 # vim
 *.*~

@@ -1,6 +1,6 @@
 {
   "name": "@wavesenterprise/transactions-factory",
-  "version": "2.1.2",
+  "version": "2.1.4",
   "files": [
     "dist"
   ],
@@ -8,6 +8,7 @@
   "typings": "dist/index.d.ts",
   "module": "dist/transactions-factory.esm.js",
   "dependencies": {
+    "bignumber.js": "7.0.1",
     "@wavesenterprise/crypto-utils": "^1.0.1",
     "@wavesenterprise/signature-generator": "^3.0.2"
   },

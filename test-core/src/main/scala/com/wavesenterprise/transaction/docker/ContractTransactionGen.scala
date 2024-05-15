@@ -723,6 +723,41 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
                   contractApiVersion)
       .explicitGet()
 
+  def updateContractV5ParamGen(contractIdGen: Gen[ByteStr] = bytes32gen.map(ByteStr.apply)): Gen[UpdateContractTransactionV5] =
+    updateContractV5ParamGen(createTxFeeGen, accountGen, contractIdGen)
+
+  def updateContractV5ParamGen(amountGen: Gen[Long],
+                               signerGen: Gen[PrivateKeyAccount],
+                               contractIdGen: Gen[ByteStr]): Gen[UpdateContractTransactionV5] =
+    for {
+      signer             <- signerGen
+      contractId         <- contractIdGen
+      image              <- genBoundedString(UpdateContractTransactionV2.ImageMinLength, UpdateContractTransactionV2.ImageMaxLength)
+      imageHash          <- bytes32gen.map(DigestUtils.sha256Hex)
+      feeAmount          <- amountGen
+      atomicBadge        <- atomicBadgeOptGen
+      validationPolicy   <- validationPolicyGen
+      timestamp          <- ntpTimestampGen
+      contractApiVersion <- contractApiVersionGen
+      groupParticipants  <- Gen.choose(participantsMinCount, participantsMaxCount).flatMap(Gen.listOfN(_, addressGen))
+      groupOwners        <- Gen.choose(participantsMinCount, participantsMaxCount).flatMap(Gen.listOfN(_, addressGen))
+    } yield UpdateContractTransactionV5
+      .selfSigned(
+        signer,
+        contractId,
+        new String(image, UTF_8),
+        imageHash,
+        feeAmount,
+        timestamp,
+        None,
+        atomicBadge,
+        validationPolicy,
+        contractApiVersion,
+        groupParticipants.toSet,
+        groupOwners.toSet
+      )
+      .explicitGet()
+
   def updateContractV6ParamGen(contractIdGen: Gen[ByteStr] = bytes32gen.map(ByteStr.apply)): Gen[UpdateContractTransactionV6] =
     updateContractV6ParamGen(createTxFeeGen, accountGen, contractIdGen)
 
@@ -1092,6 +1127,63 @@ trait ContractTransactionGen extends CommonGen with WithSenderAndRecipient { _: 
         validationPolicy,
         contractApiVersion,
         payments
+      )
+      .explicitGet()
+
+  def createContractV6ParamGen(atomicBadgeGen: Gen[Option[AtomicBadge]] = atomicBadgeOptGen,
+                               validationPolicyGen: Gen[ValidationPolicy] = validationPolicyGen,
+                               contractApiVersionGen: Gen[ContractApiVersion] = contractApiVersionGen,
+                               transfersCountGen: Gen[Int] = defaultTransfersCountGen): Gen[CreateContractTransactionV6] = {
+    createContractV6ParamGen(atomicBadgeGen,
+                             genOptAssetId,
+                             createTxFeeGen,
+                             accountGen,
+                             validationPolicyGen,
+                             contractApiVersionGen,
+                             transfersCountGen,
+                             transfersAssetGen = genOptAssetId)
+  }
+
+  def createContractV6ParamGen(atomicBadgeGen: Gen[Option[AtomicBadge]],
+                               optAssetIdGen: Gen[Option[AssetId]],
+                               amountGen: Gen[Long],
+                               signerGen: Gen[PrivateKeyAccount],
+                               validationPolicyGen: Gen[ValidationPolicy],
+                               contractApiVersionGen: Gen[ContractApiVersion],
+                               transfersCountGen: Gen[Int],
+                               transfersAssetGen: Gen[Option[AssetId]]): Gen[CreateContractTransactionV6] =
+    for {
+      signer             <- signerGen
+      image              <- genBoundedString(CreateContractTransactionV5.ImageMinLength, CreateContractTransactionV5.ImageMaxLength)
+      imageHash          <- bytes32gen.map(DigestUtils.sha256Hex)
+      contractName       <- genBoundedString(1, CreateContractTransactionV5.ContractNameMaxLength)
+      params             <- Gen.choose(ParamsMinCount, ParamsMaxCount).flatMap(Gen.listOfN(_, dataEntryGen(DataEntryMaxSize)))
+      optFeeAssetId      <- optAssetIdGen
+      feeAmount          <- amountGen
+      atomicBadge        <- atomicBadgeGen
+      validationPolicy   <- validationPolicyGen
+      contractApiVersion <- contractApiVersionGen
+      timestamp          <- ntpTimestampGen
+      payments           <- listContractTransferInV1Gen(transfersCountGen, transfersAssetGen)
+      groupParticipants  <- Gen.choose(participantsMinCount, participantsMaxCount).flatMap(Gen.listOfN(_, addressGen))
+      groupOwners        <- Gen.choose(participantsMinCount, participantsMaxCount).flatMap(Gen.listOfN(_, addressGen))
+    } yield CreateContractTransactionV6
+      .selfSigned(
+        signer,
+        new String(image, UTF_8),
+        imageHash,
+        new String(contractName, UTF_8),
+        params,
+        feeAmount,
+        timestamp,
+        optFeeAssetId,
+        atomicBadge,
+        validationPolicy,
+        contractApiVersion,
+        payments,
+        isConfidential = true,
+        groupOwners = groupOwners.toSet,
+        groupParticipants = groupParticipants.toSet
       )
       .explicitGet()
 
