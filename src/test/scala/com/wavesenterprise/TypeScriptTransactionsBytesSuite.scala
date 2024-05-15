@@ -6,9 +6,10 @@ import com.github.dockerjava.api.model.{ExposedPort, Frame, HostConfig, PortBind
 import com.wavesenterprise.DockerClientBuilder.createDefaultApacheDockerClient
 import com.wavesenterprise.TypeScriptTransactionsBytesSuite.waitFor
 import com.wavesenterprise.account.PrivateKeyAccount
+import com.wavesenterprise.transaction.acl.PermitTransaction
 import com.wavesenterprise.transaction.Transaction
 import com.wavesenterprise.transaction.docker.ContractTransactionGen
-import com.wavesenterprise.utils.ScorexLogging
+import com.wavesenterprise.utils.{ScorexLogging, TypescriptTestWithDocker}
 import monix.eval.Task
 import monix.execution.cancelables.SerialCancelable
 import org.asynchttpclient.Dsl.{asyncHttpClient, get, post, config => clientConfig}
@@ -28,8 +29,10 @@ import scala.language.postfixOps
 import scala.util.Try
 
 /*
-  For local testing ensure docker and npm installed. Run in transactions-factory folder: "npm install"
+  For local testing ensure docker and npm installed.
+  Run in transactions-factory folder: "npm install"
  */
+@TypescriptTestWithDocker
 class TypeScriptTransactionsBytesSuite extends FreeSpec with Matchers with ContractTransactionGen with NodeHost with BeforeAndAfterAll
     with ScorexLogging {
 
@@ -139,14 +142,18 @@ class TypeScriptTransactionsBytesSuite extends FreeSpec with Matchers with Contr
       forAll(registerNodeTransactionGen())(assertSameBytes)
     }
 
-//    "CreateAliasTransactionV2" in {
-//      forAll(createAliasV2Gen)(assertSameBytes)
-//    }
-//
-//    "CreateAliasTransactionV3" in {
-//      forAll(createAliasV3Gen)(assertSameBytes)
-//    }
-//
+    "CreateAliasTransactionV2" in {
+      forAll(createAliasV2Gen)(assertSameBytes)
+    }
+
+    "CreateAliasTransactionV3" in {
+      forAll(createAliasV3Gen)(assertSameBytes)
+    }
+
+    "CreateAliasTransactionV4" in {
+      forAll(createAliasV4Gen)(assertSameBytes)
+    }
+
     "IssueTransactionV2" in {
       forAll(issueGen)(assertSameBytes)
     }
@@ -170,18 +177,22 @@ class TypeScriptTransactionsBytesSuite extends FreeSpec with Matchers with Contr
     "SponsorFeeTransaction" in {
       forAll(sponsorFeeGen)(assertSameBytes)
     }
-//
-//    "SetAssetScriptTransaction" in {
-//      forAll(setAssetScriptTransactionGen) { case (_, tx) => assertSameBytes(tx) }
-//    }
-//
-//    "DataTransaction" in {
-//      forAll(dataTransactionV1Gen)(assertSameBytes)
-//    }
-//
-//    "DataTransactionV2" in {
-//      forAll(dataTransactionV2Gen)(assertSameBytes)
-//    }
+
+    "SetAssetScriptTransaction" in {
+      forAll(setAssetScriptTransactionGen) { case (_, tx) => assertSameBytes(tx) }
+    }
+
+    "DataTransaction" in {
+      forAll(dataTransactionV1Gen)(assertSameBytes)
+    }
+
+    "DataTransactionV2" in {
+      forAll(dataTransactionV2Gen)(assertSameBytes)
+    }
+
+    "DataTransactionV3" in {
+      forAll(dataTransactionV3Gen)(assertSameBytes)
+    }
 
     "TransferTransactionV2" in {
       forAll(transferV2Gen)(assertSameBytes)
@@ -190,102 +201,110 @@ class TypeScriptTransactionsBytesSuite extends FreeSpec with Matchers with Contr
     "TransferTransactionV3" in {
       forAll(transferV3Gen())(assertSameBytes)
     }
-//
-//    "MassTransferTransaction" in {
-//      forAll(massTransferV1Gen(minTransfersCount = 2))(assertSameBytes)
-//    }
-//
-//    "MassTransferTransactionV2" in {
-//      forAll(massTransferV2Gen(minTransfersCount = 2))(assertSameBytes)
-//    }
 
-//    "PermitTransactionV1" in {
-//      forAll(permitTransactionV1Gen())(assertSameBytes)
-//    }
-//
-//    "PermitTransactionV2" in {
-//      forAll(permitTransactionV2Gen())(assertSameBytes)
-//    }
-//
-//    "CreatePolicyTransaction" in {
-//      forAll(createPolicyTransactionV1Gen())(createPolicyWrap => assertSameBytes(createPolicyWrap.tx))
-//    }
-//
-//    "CreatePolicyTransactionV2" in {
-//      forAll(createPolicyTransactionV2Gen())(createPolicyWrap => assertSameBytes(createPolicyWrap.tx))
-//    }
-//
-//    "CreatePolicyTransactionV3" in {
-//      forAll(createPolicyTransactionV3Gen())(createPolicyWrap => assertSameBytes(createPolicyWrap.tx))
-//    }
-//
-//    "UpdatePolicyTransaction" in {
-//      forAll(updatePolicyTransactionV1Gen())(assertSameBytes)
-//    }
-//
-//    "UpdatePolicyTransactionV2" in {
-//      forAll(updatePolicyTransactionV2Gen())(assertSameBytes)
-//    }
-//
-//    "UpdatePolicyTransactionV3" in {
-//      forAll(updatePolicyTransactionV3Gen())(assertSameBytes)
-//    }
+    "MassTransferTransaction" in {
+      forAll(massTransferV1Gen(minTransfersCount = 2))(assertSameBytes)
+    }
+
+    "MassTransferTransactionV2" in {
+      forAll(massTransferV2Gen(minTransfersCount = 2))(assertSameBytes)
+    }
+
+    "MassTransferTransactionV3" in {
+      forAll(massTransferV3Gen(minTransfersCount = 2))(assertSameBytes)
+    }
+
+    "PermitTransactionV1" in {
+      forAll(permitTransactionV1Gen())(assertSameBytes)
+    }
+
+    "PermitTransactionV2" in {
+      forAll(permitTransactionV2Gen())(assertSameBytes)
+    }
+
+    "CreatePolicyTransaction" in {
+      forAll(createPolicyTransactionV1Gen())(createPolicyWrap => assertSameBytes(createPolicyWrap.tx))
+    }
+
+    "CreatePolicyTransactionV2" in {
+      forAll(createPolicyTransactionV2Gen())(createPolicyWrap => assertSameBytes(createPolicyWrap.tx))
+    }
+
+    "CreatePolicyTransactionV3" in {
+      forAll(createPolicyTransactionV3Gen())(createPolicyWrap => assertSameBytes(createPolicyWrap.tx))
+    }
+
+    "UpdatePolicyTransaction" in {
+      forAll(updatePolicyTransactionV1Gen())(assertSameBytes)
+    }
+
+    "UpdatePolicyTransactionV2" in {
+      forAll(updatePolicyTransactionV2Gen())(assertSameBytes)
+    }
+
+    "UpdatePolicyTransactionV3" in {
+      forAll(updatePolicyTransactionV3Gen())(assertSameBytes)
+    }
 
     "PolicyDataHashTransactionV3" in {
       forAll(policyDataHashTransactionV3Gen())(pdhWrap => assertSameBytes(pdhWrap.tx))
     }
-//
-//    "CreateContractTransaction" in {
-//      forAll(createContractV1ParamGen)(assertSameBytes)
-//    }
-//
-//    "CreateContractTransactionV2" in {
-//      forAll(createContractV2ParamGen)(assertSameBytes)
-//    }
-//
-//    "CreateContractTransactionV3" in {
-//      forAll(createContractV3ParamGen())(assertSameBytes)
-//    }
-//
-//    "CreateContractTransactionV4" in {
-//      forAll(createContractV4ParamGen())(assertSameBytes)
-//    }
 
-//    "CreateContractTransactionV5" in {
-//      forAll(createContractV5ParamGen())(assertSameBytes)
-//    }
-//
-//    "CreateContractTransactionV6" in {
-//      forAll(createContractV6ParamGen())(assertSameBytes)
-//    }
+    "CreateContractTransaction" in {
+      forAll(createContractV1ParamGen)(assertSameBytes)
+    }
 
-//    "CallContractTransaction" in {
-//      forAll(callContractV1ParamGen)(assertSameBytes)
-//    }
-//
-//    "CallContractTransactionV2" in {
-//      forAll(callContractV2ParamGen)(assertSameBytes)
-//    }
-//
-//    "CallContractTransactionV3" in {
-//      forAll(callContractV3ParamGen)(assertSameBytes)
-//    }
-//
-//    "CallContractTransactionV4" in {
-//      forAll(callContractV4ParamGen())(assertSameBytes)
-//    }
+    "CreateContractTransactionV2" in {
+      forAll(createContractV2ParamGen)(assertSameBytes)
+    }
 
-//    "CallContractTransactionV5" in {
-//      forAll(callContractV5ParamGen())(assertSameBytes)
-//    }
-//
-//    "CallContractTransactionV6" in {
-//      forAll(callContractV6ParamGen())(assertSameBytes)
-//    }
-//
-//    "CallContractTransactionV7" in {
-//      forAll(callContractV7ParamGen())(assertSameBytes)
-//    }
+    "CreateContractTransactionV3" in {
+      forAll(createContractV3ParamGen())(assertSameBytes)
+    }
+
+    "CreateContractTransactionV4" in {
+      forAll(createContractV4ParamGen())(assertSameBytes)
+    }
+
+    "CreateContractTransactionV5" in {
+      forAll(createContractV5ParamGen())(assertSameBytes)
+    }
+
+    "CreateContractTransactionV6" in {
+      forAll(createContractV6ParamGen())(assertSameBytes)
+    }
+
+    "CreateContractTransactionV7" in {
+      forAll(createContractV7ParamGen)(assertSameBytes)
+    }
+
+    "CallContractTransaction" in {
+      forAll(callContractV1ParamGen)(assertSameBytes)
+    }
+
+    "CallContractTransactionV2" in {
+      forAll(callContractV2ParamGen)(assertSameBytes)
+    }
+
+    "CallContractTransactionV3" in {
+      forAll(callContractV3ParamGen)(assertSameBytes)
+    }
+
+    "CallContractTransactionV4" in {
+      forAll(callContractV4ParamGen())(assertSameBytes)
+    }
+
+    "CallContractTransactionV5" in {
+      forAll(callContractV5ParamGen())(assertSameBytes)
+    }
+
+    "CallContractTransactionV6" in {
+      forAll(callContractV6ParamGen())(assertSameBytes)
+    }
+
+    "CallContractTransactionV7" in {
+      forAll(callContractV7ParamGen())(assertSameBytes)
+    }
 
     "DisableContractTransaction" in {
       forAll(disableContractV1ParamGen)(assertSameBytes)
@@ -315,18 +334,17 @@ class TypeScriptTransactionsBytesSuite extends FreeSpec with Matchers with Contr
       forAll(updateContractV4ParamGen())(assertSameBytes)
     }
 
-//    "UpdateContractTransactionV5" in {
-//      forAll(updateContractV5ParamGen())(assertSameBytes)
-//    }
+    "UpdateContractTransactionV5" in {
+      forAll(updateContractV5ParamGen())(assertSameBytes)
+    }
 
     "UpdateContractTransactionV6" in {
       forAll(updateContractV6ParamGen())(assertSameBytes)
     }
 
-//
-//    "SetScriptTransaction" in {
-//      forAll(setScriptTransactionGen)(assertSameBytes)
-//    }
+    "SetScriptTransaction" in {
+      forAll(setScriptTransactionGen)(assertSameBytes)
+    }
 
     "AtomicTransaction" in {
       forAll(atomicTxV1Gen)(assertSameBytes)
@@ -349,9 +367,11 @@ class TypeScriptTransactionsBytesSuite extends FreeSpec with Matchers with Contr
 
   private def assertSameBytes(tx: Transaction) = {
     val expectedBytes: Array[Byte] = tx.proofSourceBytes
-    val json: String               = tx.json().toString()
-    val actualBytes: Array[Byte]   = Json.fromJson[BytesResponse](Json.parse(executeRequest(json).getResponseBody)).get.bytes
-
+    val json: String = tx match {
+      case permitTx: PermitTransaction => (permitTx.json() ++ Json.obj("duplicate_timestamp" -> s"${permitTx.timestamp}")).toString()
+      case _                           => tx.json().toString()
+    }
+    val actualBytes: Array[Byte] = Json.fromJson[BytesResponse](Json.parse(executeRequest(json).getResponseBody)).get.bytes
     expectedBytes should contain theSameElementsInOrderAs actualBytes
   }
 
@@ -374,7 +394,7 @@ object TypeScriptTransactionsBytesSuite {
   def waitFor(waitingFor: String, retriesCount: Int = 10, sleepMs: Int = 5000)(test: => Boolean): Unit = {
 
     @tailrec
-    def go(n: Int) {
+    def go(n: Int): Unit = {
       if (n > 0) {
         if (!test) {
           Thread.sleep(sleepMs)

@@ -1,6 +1,7 @@
 import express = require('express');
 import bodyParser = require('body-parser-bigint')
-import {TRANSACTION_TYPES, TRANSACTIONS, TxFactory} from '../../src'
+import {TRANSACTION_TYPES,TxFactory} from '../../src'
+import { TRANSACTIONS } from '../../src/FixedTransactions';
 import {config} from '@wavesenterprise/signature-generator'
 
 config.set({

@@ -1,10 +1,11 @@
 import {TransactionFactory} from './types';
 import {TRANSACTION_TYPES} from './constants';
-import {TRANSACTIONS} from './Transactions';
+import {TRANSACTIONS} from './FixedTransactions';
 
 export * from '@wavesenterprise/signature-generator';
 export * from './constants';
-export * from './Transactions';
+export * from './FixedTransactions';
+export * from './FixedTypes';
 export * from './TransactionsFactory';
 
 export * from './types';
