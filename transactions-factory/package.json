@@ -15,7 +15,7 @@
   "scripts": {
     "prepare": "npm run build",
     "build": "tsdx build --target browser --format umd,esm,cjs",
-    "test": "export TS_NODE_PROJECT='./tsconfig.tests.json' &&  node_modules/.bin/mocha -r ts-node/register tests/base-tx.ts",
+    "test": "export TS_NODE_PROJECT='./tsconfig.tests.json' &&  node_modules/.bin/mocha -r ts-node/register tests/Tests.ts",
     "test-server": "node_modules/.bin/ts-node -P tsconfig.tests.json tests/server/server.ts"
   },
   "devDependencies": {

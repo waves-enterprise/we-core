@@ -1,12 +1,44 @@
 import {TransactionFactory} from './types';
 import {TRANSACTION_TYPES} from './constants';
-import {TRANSACTIONS} from './FixedTransactions';
+import {TRANSACTIONS} from './Transactions';
 
-export * from '@wavesenterprise/signature-generator';
+export {
+    ArrayOfStringsWithLength,
+    AssetId,
+    AtomicBadge,
+    AtomicInnerTransaction,
+    Base58,
+    Base58WithLength,
+    Bool,
+    Byte,
+    ByteArrayWithSize,
+    ContractApiVersion,
+    DataEntryMap,
+    Integer,
+    List,
+    Long,
+    PermissionOpType,
+    PermissionRole,
+    Recipient,
+    StoredContract,
+    StringWithLength,
+    TxType,
+    TxVersion,
+    ValidationPolicy
+} from '@wavesenterprise/signature-generator';
+export { 
+    Base64,
+    Alias,
+    DataEntry,
+    Long8Bytes,
+    ArrayOfStringsWithBigLength,
+    DockerParamEntry,
+    ContractTransferIn,
+    Transfers
+   } from './FixedTypes';
 export * from './constants';
-export * from './FixedTransactions';
-export * from './FixedTypes';
 export * from './TransactionsFactory';
+export * from './Transactions';
 
 export * from './types';
 export * from './base-tx';

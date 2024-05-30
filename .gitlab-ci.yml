@@ -67,11 +67,13 @@ test-typescript-generated-transactions:
   <<: *create-environment
   stage: test
   script:
+    - sbt "compile; Test / compile"
     - cd transactions-factory
     - apt-get update -y
     - curl -sL https://deb.nodesource.com/setup_18.x | bash
     - apt-get install nodejs -yq
     - npm install
+#    - npm test TODO: WE-8895 after Test.ts fixed
     - cd ..
     - sbt -mem 2048 "testOnly *TypeScriptTransactionsBytesSuite"
   variables:
@@ -112,6 +114,7 @@ publish-nexus-artifacts:
     - compile
 
 publish-typescript-transactions-factory:
+  <<: *create-environment
   stage: publish
   needs:
     - compile
@@ -124,7 +127,6 @@ publish-typescript-transactions-factory:
     - curl -sL https://deb.nodesource.com/setup_18.x | bash
     - apt-get install nodejs -yq
     - npm install
-    - cd ..
     - git config --global user.email support@wavesenterprise.com;
     - git config --global user.name wavesenterprise;
     - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
