@@ -15,7 +15,7 @@ import {
 } from '@wavesenterprise/crypto-utils';
 import { BigNumber } from 'bignumber.js';
 
-export class ProperAlias extends BaseProcessor<string> {
+export class Alias extends BaseProcessor<string> {
     constructor(required: boolean) {
         super(required);
     }
@@ -62,7 +62,7 @@ class FixedBase64Processor extends BaseProcessor<string> {
     }
 }
 
-export class FixedScript extends FixedBase64Processor {
+export class Base64 extends FixedBase64Processor {
     constructor (required: boolean) {
         super(required, {
             appendLength: true,
@@ -192,9 +192,9 @@ class FixedContractParamProcessor extends BaseProcessor<ContractParam> {
 }
 
 
-export class FixedDataEntry extends FixedDataParamProcessor {}
+export class DataEntry extends FixedDataParamProcessor {}
 
-export class FixedContractEntry extends FixedContractParamProcessor {}
+export class DockerParamEntry extends FixedContractParamProcessor {}
 
 export class FixedRecipient extends BaseProcessor {
     static aliasRegex = /alias:.:/i
@@ -228,7 +228,7 @@ export class FixedRecipient extends BaseProcessor {
         }
     }
 }
-export class FixedTransfers extends BaseProcessor<Array<{
+export class Transfers extends BaseProcessor<Array<{
     recipient: string,
     amount: number | string,
 }>> {
@@ -262,7 +262,7 @@ export class Long8Bytes extends BaseProcessor<number | string> {
     }
 }
 
-export class LongFixed8Bytes extends BaseProcessor<number | string> {
+export class PermissionDueTimestamp extends BaseProcessor<number | string> {
 
     isSpecified(_: string | number): boolean {
         return true  // hack that right 9 zeros, if field is absent
@@ -304,7 +304,7 @@ export class ArrayOfStringsWithBigLength extends ListWithBigLength.of(Recipient)
 
 type FixedContractPayment = {
     assetId?: string,
-    amount: string
+    amount: number
 }
 
 class FixedContractTransferInProcessor extends BaseProcessor<FixedContractPayment> {
@@ -329,4 +329,4 @@ class FixedContractTransferInProcessor extends BaseProcessor<FixedContractPaymen
     }
 }
 
-export class FixedContractTransferIn extends FixedContractTransferInProcessor {}
+export class ContractTransferIn extends FixedContractTransferInProcessor {}

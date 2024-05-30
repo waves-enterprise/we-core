@@ -59,7 +59,7 @@ object TestsTypeScriptGenerator extends TypeScriptGenerator {
 
   override protected def buildWriter(schemes: Seq[TxScheme]): CodeWriter =
     CodeWriter()
-      .addLines(s"""import { ${TxTypeScriptGenerator.EXPORT_NAME} } from '../src/';""")
+      .addLines(s"""import { ${TxTypeScriptGenerator.EXPORT_NAME}, TxFactory } from '../src/';""")
       .addLines(s"""import { config } from "@wavesenterprise/signature-generator";""")
       .addLines(s"""import * as expect from 'expect';""")
       .newLine
@@ -104,7 +104,8 @@ object TestsTypeScriptGenerator extends TypeScriptGenerator {
                     fieldWriter.addLines(s"$fieldName: ${fieldTestValue.getOrElse(fieldName, """""""")}")
                 }
                 .addLines("};")
-                .addLines(s"const signatureGenerator = TRANSACTIONS.${scheme.typeScriptEntryName}.V$version(transaction);")
+                .addLines(s"const generator: TxFactory<any> = TRANSACTIONS.${scheme.typeScriptEntryName}.V$version;")
+                .addLines(s"const signatureGenerator = generator(transaction)")
                 .addLines("const bytes = await signatureGenerator.getBytes();")
                 .newLine
                 .addLines("expect(decoder.decode(bytes))")
@@ -112,7 +113,7 @@ object TestsTypeScriptGenerator extends TypeScriptGenerator {
                 .addLines(".toEqual(")
                 .indent
                 .addLines("decoder.decode(Int8Array.from(")
-                // TODO 08.12.2020 izhavoronkov: fix when client will be ready
+                // TODO 08.12.2020 izhavoronkov: fix when client will be ready (WE-8895)
 //                .addLinesIndented(s"[${txBytesByType(scheme.typeId)}]")
                 .addLinesIndented(s"[0]")
                 .outdent

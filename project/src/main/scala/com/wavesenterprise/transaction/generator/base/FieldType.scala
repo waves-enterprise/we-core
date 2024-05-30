@@ -614,7 +614,7 @@ object FieldType extends Enum[FieldType] {
           underlay.scalaImports ++
           underlayTypeImportsForProto(underlay),
         protoImports = underlay.protoImports,
-        typeScriptType = Some("ArrayOfStringsWithLength")
+        typeScriptType = Some("ArrayOfStringsWithBigLength")
       )
       with WrapperType
       with BinarySerializableType
@@ -1198,7 +1198,8 @@ object FieldType extends Enum[FieldType] {
           "com.wavesenterprise.transaction.TransactionParsers",
           ProtoAdapterImport
         ),
-        protoImports = Set("contract_transfer_in.proto")
+        protoImports = Set("contract_transfer_in.proto"),
+        typeScriptType = Some("ContractTransferIn")
       )
       with BinarySerializableType
       with ProtoCompatibleType {
@@ -1326,6 +1327,7 @@ object FieldType extends Enum[FieldType] {
           "com.wavesenterprise.crypto.internals.confidentialcontracts.Commitment.commitmentLength",
           ProtoAdapterImport
         ),
+        typeScriptType = Some("Base58")
       )
       with BinarySerializableType
       with ProtoCompatibleType {

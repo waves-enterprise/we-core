@@ -524,8 +524,8 @@ object TxScheme extends Enum[TxScheme] {
           val v1Imports = Seq(
             "opType"              -> "new PermissionOpType(true)",
             "role"                -> "new PermissionRole(true)",
-            "duplicate_timestamp" -> "new Long(true)",
-            "dueTimestamp"        -> "new PermissionDueTimestamp(false)"
+            "duplicate_timestamp" -> "new Long8Bytes(true)",
+            "dueTimestamp"        -> "new PermissionDueTimestamp"
           )
           v match {
             case 1 => v1Imports

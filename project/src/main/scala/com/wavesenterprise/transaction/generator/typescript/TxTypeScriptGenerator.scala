@@ -47,14 +47,57 @@ object TxTypeScriptGenerator extends TypeScriptGenerator {
 
     val allImports = (schemeImports ++ schemeAdditionalImports ++ imports).toList.sorted
 
+
+    val wavesSignatureGeneratorImports: List[String] = List(
+      "ArrayOfStringsWithLength",
+      "AssetId",
+      "AtomicBadge",
+      "AtomicInnerTransaction",
+      "Base58",
+      "Base58WithLength",
+      "Bool",
+      "Byte",
+      "ByteArrayWithSize",
+      "ContractApiVersion",
+      "DataEntryMap",
+      "Integer",
+      "List",
+      "Long",
+      "PermissionOpType",
+      "PermissionRole",
+      "Recipient",
+      "StoredContract",
+      "StringWithLength",
+      "TxType",
+      "TxVersion",
+      "ValidationPolicy"
+    )
+
+    val fixedTypesImports: List[String] = List(
+      "Base64",
+      "Alias",
+      "DataEntry",
+      "Long8Bytes",
+      "PermissionDueTimestamp",
+      "ArrayOfStringsWithBigLength",
+      "DockerParamEntry",
+      "ContractTransferIn",
+      "Transfers"
+    )
+
     CodeWriter()
+      .addLines(s"import { $txTypesTsClassName, $txVersionsTxClassName } from './${ConstantsTypeScriptGenerator.FILE_NAME}'")
+      .addLines("import { createTransactionsFactory } from './TransactionsFactory'")
       .addLines("import {")
-      .foldWithDelimiterIndented(allImports, ",") {
+        .foldWithDelimiterIndented(wavesSignatureGeneratorImports, ",") {
+          case (w, imp) => w.addLines(s"$imp")
+        }
+      .addLines("} from '@wavesenterprise/signature-generator'")
+      .addLines("import {")
+      .foldWithDelimiterIndented(fixedTypesImports, ",") {
         case (w, imp) => w.addLines(s"$imp")
       }
-      .addLines("} from '@wavesenterprise/signature-generator'")
-      .addLines(s"import { $txTypesTsClassName, $txVersionsTxClassName } from './${ConstantsTypeScriptGenerator.FILE_NAME}'")
-      .addLines("import { createTransactionsFactory, Processor } from './TransactionsFactory'")
+      .addLines("} from './FixedTypes'")
   }
 
   private def transactionsWriter(schemes: Seq[TxScheme]): CodeWriter =
