@@ -11,6 +11,7 @@ import "data_entry.proto";
 import "google/protobuf/wrappers.proto";
 import "managed/call_contract_transaction.proto";
 import "managed/executed_contract_transaction.proto";
+import "contract_transfer_in.proto";
 
 option java_multiple_files = true;
 option java_package = "com.wavesenterprise.protobuf.service.contract";
@@ -39,6 +40,7 @@ message ConfidentialCallRequest {
   bool broadcast_tx = 13;
   bool commitment_verification = 14;
   repeated string participants_for_atomic = 15;
+  repeated ContractTransferIn payments = 16;
 }
 
 message ConfidentialCallResponse {
