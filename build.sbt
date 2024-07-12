@@ -43,9 +43,7 @@ inThisBuild(
       Developer("wavesenterprise", "Waves Enterprise", "dev@wavesenterprise.com", url("https://wavesenterprise.com")),
       Developer("1estart", "Artemiy Pospelov", "artemiywaves@gmail.com", url("https://github.com/1estart")),
       Developer("deadblackclover", "Mark Ikonnikov", "deadblackclover@protonmail.com", url("https://github.com/deadblackclover")),
-      Developer("np96", "Nikolai Poperechnyi", "npoperechnyi@web3tech.ru,n.poperechnyi@gmail.com", url("https://github.com/np96")),
       Developer("GiperMeon", "Evgeniy Gnatovskiy", "egnatovskiy@web3tech.ru,gnatoffskiy43@gmail.com", url("https://github.com/GiperMeon")),
-      Developer("arlengur", "Alex Galin", "satovritti@gmail.com", url("https://github.com/arlengur")),
     ),
     crossPaths := false,
     scalacOptions ++= Seq(
@@ -275,7 +273,7 @@ lazy val testCore: Project = (project in file("test-core"))
     Compile / packageDoc / publishArtifact := !isSnapshotVersion.value
   )
 
-val grpcProtobufVersion = "1.11"
+val grpcProtobufVersion = "1.12"
 
 lazy val grpcProtobuf = (project in file("grpc-protobuf"))
   .enablePlugins(AkkaGrpcPlugin, GrpcApiVersionGenerator)
